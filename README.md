@@ -1,4 +1,6 @@
-# Teller 
+# Teller
+
+Teller is a comprehensive Minecraft backup solution. It is designed to facilitate both local backups and interfacing with the ChunkVault Backend. This dual functionality allows users to maintain local copies of their Minecraft worlds while also leveraging the secure storage capabilities of the ChunkVault Backend.
 
 # The Teller Library
 
