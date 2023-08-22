@@ -1,0 +1,3 @@
+# Teller 
+
+This monorepo contains both Teller and Teller_Desktop. Teller is a comprehensive library designed for processing and backing up Minecraft worlds. It provides robust functionality to handle various aspects of world backup, including local backups, private server backups, and public ChunkVault backups. On the other hand, Teller_Desktop is a Tauri application that serves as a user-friendly interface for backing up Minecraft worlds. It leverages the power of Teller library to provide an all-in-one tool for Minecraft world backup. While Teller and Teller_Desktop handle the backup process, [The Vault Backend](https://github.com/Valink-Solutions/vault) ensures secure storage of these world backups in the cloud.
