@@ -21,4 +21,4 @@ Follow these steps to create a production version of the app:
    ```bash
    pnpm tauri build
    ```
-This will create a production-ready version of the app.
+   This will create a production-ready version of the app.

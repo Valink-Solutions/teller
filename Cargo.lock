@@ -3316,6 +3316,15 @@ dependencies = [
 [[package]]
 name = "teller"
 version = "0.1.0"
+dependencies = [
+ "commandblock",
+ "config",
+ "directories",
+ "log",
+ "serde",
+ "serde_json",
+ "uuid",
+]
 
 [[package]]
 name = "teller_desktop"
@@ -3332,6 +3341,7 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-plugin-log",
+ "teller",
  "tokio",
  "uuid",
 ]
