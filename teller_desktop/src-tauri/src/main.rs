@@ -13,11 +13,9 @@ use log::info;
 
 use base64::{engine::general_purpose, Engine as _};
 use tauri_plugin_log::LogTarget;
-use teller_desktop::backend::folder_handler::{is_minecraft_world, GameType};
-use teller_desktop::backend::world_handler::{get_vault_id, parse_dat_file};
-
-use teller_desktop::config::get_config_folder;
-use teller_desktop::utils::WorldData;
+use teller::configuration::get_config_folder;
+use teller::world::{get_vault_id, is_minecraft_world, parse_dat_file, GameType};
+use teller::utils::WorldData;
 
 fn encode_image_to_base64(path: PathBuf) -> Result<String, Box<dyn std::error::Error>> {
     let mut file = File::open(path)?;
