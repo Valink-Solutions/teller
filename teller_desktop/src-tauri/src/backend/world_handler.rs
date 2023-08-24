@@ -1,11 +1,13 @@
-use std::path::PathBuf;
+use std::{collections::HashMap, path::PathBuf};
 
 use log::info;
 use serde_json::Value;
 use teller::{
     configuration::{get_config_folder, get_saves_config},
-    world::{get_vault_id, get_world_data},
+    utils::{player_handler::fetch_players_meta_data, PlayerData},
+    world::{get_vault_id, is_minecraft_world, process_world_data},
 };
+use uuid::Uuid;
 
 use crate::config::get_minecraft_save_location;
 
@@ -49,10 +51,15 @@ pub fn get_world_by_id(world_id: &str) -> Result<Value, String> {
                 };
 
                 if vault_id == world_id {
-                    match get_world_data(&world_folder) {
+                    let game_type = is_minecraft_world(&world_folder);
+
+                    match process_world_data(&world_folder, game_type) {
                         Ok(data) => {
                             info!("Found world: {world_id}");
-                            return Ok(data);
+
+                            let data_value = serde_json::to_value(data).unwrap();
+
+                            return Ok(data_value);
                         }
                         Err(_) => continue,
                     };
@@ -62,4 +69,16 @@ pub fn get_world_by_id(world_id: &str) -> Result<Value, String> {
     }
 
     Err("Could not find world".to_string())
+}
+
+#[tauri::command]
+pub fn grab_player_meta_from_uuids(
+    player_data_list: Vec<PlayerData>,
+) -> Result<HashMap<Uuid, Value>, String> {
+    let player_meta_map = match fetch_players_meta_data(player_data_list) {
+        Ok(meta_map) => meta_map,
+        Err(_) => return Err("Failed to fetch player data".into()),
+    };
+
+    Ok(player_meta_map)
 }

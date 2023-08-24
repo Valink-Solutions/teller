@@ -1,3 +1,5 @@
+pub mod player_handler;
+
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -50,4 +52,61 @@ pub struct WorldVersion {
     pub size: i64,
     pub level_name: String,
     pub additional_data: Option<serde_json::Value>,
+}
+
+// Experimental data structures
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PlayerData {
+    pub id: Uuid,
+    // pub name: String,
+    pub health: f32,
+    pub food: i32,
+    pub level: i32,
+    pub xp: i32,
+    pub inventory: Vec<Item>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Item {
+    pub id: String,
+    pub slot: i32,
+    pub count: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WorldLevelData {
+    pub name: String,
+    pub difficulty: String,
+    pub game_type: String,
+    pub last_played: Option<NaiveDateTime>,
+    pub size_on_disk: i64,
+    pub players: Vec<PlayerData>,
+    pub game_rules: Option<GameRules>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GameRules {
+    pub do_fire_tick: bool,
+    pub mob_loot: bool,
+    pub keep_inventory: bool,
+    pub do_mob_spawning: bool,
+    pub do_tile_drops: bool,
+    pub command_block_output: bool,
+    pub natural_regeneration: bool,
+    pub do_daylight_cycle: bool,
+    pub do_weather_cycle: bool,
+    pub do_immediate_respawn: bool,
+    pub drowning_damage: bool,
+    pub fall_damage: bool,
+    pub fire_damage: bool,
+    pub do_insomnia: bool,
+    pub invulnerable: bool,
+    pub max_command_chain_length: i32,
+    pub random_tick_speed: i32,
+    pub reduced_debug_info: bool,
+    pub send_command_feedback: bool,
+    pub show_death_messages: bool,
+    pub spawn_radius: i32,
+    pub spectators_generate_chunks: bool,
 }

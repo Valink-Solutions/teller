@@ -4,18 +4,21 @@
 )]
 
 use std::env;
-use std::fs::{self, File};
+use std::fs::File;
 use std::io::Read;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
+use commandblock::nbt::NbtValue;
 use log::error;
 use log::info;
 
 use base64::{engine::general_purpose, Engine as _};
 use tauri_plugin_log::LogTarget;
 use teller::configuration::get_config_folder;
-use teller::world::{get_vault_id, is_minecraft_world, parse_dat_file, GameType};
 use teller::utils::WorldData;
+use teller::world::{
+    calculate_dir_size, get_vault_id, is_minecraft_world, parse_dat_file, GameType,
+};
 
 fn encode_image_to_base64(path: PathBuf) -> Result<String, Box<dyn std::error::Error>> {
     let mut file = File::open(path)?;
@@ -25,25 +28,8 @@ fn encode_image_to_base64(path: PathBuf) -> Result<String, Box<dyn std::error::E
     Ok(format!("data:image/png;base64,{}", res_base64))
 }
 
-fn calculate_dir_size<P: AsRef<Path>>(path: P) -> std::io::Result<u64> {
-    let mut size = 0;
-
-    for entry in fs::read_dir(path)? {
-        let dir = entry?;
-        let metadata = dir.metadata()?;
-
-        if metadata.is_dir() {
-            size += calculate_dir_size(dir.path())?;
-        } else {
-            size += metadata.len();
-        }
-    }
-
-    Ok(size)
-}
-
 fn get_level_name(
-    level_dat_blob: commandblock::NbtValue,
+    level_dat_blob: NbtValue,
     game_type: GameType,
 ) -> Result<String, Box<dyn std::error::Error>> {
     let level_value: serde_json::Value = serde_json::to_value(level_dat_blob)?;
@@ -188,6 +174,7 @@ fn main() {
             teller_desktop::config::get_folder_path,
             teller_desktop::config::create_saves_config,
             teller_desktop::backend::world_handler::get_world_by_id,
+            teller_desktop::backend::world_handler::grab_player_meta_from_uuids,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
