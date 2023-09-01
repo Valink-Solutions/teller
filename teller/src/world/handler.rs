@@ -6,12 +6,10 @@ use std::{
 
 use commandblock::nbt::{read_from_file, Compression, Endian, NbtValue};
 use log::error;
-use serde_json::{json, Value};
+use serde_json::Value;
 use uuid::Uuid;
 
-use crate::utils::{
-    player_handler::fetch_player_data_from_uuid, GameRules, Item, PlayerData, WorldLevelData,
-};
+use crate::utils::{GameRules, Item, PlayerData, WorldLevelData};
 
 use super::{is_minecraft_folder, is_minecraft_world, GameType};
 
@@ -133,15 +131,16 @@ pub fn parse_dat_file(
 ) -> Result<NbtValue, Box<dyn std::error::Error>> {
     match game_type {
         GameType::Java => {
-            let (_, dat_blob) = match read_from_file(file_path, Compression::Gzip, Endian::Big) {
-                Ok(data) => data,
-                Err(e) => return Err(format!("Failed to read level.dat: {e:?}").into()),
-            };
+            let (_, dat_blob) =
+                match read_from_file(file_path, Compression::Gzip, Endian::Big, false) {
+                    Ok(data) => data,
+                    Err(e) => return Err(format!("Failed to read level.dat: {e:?}").into()),
+                };
             Ok(dat_blob)
         }
         GameType::Bedrock => {
             let (_, dat_blob) =
-                match read_from_file(file_path, Compression::Uncompressed, Endian::Little) {
+                match read_from_file(file_path, Compression::Uncompressed, Endian::Little, true) {
                     Ok(data) => data,
                     Err(e) => return Err(format!("Failed to read level.dat: {e:?}").into()),
                 };
@@ -181,6 +180,7 @@ pub fn process_world_data(
     match game_type {
         GameType::Bedrock => {
             let world_level_data = WorldLevelData {
+                game_engine: "Bedrock".to_string(),
                 name: level_value["LevelName"]
                     .as_str()
                     .unwrap_or_default()
@@ -207,10 +207,10 @@ pub fn process_world_data(
                 },
                 last_played: {
                     let last_played = level_value["LastPlayed"].as_i64().unwrap_or_default();
-                    let naive_datetime = chrono::NaiveDateTime::from_timestamp_millis(last_played);
+                    let naive_datetime = chrono::NaiveDateTime::from_timestamp_opt(last_played, 0);
                     naive_datetime
                 },
-                players: Vec::new(),
+                players: get_player_data(path, game_type)?,
                 size_on_disk: calculate_dir_size(path)? as i64,
                 game_rules: Some(parse_game_rules(&level_value, game_type)?),
             };
@@ -224,17 +224,25 @@ pub fn process_world_data(
             };
 
             let world_level_data = WorldLevelData {
+                game_engine: "Java".to_string(),
                 name: level_data["LevelName"]
                     .as_str()
                     .unwrap_or_default()
                     .to_string(),
                 difficulty: {
                     let difficulty = level_data["Difficulty"].as_i64().unwrap_or_default() as i32;
+                    let hardcore = level_data["hardcore"].as_bool().unwrap_or_default();
                     match difficulty {
                         0 => "Peaceful".to_string(),
                         1 => "Easy".to_string(),
                         2 => "Normal".to_string(),
-                        3 => "Hard".to_string(),
+                        3 => {
+                            if hardcore {
+                                "Hardcore".to_string()
+                            } else {
+                                "Hard".to_string()
+                            }
+                        }
                         _ => "Unknown".to_string(),
                     }
                 },
@@ -269,7 +277,49 @@ pub fn get_player_data(
     game_type: GameType,
 ) -> Result<Vec<PlayerData>, Box<dyn std::error::Error>> {
     match game_type {
-        GameType::Bedrock => Ok(Vec::new()),
+        GameType::Bedrock => {
+            let db_path = path.join("db").to_str().unwrap().to_string();
+
+            let mut db_reader = commandblock::db::DbReader::new(&db_path, 0);
+            let local_player_data = db_reader.get("~local_player".as_bytes());
+
+            if local_player_data.is_none() {
+                return Ok(Vec::new());
+            }
+
+            let player_data = serde_json::to_value(local_player_data.unwrap())?;
+
+            let player_uuid = "Bedrock Player".to_string();
+
+            let player_data = PlayerData {
+                id: player_uuid,
+                health: None,
+                food: None,
+                level: player_data.get("PlayerLevel").unwrap().as_i64().unwrap() as i32,
+                xp: player_data
+                    .get("PlayerLevelProgress")
+                    .unwrap()
+                    .as_f64()
+                    .unwrap() as f32,
+                inventory: player_data
+                    .get("Inventory")
+                    .unwrap()
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|item| Item {
+                        id: item.get("Name").unwrap().as_str().unwrap().to_string(),
+                        slot: Some(item.get("Slot").unwrap().as_i64().unwrap() as i32),
+                        count: item.get("Count").unwrap().as_i64().unwrap() as i32,
+                        tag: Some(item.clone()),
+                    })
+                    .collect::<Vec<Item>>(),
+            };
+
+            Ok(vec![player_data])
+
+            // Ok(Vec::new())
+        }
         GameType::Java => {
             let player_data_path = path.join("playerdata");
 
@@ -304,6 +354,7 @@ pub fn get_player_data(
                     player.clone(),
                     commandblock::nbt::Compression::Gzip,
                     commandblock::nbt::Endian::Big,
+                    false,
                 ) {
                     Ok((_, data)) => serde_json::to_value(data)?,
                     Err(e) => {
@@ -317,11 +368,11 @@ pub fn get_player_data(
                 // let player_meta = fetch_player_data_from_uuid(player_uuid)?;
 
                 let player_data = PlayerData {
-                    id: player_uuid,
-                    health: player_data.get("Health").unwrap().as_f64().unwrap() as f32,
-                    food: player_data.get("foodLevel").unwrap().as_i64().unwrap() as i32,
+                    id: player_uuid.to_string(),
+                    health: Some(player_data.get("Health").unwrap().as_f64().unwrap() as f32),
+                    food: Some(player_data.get("foodLevel").unwrap().as_i64().unwrap() as i32),
                     level: player_data.get("XpLevel").unwrap().as_i64().unwrap() as i32,
-                    xp: player_data.get("XpTotal").unwrap().as_i64().unwrap() as i32,
+                    xp: player_data.get("XpTotal").unwrap().as_f64().unwrap() as f32,
                     inventory: player_data
                         .get("Inventory")
                         .unwrap()
@@ -330,8 +381,9 @@ pub fn get_player_data(
                         .iter()
                         .map(|item| Item {
                             id: item.get("id").unwrap().as_str().unwrap().to_string(),
-                            slot: item.get("Slot").unwrap().as_i64().unwrap() as i32,
+                            slot: Some(item.get("Slot").unwrap().as_i64().unwrap() as i32),
                             count: item.get("Count").unwrap().as_i64().unwrap() as i32,
+                            tag: item.get("tag").cloned(),
                         })
                         .collect::<Vec<Item>>(),
                 };

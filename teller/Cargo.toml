@@ -7,7 +7,8 @@ edition = "2021"
 
 [dependencies]
 chrono = { version = "0.4.26", features = ["serde"] }
-commandblock = { version = "0.4.1", features = ["serde"] }
+# commandblock = { version = "0.4.1", features = ["serde"] }
+commandblock = { git = "https://github.com/Valink-Solutions/CommandBlock", features = ["serde"], branch = "add-bedrock-db-parsing" }
 config = "0.13.3"
 directories = "5.0.1"
 log = "0.4.20"

@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import Icon from '@iconify/svelte';
 	import { invoke } from '@tauri-apps/api/tauri';
 	import { onMount } from 'svelte';
 	import dayjs from 'dayjs';
+	import InventoryViewer from '$lib/inventory_viewer.svelte';
 
 	let world_data: any;
 	let player_data: any;
@@ -14,13 +16,15 @@
 			world_data = res;
 
 			if (world_data) {
-				const players: Record<string, any> = await invoke('grab_player_meta_from_uuids', {
-					playerDataList: world_data.players
-				});
-				player_data = Object.keys(players).reduce((acc: Record<string, any>, uuid: string) => {
-					acc[uuid] = players[uuid];
-					return acc;
-				}, {});
+				if (world_data.game_engine === 'Java') {
+					const players: Record<string, any> = await invoke('grab_player_meta_from_uuids', {
+						playerDataList: world_data.players
+					});
+					player_data = Object.keys(players).reduce((acc: Record<string, any>, uuid: string) => {
+						acc[uuid] = players[uuid];
+						return acc;
+					}, {});
+				}
 			}
 		} catch (err) {
 			console.log(err);
@@ -50,24 +54,60 @@
 			<input type="checkbox" />
 			<div class="collapse-title text-xl font-medium">Players</div>
 			<div class="collapse-content">
-				<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-					{#if player_data}
-						{#each world_data.players as player}
-							<div class="card bordered">
-								<figure>
-									<img src={player_data[player.id].avatar} alt={player_data[player.id].username} class="w-full" />
-								</figure>
-								<div class="card-body">
-									<h2 class="card-title">{player_data[player.id].username}</h2>
-									<div class="flex flex-row gap-2 items-center justify-center">
-										<p class="text-xs text-opacity-50">Health: {player.health}</p>
-										<p class="text-xs text-opacity-50">Level: {player.level}</p>
-										<p class="text-xs text-opacity-50">XP: {player.xp}</p>
-									</div>
-								</div>
+				<div class="flex flex-col gap-4">
+					{#each world_data.players as player}
+						<div class="collapse collapse-arrow border-4 border-black drop-shadow-neu">
+							<input type="checkbox" />
+							<div class="collapse-title text-xl font-medium flex items-center">
+								<img
+									src={player_data
+										? player_data[player.id].avatar
+										: 'https://api.mineatar.io/face/8667ba71b85a4004af54457a9734eed7?scale=32&overlay=false'}
+									alt={player_data ? player_data[player.id].username : 'Default Icon'}
+									class="w-8 h-8 mr-2"
+								/>
+								{player_data ? player_data[player.id].username : player.id}
 							</div>
-						{/each}
-					{/if}
+							<div class="collapse-content gap-4">
+								{#if player_data}
+									<div class="flex flex-col gap-2">
+										<div class="flex select-none w-full justify-between">
+											{#each Array(Math.floor(player.health / 2)) as _}
+												<Icon icon="mdi:heart" class="w-6 h-6 text-red-500" />
+											{/each}
+											{#if player.health % 2}
+												<Icon icon="mdi:heart-half" class="w-6 h-6 text-red-500" />
+											{/if}
+											{#each Array(10 - Math.ceil(player.health / 2)) as _}
+												<Icon icon="mdi:heart" class="w-6 h-6 text-gray-500" />
+											{/each}
+										</div>
+										<div class="flex flex-row items-center gap-4">
+											<p class="text-xs text-opacity-50 whitespace-nowrap">Level {player.level}</p>
+											<progress
+												class="progress progress-primary w-full"
+												value={player.xp.toFixed(2)}
+												max="100"
+											/>
+										</div>
+										<InventoryViewer items={player.inventory} />
+									</div>
+								{:else}
+									<div class="flex flex-col">
+										<div class="flex flex-row gap-4 items-center">
+											<p class="text-xs text-opacity-50">Level: {player.level}</p>
+											<progress
+												class="progress progress-primary w-full"
+												value={player.xp.toFixed(2)}
+												max="100"
+											/>
+										</div>
+										<InventoryViewer items={player.inventory} />
+									</div>
+								{/if}
+							</div>
+						</div>
+					{/each}
 				</div>
 			</div>
 		</div>

@@ -7,7 +7,6 @@ use teller::{
     utils::{player_handler::fetch_players_meta_data, PlayerData},
     world::{get_vault_id, is_minecraft_world, process_world_data},
 };
-use uuid::Uuid;
 
 use crate::config::get_minecraft_save_location;
 
@@ -74,7 +73,7 @@ pub fn get_world_by_id(world_id: &str) -> Result<Value, String> {
 #[tauri::command]
 pub fn grab_player_meta_from_uuids(
     player_data_list: Vec<PlayerData>,
-) -> Result<HashMap<Uuid, Value>, String> {
+) -> Result<HashMap<String, Value>, String> {
     let player_meta_map = match fetch_players_meta_data(player_data_list) {
         Ok(meta_map) => meta_map,
         Err(_) => return Err("Failed to fetch player data".into()),

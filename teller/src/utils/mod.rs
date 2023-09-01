@@ -2,6 +2,7 @@ pub mod player_handler;
 
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -31,7 +32,7 @@ pub struct World {
 #[allow(non_snake_case)]
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct WorldVersion {
-    pub id: Uuid,
+    pub id: String,
     pub world_id: Uuid,
     pub version: i32,
     pub backup_path: String,
@@ -58,26 +59,28 @@ pub struct WorldVersion {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PlayerData {
-    pub id: Uuid,
+    pub id: String,
     // pub name: String,
-    pub health: f32,
-    pub food: i32,
+    pub health: Option<f32>,
+    pub food: Option<i32>,
     pub level: i32,
-    pub xp: i32,
+    pub xp: f32,
     pub inventory: Vec<Item>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Item {
     pub id: String,
-    pub slot: i32,
+    pub slot: Option<i32>,
     pub count: i32,
+    pub tag: Option<Value>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WorldLevelData {
     pub name: String,
     pub difficulty: String,
+    pub game_engine: String,
     pub game_type: String,
     pub last_played: Option<NaiveDateTime>,
     pub size_on_disk: i64,
