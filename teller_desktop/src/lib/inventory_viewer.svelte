@@ -27,7 +27,7 @@
 							src={`https://yamapi.chunkvault.com/images/items/${foundItem.id}`}
 							alt={foundItem.id.replace('minecraft:', '')}
 						/>
-						<span class="absolute bottom-1 right-2 text-white drop-shadow"
+						<span class="absolute bottom-1 right-2 text-white drop-shadow font-bold"
 							>{foundItem.count}</span
 						>
 					{/each}
@@ -46,7 +46,7 @@
 							src={`https://yamapi.chunkvault.com/images/items/${foundItem.id}`}
 							alt={foundItem.id.replace('minecraft:', '')}
 						/>
-						<span class="absolute bottom-1 right-2 text-white drop-shadow"
+						<span class="absolute bottom-1 right-2 text-white drop-shadow font-bold"
 							>{foundItem.count}</span
 						>
 					{/each}
@@ -65,7 +65,9 @@
 							src={`https://yamapi.chunkvault.com/images/items/${foundItem.id}`}
 							alt={foundItem.id.replace('minecraft:', '')}
 						/>
-						<span class="absolute bottom-1 right-2 text-white drop-shadow">{foundItem.count}</span>
+						<span class="absolute bottom-1 right-2 text-white drop-shadow font-bold"
+							>{foundItem.count}</span
+						>
 					{/each}
 				{/if}
 			</div>
@@ -81,7 +83,7 @@
 					src={`https://yamapi.chunkvault.com/images/items/${foundItem.id}`}
 					alt={foundItem.id.replace('minecraft:', '')}
 				/>
-				<span class="absolute bottom-1 right-2 text-white drop-shadow"
+				<span class="absolute bottom-1 right-2 text-white drop-shadow font-bold"
 					>{foundItem.count}</span
 				>
 			{/each}

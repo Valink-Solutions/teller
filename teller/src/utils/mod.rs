@@ -1,9 +1,13 @@
 pub mod player_handler;
 
+use std::{fs::File, io::Read, path::PathBuf};
+
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use uuid::Uuid;
+
+use base64::{engine::general_purpose, Engine as _};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WorldData {
@@ -79,6 +83,7 @@ pub struct Item {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WorldLevelData {
     pub name: String,
+    pub icon: Option<String>,
     pub difficulty: String,
     pub game_engine: String,
     pub game_type: String,
@@ -112,4 +117,12 @@ pub struct GameRules {
     pub show_death_messages: bool,
     pub spawn_radius: i32,
     pub spectators_generate_chunks: bool,
+}
+
+pub fn encode_image_to_base64(path: PathBuf) -> Result<String, Box<dyn std::error::Error>> {
+    let mut file = File::open(path)?;
+    let mut buf = Vec::new();
+    file.read_to_end(&mut buf)?;
+    let res_base64 = general_purpose::STANDARD_NO_PAD.encode(&buf);
+    Ok(format!("data:image/png;base64,{}", res_base64))
 }

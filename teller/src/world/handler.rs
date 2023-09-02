@@ -9,7 +9,7 @@ use log::error;
 use serde_json::Value;
 use uuid::Uuid;
 
-use crate::utils::{GameRules, Item, PlayerData, WorldLevelData};
+use crate::utils::{encode_image_to_base64, GameRules, Item, PlayerData, WorldLevelData};
 
 use super::{is_minecraft_folder, is_minecraft_world, GameType};
 
@@ -185,6 +185,7 @@ pub fn process_world_data(
                     .as_str()
                     .unwrap_or_default()
                     .to_string(),
+                icon: Some(encode_image_to_base64(path.join("world_icon.jpeg"))?),
                 difficulty: {
                     let difficulty = level_value["Difficulty"].as_i64().unwrap_or_default() as i32;
                     match difficulty {
@@ -229,6 +230,7 @@ pub fn process_world_data(
                     .as_str()
                     .unwrap_or_default()
                     .to_string(),
+                icon: Some(encode_image_to_base64(path.join("icon.png"))?),
                 difficulty: {
                     let difficulty = level_data["Difficulty"].as_i64().unwrap_or_default() as i32;
                     let hardcore = level_data["hardcore"].as_bool().unwrap_or_default();
@@ -324,7 +326,47 @@ pub fn get_player_data(
             let player_data_path = path.join("playerdata");
 
             if !player_data_path.exists() {
-                return Err("Player data does not exist".into());
+                // If playerdata directory does not exist, grab the single player entry from level.dat
+                let level_dat_path = path.join("level.dat");
+                let level_dat = parse_dat_file(level_dat_path, game_type)?;
+                let level_value: serde_json::Value = serde_json::to_value(level_dat)?;
+                let player_data = level_value.get("Player").unwrap();
+
+                let uuid_parts = player_data.get("UUID").unwrap().as_array().unwrap();
+                let uuid_most = uuid_parts[0].as_i64().unwrap() as u32;
+                let uuid_second = uuid_parts[1].as_i64().unwrap() as u32;
+                let uuid_third = uuid_parts[2].as_i64().unwrap() as u32;
+                let uuid_least = uuid_parts[3].as_i64().unwrap() as u32;
+
+                // Concatenate the four integers into a single 128-bit value
+                let uuid_int = ((uuid_most as u128) << 96)
+                    | ((uuid_second as u128) << 64)
+                    | ((uuid_third as u128) << 32)
+                    | uuid_least as u128;
+
+                // Create a UUID from the 128-bit value
+                let player_uuid = Uuid::from_u128(uuid_int);
+                let player_data = PlayerData {
+                    id: player_uuid.to_string(),
+                    health: Some(player_data.get("Health").unwrap().as_f64().unwrap() as f32),
+                    food: Some(player_data.get("foodLevel").unwrap().as_i64().unwrap() as i32),
+                    level: player_data.get("XpLevel").unwrap().as_i64().unwrap() as i32,
+                    xp: player_data.get("XpTotal").unwrap().as_f64().unwrap() as f32,
+                    inventory: player_data
+                        .get("Inventory")
+                        .unwrap()
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|item| Item {
+                            id: item.get("id").unwrap().as_str().unwrap().to_string(),
+                            slot: Some(item.get("Slot").unwrap().as_i64().unwrap() as i32),
+                            count: item.get("Count").unwrap().as_i64().unwrap() as i32,
+                            tag: item.get("tag").cloned(),
+                        })
+                        .collect::<Vec<Item>>(),
+                };
+                return Ok(vec![player_data]);
             }
 
             let player_data = match std::fs::read_dir(&player_data_path) {
@@ -346,7 +388,9 @@ pub fn get_player_data(
 
                 let player = player.path();
 
-                if !player.is_file() || !player.extension().unwrap().eq("dat") {
+                if !player.is_file()
+                    || player.extension().and_then(std::ffi::OsStr::to_str) != Some("dat")
+                {
                     continue;
                 }
 
@@ -362,8 +406,23 @@ pub fn get_player_data(
                     }
                 };
 
-                let player_uuid = Uuid::parse_str(player.file_stem().unwrap().to_str().unwrap())
-                    .unwrap_or_default();
+                // let player_uuid = Uuid::parse_str(player.file_stem().unwrap().to_str().unwrap())
+                //     .unwrap_or_default();
+
+                let uuid_parts = player_data.get("UUID").unwrap().as_array().unwrap();
+                let uuid_most = uuid_parts[0].as_i64().unwrap() as u32;
+                let uuid_second = uuid_parts[1].as_i64().unwrap() as u32;
+                let uuid_third = uuid_parts[2].as_i64().unwrap() as u32;
+                let uuid_least = uuid_parts[3].as_i64().unwrap() as u32;
+
+                // Concatenate the four integers into a single 128-bit value
+                let uuid_int = ((uuid_most as u128) << 96)
+                    | ((uuid_second as u128) << 64)
+                    | ((uuid_third as u128) << 32)
+                    | uuid_least as u128;
+
+                // Create a UUID from the 128-bit value
+                let player_uuid = Uuid::from_u128(uuid_int);
 
                 // let player_meta = fetch_player_data_from_uuid(player_uuid)?;
 

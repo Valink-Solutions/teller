@@ -4,29 +4,18 @@
 )]
 
 use std::env;
-use std::fs::File;
-use std::io::Read;
 use std::path::PathBuf;
 
 use commandblock::nbt::NbtValue;
 use log::error;
 use log::info;
-
-use base64::{engine::general_purpose, Engine as _};
 use tauri_plugin_log::LogTarget;
 use teller::configuration::get_config_folder;
+use teller::utils::encode_image_to_base64;
 use teller::utils::WorldData;
 use teller::world::{
     calculate_dir_size, get_vault_id, is_minecraft_world, parse_dat_file, GameType,
 };
-
-fn encode_image_to_base64(path: PathBuf) -> Result<String, Box<dyn std::error::Error>> {
-    let mut file = File::open(path)?;
-    let mut buf = Vec::new();
-    file.read_to_end(&mut buf)?;
-    let res_base64 = general_purpose::STANDARD_NO_PAD.encode(&buf);
-    Ok(format!("data:image/png;base64,{}", res_base64))
-}
 
 fn get_level_name(
     level_dat_blob: NbtValue,

@@ -41,17 +41,17 @@
 				<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 				<ul tabindex="0" class="dropdown-content z-[1] menu p-2 bg-base-100 rounded-box w-52">
 					<li>
-						<a href="http://example.com" class="flex flex-row items-center">
+						<a href={`/local/worlds/${world.id}`} class="flex flex-row items-center">
 							<Icon icon="mdi:pencil-outline" class="mr-1" />
 							Quick Edit
 						</a>
 					</li>
 					<div class="divider my-1" />
 					<li>
-						<a href="http://example.com" class="text-red-500 flex flex-row items-center">
+						<button class="text-red-500 flex flex-row items-center" disabled>
 							<Icon icon="mdi:trash-can-outline" class="mr-1" />
 							Delete
-						</a>
+						</button>
 					</li>
 				</ul>
 			</div>
