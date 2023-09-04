@@ -12,7 +12,8 @@ body {
 /* This will apply to the scrollbar thumb (the part you drag) */
 ::-webkit-scrollbar-thumb {
 	background: rgba(0, 0, 0, 1); /* Change this to whatever color you want */
-	border-radius: 0.15rem;
+	border-radius: 0;
+	box-shadow: 0px 4px 0px 0px rgba(0, 0, 0, 0.7);
 }
 
 /* This will apply to the scrollbar track (the part the thumb moves along) */
@@ -25,21 +26,21 @@ body {
 [data-theme='neubrutalism'] .btn {
 	border-width: 4px;
 	border-color: black;
-	box-shadow: 5px 5px 0px 0px rgba(0, 0, 0, 1);
+	box-shadow: 0px 4px 0px 0px rgba(0, 0, 0, 1);
 	font-weight: 800;
 	fill: black;
 }
 
 [data-theme='neubrutalism'] .btn:disabled {
 	border-color: #a9a9a9;
-	/* box-shadow: 5px 5px 0px 0px #a9a9a9; */
-	box-shadow: 5px 5px 0px 0px rgba(0, 0, 0, 0.33);
+	/* box-shadow: 0px 4px 0px 0px #a9a9a9; */
+	box-shadow: 0px 4px 0px 0px rgba(0, 0, 0, 0.33);
 }
 
 [data-theme='neubrutalism-dark'] .btn {
 	border-width: 4px;
 	border-color: rgba(61, 66, 77, 1);
-	box-shadow: 5px 5px 0px 0px rgba(61, 66, 77, 1);
+	box-shadow: 0px 4px 0px 0px rgba(61, 66, 77, 1);
 	font-weight: 800;
 	fill: rgba(61, 66, 77, 1);
 }
@@ -50,32 +51,40 @@ body {
 	box-shadow: none !important;
 }
 
-[data-theme='neubrutalism'] .badge,
+/* [data-theme='neubrutalism'] .badge,
 [data-theme='neubrutalism-dark'] .badge {
 	border-radius: 0.2rem;
-}
+} */
 
 [data-theme='neubrutalism'] .btn-circle {
-	box-shadow: 5px 5px 0px 0px rgba(0, 0, 0, 1);
+	box-shadow: 0px 4px 0px 0px rgba(0, 0, 0, 1);
 }
 [data-theme='neubrutalism-dark'] .btn-circle {
-	box-shadow: 5px 5px 0px 0px rgba(61, 66, 77, 1);
+	box-shadow: 0px 4px 0px 0px rgba(61, 66, 77, 1);
 }
 
-[data-theme='neubrutalism'] .btn:hover {
-	border-color: black !important;
-}
-
+[data-theme='neubrutalism'] .btn:hover,
 [data-theme='neubrutalism-dark'] .btn:hover {
-	border-color: rgba(61, 66, 77, 1) !important;
+	border-color: black !important;
+	/* box-shadow: 0px 2px 0px 0px rgba(61, 66, 77, 1) !important; */
+}
+
+[data-theme='neubrutalism'] .btn:active:not(.btn-ghost),
+[data-theme='neubrutalism-dark'] .btn:active:not(.btn-ghost) {
+	box-shadow: 0px 2px 0px 0px rgba(61, 66, 77, 1) !important;
+}
+[data-theme='neubrutalism'] .btn-ghost:active,
+[data-theme='neubrutalism-dark'] .btn-ghost:active {
+	box-shadow: none !important;
 }
 
 [data-theme='neubrutalism'] .card,
 [data-theme='neubrutalism'] .modal,
-[data-theme='neubrutalism'] .panel {
+[data-theme='neubrutalism'] .panel,
+[data-theme='neubrutalism'] .collapse {
 	border-width: 4px;
 	border-color: black !important;
-	box-shadow: 5px 5px 0px 0px rgba(0, 0, 0, 1);
+	box-shadow: 0px 4px 0px 0px rgba(0, 0, 0, 1);
 }
 
 [data-theme='neubrutalism-dark'] .card,
@@ -83,14 +92,14 @@ body {
 [data-theme='neubrutalism-dark'] .panel {
 	border-width: 4px;
 	border-color: rgba(61, 66, 77, 1) !important;
-	box-shadow: 5px 5px 0px 0px rgba(61, 66, 77, 1);
+	box-shadow: 0px 4px 0px 0px rgba(61, 66, 77, 1);
 }
 
 [data-theme='neubrutalism'] .input,
 [data-theme='neubrutalism'] .input:focus {
 	border-width: 4px;
 	border-color: black !important;
-	box-shadow: 5px 5px 0px 0px rgba(0, 0, 0, 1);
+	box-shadow: 0px 4px 0px 0px rgba(0, 0, 0, 1);
 	outline: none;
 }
 
@@ -98,7 +107,7 @@ body {
 [data-theme='neubrutalism-dark'] .input:focus {
 	border-width: 4px;
 	border-color: rgba(61, 66, 77, 1) !important;
-	box-shadow: 5px 5px 0px 0px rgba(61, 66, 77, 1);
+	box-shadow: 0px 4px 0px 0px rgba(61, 66, 77, 1);
 	outline: none;
 }
 
@@ -106,14 +115,14 @@ body {
 [data-theme='neubrutalism-dark'] .form-input:focus {
 	border-width: 4px;
 	border-color: rgba(61, 66, 77, 1) !important;
-	box-shadow: 5px 5px 0px 0px rgba(61, 66, 77, 1);
+	box-shadow: 0px 4px 0px 0px rgba(61, 66, 77, 1);
 }
 
 [data-theme='neubrutalism'] .form-input,
 [data-theme='neubrutalism'] .form-input:focus {
 	border-width: 4px;
 	border-color: black !important;
-	box-shadow: 5px 5px 0px 0px rgba(0, 0, 0, 1);
+	box-shadow: 0px 4px 0px 0px rgba(0, 0, 0, 1);
 }
 
 [data-theme='neubrutalism'] .input-bordered {
@@ -125,7 +134,7 @@ body {
 [data-theme='neubrutalism'] .select:focus {
 	border-width: 4px;
 	border-color: black !important;
-	box-shadow: 5px 5px 0px 0px rgba(0, 0, 0, 1);
+	box-shadow: 0px 4px 0px 0px rgba(0, 0, 0, 1);
 	outline: none;
 }
 
@@ -159,7 +168,7 @@ body {
 	border-color: black !important;
 	background-color: white;
 	outline: none !important;
-	box-shadow: 5px 5px 0px 0px rgba(0, 0, 0, 1);
+	box-shadow: 0px 4px 0px 0px rgba(0, 0, 0, 1);
 	gap: 0.25rem;
 }
 
@@ -167,7 +176,7 @@ body {
 	border-width: 4px;
 	border-color: rgba(61, 66, 77, 1) !important;
 	outline: none !important;
-	box-shadow: 5px 5px 0px 0px rgba(61, 66, 77, 1);
+	box-shadow: 0px 4px 0px 0px rgba(61, 66, 77, 1);
 	gap: 0.25rem;
 }
 
@@ -178,14 +187,14 @@ body {
 [data-theme='neubrutalism'] .badge {
 	border-width: 4px;
 	border-color: black !important;
-	box-shadow: 5px 5px 0px 0px rgba(0, 0, 0, 1);
+	box-shadow: 0px 4px 0px 0px rgba(0, 0, 0, 1);
 	padding: 9px 8px;
 }
 
 [data-theme='neubrutalism-dark'] .badge {
 	border-width: 4px;
 	border-color: rgba(61, 66, 77, 1) !important;
-	box-shadow: 5px 5px 0px 0px rgba(61, 66, 77, 1);
+	box-shadow: 0px 4px 0px 0px rgba(61, 66, 77, 1);
 	padding: 9px 8px;
 }
 
@@ -193,7 +202,7 @@ body {
 	height: 2rem;
 	border: 4px solid black;
 	background-color: white !important;
-	box-shadow: 5px 5px 0px 0px rgba(0, 0, 0, 1);
+	box-shadow: 0px 4px 0px 0px rgba(0, 0, 0, 1);
 	border-radius: 0.2rem !important;
 	box-sizing: border-box;
 }
@@ -212,9 +221,9 @@ body {
 	flex-direction: row;
 	width: fit-content;
 	border-width: 4px;
-	border-radius: 0.2rem;
+	/* border-radius: 0.2rem; */
 	border-color: black !important;
-	box-shadow: 5px 5px 0px 0px rgba(0, 0, 0, 1);
+	box-shadow: 0px 4px 0px 0px rgba(0, 0, 0, 1);
 }
 
 [data-theme='neubrutalism'] .pagination .btn {

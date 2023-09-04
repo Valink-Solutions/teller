@@ -6,10 +6,13 @@ use std::{
 
 use commandblock::nbt::{read_from_file, Compression, Endian, NbtValue};
 use log::error;
-use serde_json::Value;
+use serde_json::{json, Value};
 use uuid::Uuid;
 
-use crate::utils::{encode_image_to_base64, GameRules, Item, PlayerData, WorldLevelData};
+use crate::utils::{
+    encode_image_to_base64, player_handler::fetch_player_data_from_uuid, GameRules, Item,
+    PlayerData, WorldLevelData,
+};
 
 use super::{is_minecraft_folder, is_minecraft_world, GameType};
 
@@ -185,6 +188,7 @@ pub fn process_world_data(
                     .as_str()
                     .unwrap_or_default()
                     .to_string(),
+                folder: Some(path.to_str().unwrap().to_string()),
                 icon: Some(encode_image_to_base64(path.join("world_icon.jpeg"))?),
                 difficulty: {
                     let difficulty = level_value["Difficulty"].as_i64().unwrap_or_default() as i32;
@@ -230,6 +234,7 @@ pub fn process_world_data(
                     .as_str()
                     .unwrap_or_default()
                     .to_string(),
+                folder: Some(path.to_str().unwrap().to_string()),
                 icon: Some(encode_image_to_base64(path.join("icon.png"))?),
                 difficulty: {
                     let difficulty = level_data["Difficulty"].as_i64().unwrap_or_default() as i32;
@@ -277,6 +282,75 @@ pub fn process_world_data(
 pub fn get_player_data(
     path: &PathBuf,
     game_type: GameType,
+) -> Result<Vec<Value>, Box<dyn std::error::Error>> {
+    match game_type {
+        GameType::Bedrock => {
+            let player_uuid = "00000000-0000-0000-0000-000000000000".to_string();
+            let player_name = "Bedrock Player".to_string();
+            let player_avatar = "https://crafthead.net/avatar/8667ba71b85a4004af54457a9734eed7?scale=32&overlay=false";
+
+            let player_data = json!({
+                "username": player_name,
+                "id": player_uuid,
+                "avatar": player_avatar,
+                "meta": {}
+            });
+
+            Ok(vec![player_data])
+        }
+        GameType::Java => {
+            let player_data_path = path.join("playerdata");
+
+            if !player_data_path.exists() {
+                return Err("Player data directory does not exist".into());
+            }
+
+            let player_data = match std::fs::read_dir(&player_data_path) {
+                Ok(data) => data,
+                Err(e) => {
+                    return Err(format!("Failed to read player data: {:?}", e).into());
+                }
+            };
+
+            let mut all_players: Vec<Value> = Vec::new();
+
+            for player in player_data {
+                let player = match player {
+                    Ok(player) => player,
+                    Err(e) => {
+                        return Err(format!("Failed to read player data: {:?}", e).into());
+                    }
+                };
+
+                let player = player.path();
+
+                if !player.is_file()
+                    || player.extension().and_then(std::ffi::OsStr::to_str) != Some("dat")
+                {
+                    continue;
+                }
+
+                let player_uuid = player.file_stem().unwrap().to_str().unwrap().to_string();
+
+                let player_meta = match fetch_player_data_from_uuid(player_uuid) {
+                    Ok(data) => data,
+                    Err(e) => {
+                        return Err(format!("Failed to fetch player data: {:?}", e).into());
+                    }
+                };
+
+                all_players.push(player_meta);
+            }
+
+            Ok(all_players)
+        }
+        GameType::None => Err("Game type not specified".into()),
+    }
+}
+
+pub fn get_player_data_old(
+    path: &PathBuf,
+    game_type: GameType,
 ) -> Result<Vec<PlayerData>, Box<dyn std::error::Error>> {
     match game_type {
         GameType::Bedrock => {
@@ -297,6 +371,7 @@ pub fn get_player_data(
                 id: player_uuid,
                 health: None,
                 food: None,
+                game_mode: player_data.get("PlayerGameMode").unwrap().as_i64().unwrap() as i32,
                 level: player_data.get("PlayerLevel").unwrap().as_i64().unwrap() as i32,
                 xp: player_data
                     .get("PlayerLevelProgress")
@@ -312,6 +387,11 @@ pub fn get_player_data(
                     .map(|item| Item {
                         id: item.get("Name").unwrap().as_str().unwrap().to_string(),
                         slot: Some(item.get("Slot").unwrap().as_i64().unwrap() as i32),
+                        damage: item
+                            .get("tag")
+                            .and_then(|tag| tag.get("Damage"))
+                            .and_then(|damage| damage.as_i64())
+                            .map(|damage| damage as i32),
                         count: item.get("Count").unwrap().as_i64().unwrap() as i32,
                         tag: Some(item.clone()),
                     })
@@ -350,6 +430,7 @@ pub fn get_player_data(
                     id: player_uuid.to_string(),
                     health: Some(player_data.get("Health").unwrap().as_f64().unwrap() as f32),
                     food: Some(player_data.get("foodLevel").unwrap().as_i64().unwrap() as i32),
+                    game_mode: player_data.get("playerGameType").unwrap().as_i64().unwrap() as i32,
                     level: player_data.get("XpLevel").unwrap().as_i64().unwrap() as i32,
                     xp: player_data.get("XpTotal").unwrap().as_f64().unwrap() as f32,
                     inventory: player_data
@@ -361,6 +442,11 @@ pub fn get_player_data(
                         .map(|item| Item {
                             id: item.get("id").unwrap().as_str().unwrap().to_string(),
                             slot: Some(item.get("Slot").unwrap().as_i64().unwrap() as i32),
+                            damage: item
+                                .get("tag")
+                                .and_then(|tag| tag.get("Damage"))
+                                .and_then(|damage| damage.as_i64())
+                                .map(|damage| damage as i32),
                             count: item.get("Count").unwrap().as_i64().unwrap() as i32,
                             tag: item.get("tag").cloned(),
                         })
@@ -430,6 +516,7 @@ pub fn get_player_data(
                     id: player_uuid.to_string(),
                     health: Some(player_data.get("Health").unwrap().as_f64().unwrap() as f32),
                     food: Some(player_data.get("foodLevel").unwrap().as_i64().unwrap() as i32),
+                    game_mode: player_data.get("playerGameType").unwrap().as_i64().unwrap() as i32,
                     level: player_data.get("XpLevel").unwrap().as_i64().unwrap() as i32,
                     xp: player_data.get("XpTotal").unwrap().as_f64().unwrap() as f32,
                     inventory: player_data
@@ -441,6 +528,11 @@ pub fn get_player_data(
                         .map(|item| Item {
                             id: item.get("id").unwrap().as_str().unwrap().to_string(),
                             slot: Some(item.get("Slot").unwrap().as_i64().unwrap() as i32),
+                            damage: item
+                                .get("tag")
+                                .and_then(|tag| tag.get("Damage"))
+                                .and_then(|damage| damage.as_i64())
+                                .map(|damage| damage as i32),
                             count: item.get("Count").unwrap().as_i64().unwrap() as i32,
                             tag: item.get("tag").cloned(),
                         })

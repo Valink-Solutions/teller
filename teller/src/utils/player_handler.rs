@@ -1,10 +1,12 @@
-use log::info;
+// use log::info;
 use serde_json::Value;
 use uuid::Uuid;
 
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf};
 
-use super::PlayerData;
+use crate::world::GameType;
+
+use super::{Item, PlayerData};
 
 pub fn fetch_player_data_from_uuid(player_uuid_str: String) -> Result<Value, String> {
     let player_uuid = match Uuid::parse_str(&player_uuid_str) {
@@ -18,7 +20,7 @@ pub fn fetch_player_data_from_uuid(player_uuid_str: String) -> Result<Value, Str
     match response {
         Ok(data) => match data.json::<Value>() {
             Ok(mut json) => {
-                info!("Fetched player data from playerdb.co: {:?}", json);
+                // info!("Fetched player data from playerdb.co: {:?}", json);
                 if let Some(player) = json.get_mut("data").and_then(|data| data.get_mut("player")) {
                     Ok(player.take())
                 } else {
@@ -47,4 +49,107 @@ pub fn fetch_players_meta_data(
     }
 
     Ok(player_data_map)
+}
+
+pub fn grab_player_from_uuid(
+    player_uuid: String,
+    path: &PathBuf,
+    game_type: GameType,
+) -> Result<PlayerData, Box<dyn std::error::Error>> {
+    match game_type {
+        GameType::Bedrock => {
+            let db_path = path.join("db").to_str().unwrap().to_string();
+
+            let mut db_reader = commandblock::db::DbReader::new(&db_path, 0);
+            let local_player_data = db_reader.get("~local_player".as_bytes());
+
+            if local_player_data.is_none() {
+                return Err("Failed to read player data".into());
+            }
+
+            let player_data = serde_json::to_value(local_player_data.unwrap())?;
+
+            // let player_uuid = "Main Bedrock Player".to_string();
+
+            let player_id = "local_player".to_string();
+
+            let player_data = PlayerData {
+                id: player_id,
+                health: None,
+                food: None,
+                game_mode: player_data.get("PlayerGameMode").unwrap().as_i64().unwrap() as i32,
+                level: player_data.get("PlayerLevel").unwrap().as_i64().unwrap() as i32,
+                xp: player_data
+                    .get("PlayerLevelProgress")
+                    .unwrap()
+                    .as_f64()
+                    .unwrap() as f32,
+                inventory: player_data
+                    .get("Inventory")
+                    .unwrap()
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|item| Item {
+                        id: item.get("Name").unwrap().as_str().unwrap().to_string(),
+                        slot: Some(item.get("Slot").unwrap().as_i64().unwrap() as i32),
+                        damage: item
+                            .get("tag")
+                            .and_then(|tag| tag.get("Damage"))
+                            .and_then(|damage| damage.as_i64())
+                            .map(|damage| damage as i32),
+                        count: item.get("Count").unwrap().as_i64().unwrap() as i32,
+                        tag: Some(item.clone()),
+                    })
+                    .collect::<Vec<Item>>(),
+            };
+
+            Ok(player_data)
+        }
+        GameType::Java => {
+            let player = path.join("playerdata").join(format!("{}.dat", player_uuid));
+
+            let player_data = match commandblock::nbt::read_from_file(
+                player.clone(),
+                commandblock::nbt::Compression::Gzip,
+                commandblock::nbt::Endian::Big,
+                false,
+            ) {
+                Ok((_, data)) => serde_json::to_value(data)?,
+                Err(e) => {
+                    return Err(format!("Failed to read player data: {:?}", e).into());
+                }
+            };
+
+            let player_data = PlayerData {
+                id: player_uuid.to_string(),
+                health: Some(player_data.get("Health").unwrap().as_f64().unwrap() as f32),
+                food: Some(player_data.get("foodLevel").unwrap().as_i64().unwrap() as i32),
+                game_mode: player_data.get("playerGameType").unwrap().as_i64().unwrap() as i32,
+                level: player_data.get("XpLevel").unwrap().as_i64().unwrap() as i32,
+                xp: player_data.get("XpTotal").unwrap().as_f64().unwrap() as f32,
+                inventory: player_data
+                    .get("Inventory")
+                    .unwrap()
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|item| Item {
+                        id: item.get("id").unwrap().as_str().unwrap().to_string(),
+                        slot: Some(item.get("Slot").unwrap().as_i64().unwrap() as i32),
+                        damage: item
+                            .get("tag")
+                            .and_then(|tag| tag.get("Damage"))
+                            .and_then(|damage| damage.as_i64())
+                            .map(|damage| damage as i32),
+                        count: item.get("Count").unwrap().as_i64().unwrap() as i32,
+                        tag: item.get("tag").cloned(),
+                    })
+                    .collect::<Vec<Item>>(),
+            };
+
+            Ok(player_data)
+        }
+        GameType::None => Err("Game type not found".into()),
+    }
 }

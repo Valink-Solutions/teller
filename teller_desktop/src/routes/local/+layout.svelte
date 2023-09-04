@@ -58,7 +58,7 @@
 			<div class="flex flex-row justify-center gap-2 items-center">
 				<h1 class="font-bold">Teller</h1>
 				<span
-					class="text-xs bg-black bg-opacity-10 p-1 py-0.5 border-2 border-black rounded-sm shadow-neu font-semibold"
+					class="text-xs bg-black bg-opacity-10 p-1 py-0.5 border-2 border-black shadow-neu font-semibold"
 					>v0.1</span
 				>
 			</div>
@@ -88,10 +88,9 @@
 				</ul>
 			</div>
 
-			<div class="flex h-20 w-full rounded bg-black bg-opacity-10 p-2 items-center justify-center">
-				<!-- a simple login button -->
+			<!-- <div class="flex h-20 w-full rounded bg-black bg-opacity-10 p-2 items-center justify-center">
 				<a href="/login" class="btn btn-primary btn-block">Login</a>
-			</div>
+			</div> -->
 		</div>
 	</div>
 

@@ -164,6 +164,8 @@ fn main() {
             teller_desktop::config::create_saves_config,
             teller_desktop::backend::world_handler::get_world_by_id,
             teller_desktop::backend::world_handler::grab_player_meta_from_uuids,
+            teller_desktop::backend::world_handler::grab_player_meta_from_uuid,
+            teller_desktop::backend::world_handler::grab_player_from_uuid,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

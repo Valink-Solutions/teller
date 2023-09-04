@@ -5,13 +5,11 @@
 	import { invoke } from '@tauri-apps/api/tauri';
 	import { onMount } from 'svelte';
 	import dayjs from 'dayjs';
-	import InventoryViewer from '$lib/inventory_viewer.svelte';
-
 	let world_data: any;
 	let player_data: any;
 
 	let currentPage = 1;
-	const itemsPerPage = 4;
+	const itemsPerPage = 6;
 
 	let loading = true;
 	let error = false;
@@ -26,17 +24,17 @@
 			const res = await invoke('get_world_by_id', { worldId: $page.params.worldId });
 			world_data = res;
 
-			if (world_data) {
-				if (world_data.game_engine === 'Java') {
-					const players: Record<string, any> = await invoke('grab_player_meta_from_uuids', {
-						playerDataList: world_data.players
-					});
-					player_data = Object.keys(players).reduce((acc: Record<string, any>, uuid: string) => {
-						acc[uuid] = players[uuid];
-						return acc;
-					}, {});
-				}
-			}
+			// if (world_data) {
+			// 	if (world_data.game_engine === 'Java') {
+			// 		const players: Record<string, any> = await invoke('grab_player_meta_from_uuids', {
+			// 			playerDataList: world_data.players
+			// 		});
+			// 		player_data = Object.keys(players).reduce((acc: Record<string, any>, uuid: string) => {
+			// 			acc[uuid] = players[uuid];
+			// 			return acc;
+			// 		}, {});
+			// 	}
+			// }
 		} catch (err) {
 			console.log(err);
 			error = true;
@@ -53,7 +51,7 @@
 	</button>
 
 	{#if loading}
-		<div class="flex flex-col items-center justify-center w-full h-full">
+		<div class="flex flex-col items-center justify-center m-auto w-full h-full">
 			<Icon icon="mdi:loading" class="w-16 h-16 animate-spin" />
 			<p class="text-lg font-semibold">Loading...</p>
 		</div>
@@ -73,18 +71,18 @@
 			/>
 			<div class="flex flex-col w-full">
 				<h1 class="text-4xl font-bold mb-2">{world_data.name}</h1>
-				<p class="flex flex-row items-center text-sm text-gray-600 mb-1 gap-2">
+				<p class="flex flex-row items-center text-sm mb-1 gap-2">
 					<Icon icon="mdi:calendar-clock" class="mr-1" />
 					<span class="font-semibold">Last Played:</span>
 					{dayjs(world_data.last_played).format('MMMM D, YYYY [at] h:mm A')}
 				</p>
 				<div class="flex flex-row items-center justify-between">
-					<p class="flex flex-row items-center text-gray-600 mb-1 gap-2">
+					<p class="flex flex-row items-center mb-1 gap-2">
 						<Icon icon="mdi:gamepad-variant" class="mr-1" />
 						<span class="font-semibold">Game Type:</span>
 						{world_data.game_type}
 					</p>
-					<p class="flex flex-row items-center text-gray-600 mb-1 gap-2">
+					<p class="flex flex-row items-center mb-1 gap-2">
 						<Icon icon="mdi:shield-outline" class="mr-1" />
 						<span class="font-semibold">Difficulty:</span>
 						{world_data.difficulty}
@@ -94,7 +92,7 @@
 		</div>
 
 		<div class="flex flex-row justify-between items-center">
-			<h1 class="border-l-primary border-l-4 pl-3 text-lg font-bold">Players</h1>
+			<h1 class="border-l-4 pl-2 border-primary text-lg font-bold">Players</h1>
 
 			<div class="flex flex-row justify-center items-center space-x-4">
 				<button
@@ -115,63 +113,35 @@
 				>
 			</div>
 		</div>
-		<div class="flex flex-col 2xl:grid 2xl:grid-cols-2 gap-4 2xl:align-start">
+		<div class="grid grid-cols-2 xl:grid-cols-3 gap-4 2xl:align-start">
 			{#each paginatedPlayers as player}
-				<div class="collapse collapse-arrow border-4 border-black drop-shadow-neu">
-					<input type="checkbox" />
-					<div class="collapse-title text-xl font-medium flex items-center">
+				<div class="card p-4 flex flex-row justify-between select-none">
+					<div class="flex flex-row items-center">
 						<img
-							src={player_data
-								? player_data[player.id].avatar
+							src={player.avatar
+								? player.avatar
 								: 'https://api.mineatar.io/face/8667ba71b85a4004af54457a9734eed7?scale=32&overlay=false'}
-							alt={player_data ? player_data[player.id].username : 'Default Icon'}
+							alt={player.username ? player.username : 'Default Icon'}
 							class="w-8 h-8 mr-2"
 						/>
-						{player_data ? player_data[player.id].username : player.id}
+						{player.username ? player.username : player.id}
 					</div>
-					<div class="collapse-content gap-4">
-						{#if player_data}
-							<div class="flex flex-col gap-2">
-								<div class="flex select-none w-full justify-between">
-									{#each Array(Math.floor(player.health / 2)) as _}
-										<Icon icon="mdi:heart" class="w-6 h-6 text-red-500" />
-									{/each}
-									{#if player.health % 2}
-										<Icon icon="mdi:heart-half" class="w-6 h-6 text-red-500" />
-									{/if}
-									{#each Array(10 - Math.ceil(player.health / 2)) as _}
-										<Icon icon="mdi:heart" class="w-6 h-6 text-gray-500" />
-									{/each}
-								</div>
-								<div class="flex flex-row items-center gap-4">
-									<p class="text-xs text-opacity-50 whitespace-nowrap">Level {player.level}</p>
-									<progress
-										class="progress progress-primary w-full"
-										value={player.xp.toFixed(2)}
-										max="100"
-									/>
-								</div>
-								<InventoryViewer items={player.inventory} />
-							</div>
-						{:else}
-							<div class="flex flex-col">
-								<div class="flex flex-row gap-4 items-center">
-									<p class="whitespace-nowrap text-xs text-opacity-50">Level: {player.level}</p>
-									<progress
-										class="progress progress-primary w-full"
-										value={player.xp.toFixed(2)}
-										max="100"
-									/>
-								</div>
-								<InventoryViewer items={player.inventory} />
-							</div>
-						{/if}
-					</div>
+
+					<a
+						class="btn btn-ghost"
+						href={`/local/worlds/${$page.params.worldId}/player/${player.id}`}
+					>
+						<Icon icon="mdi:arrow-right" />
+					</a>
+
+					<!-- <button class="btn btn-ghost" on:click={() => handleClick(player)}>
+						<Icon icon="mdi:arrow-right" />
+					</button> -->
 				</div>
 			{/each}
 		</div>
 
-		<h1 class="border-l-primary border-l-4 pl-3 text-lg font-bold">World Data</h1>
+		<h1 class="border-l-4 pl-2 border-primary text-lg font-bold">World Data</h1>
 		<div class="collapse collapse-arrow border-4 border-black drop-shadow-neu">
 			<input type="checkbox" />
 			<div class="collapse-title text-xl font-medium">Game Rules</div>
