@@ -158,6 +158,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             grab_local_worlds_list,
             teller_desktop::backend::folder_handler::check_path_for_save_folders,
+            teller_desktop::backend::folder_handler::open_world_in_explorer,
             teller_desktop::config::get_save_folders,
             teller_desktop::config::get_minecraft_save_location,
             teller_desktop::config::get_folder_path,

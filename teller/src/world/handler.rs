@@ -5,7 +5,7 @@ use std::{
 };
 
 use commandblock::nbt::{read_from_file, Compression, Endian, NbtValue};
-use log::error;
+use log::{error, info};
 use serde_json::{json, Value};
 use uuid::Uuid;
 
@@ -285,18 +285,45 @@ pub fn get_player_data(
 ) -> Result<Vec<Value>, Box<dyn std::error::Error>> {
     match game_type {
         GameType::Bedrock => {
-            let player_uuid = "00000000-0000-0000-0000-000000000000".to_string();
-            let player_name = "Bedrock Player".to_string();
+            let player_uuid = "~local_player".to_string();
             let player_avatar = "https://crafthead.net/avatar/8667ba71b85a4004af54457a9734eed7?scale=32&overlay=false";
 
-            let player_data = json!({
-                "username": player_name,
+            let db_path = path.join("db").to_str().unwrap().to_string();
+
+            let mut db_reader = commandblock::db::DbReader::new(&db_path, 0);
+
+            let remote_player_data = db_reader.parse_remote_players();
+
+            let mut players: Vec<Value> = Vec::new();
+
+            if remote_player_data.is_some() {
+                for (uuid, _) in remote_player_data.unwrap().iter() {
+
+                    info!("Fetching player data for: {:?}", uuid);
+
+                    let player_meta = json!({
+                        "username": "Remote Player",
+                        "id": uuid.strip_prefix("player_server_").unwrap_or(uuid),
+                        "avatar": player_avatar,
+                        "meta": {}
+                    });
+
+                    players.push(player_meta);
+                }
+            }
+
+            let local_player_data = json!({
+                "username": "Local Player",
                 "id": player_uuid,
                 "avatar": player_avatar,
                 "meta": {}
             });
 
-            Ok(vec![player_data])
+            players.push(local_player_data);
+
+            info!("Players: {:?}", players);
+
+            Ok(players)
         }
         GameType::Java => {
             let player_data_path = path.join("playerdata");
@@ -365,7 +392,7 @@ pub fn get_player_data_old(
 
             let player_data = serde_json::to_value(local_player_data.unwrap())?;
 
-            let player_uuid = "Bedrock Player".to_string();
+            let player_uuid = "~local_player".to_string();
 
             let player_data = PlayerData {
                 id: player_uuid,

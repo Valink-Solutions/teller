@@ -20,11 +20,6 @@ use crate::config::get_minecraft_save_location;
 pub fn get_world_by_id(world_id: &str, return_path: Option<bool>) -> Result<Value, String> {
     let config_dir = get_config_folder();
 
-    let saves_config = match get_saves_config(&config_dir) {
-        Ok(config) => Some(config),
-        Err(_e) => None,
-    };
-
     let mut paths: Vec<PathBuf> = Vec::new();
 
     match get_minecraft_save_location() {
@@ -32,13 +27,14 @@ pub fn get_world_by_id(world_id: &str, return_path: Option<bool>) -> Result<Valu
         None => {}
     };
 
-    if saves_config.is_some() {
-        let saves_config = saves_config.unwrap();
-
-        saves_config.paths.iter().for_each(|(_, path)| {
-            paths.push(PathBuf::from(path));
+    match get_saves_config(&config_dir) {
+        Ok(config) => {
+            config.paths.iter().for_each(|(_, path)| {
+                paths.push(PathBuf::from(path));
         });
-    }
+        },
+        Err(_e) => {},
+    };
 
     for save_location in paths {
         let world_folders = match std::fs::read_dir(&save_location) {
@@ -62,21 +58,20 @@ pub fn get_world_by_id(world_id: &str, return_path: Option<bool>) -> Result<Valu
                 if vault_id == world_id {
                     let game_type = is_minecraft_world(&world_folder);
 
-                    match process_world_data(&world_folder, game_type) {
-                        Ok(data) => {
-                            info!("Found world: {world_id}");
-
-                            if let Some(true) = return_path {
-                                return Ok(Value::String(
-                                    world_folder.to_string_lossy().into_owned(),
-                                ));
-                            } else {
+                    if let Some(true) = return_path {
+                        return Ok(Value::String(
+                            world_folder.to_string_lossy().into_owned(),
+                        ));
+                    } else {
+                        match process_world_data(&world_folder, game_type) {
+                            Ok(data) => {
+                                info!("Found world: {world_id}");
                                 let data_value = serde_json::to_value(data).unwrap();
                                 return Ok(data_value);
                             }
-                        }
-                        Err(_) => continue,
-                    };
+                            Err(_) => continue,
+                        };
+                    }
                 }
             }
         }

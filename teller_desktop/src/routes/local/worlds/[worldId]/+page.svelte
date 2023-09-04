@@ -5,8 +5,8 @@
 	import { invoke } from '@tauri-apps/api/tauri';
 	import { onMount } from 'svelte';
 	import dayjs from 'dayjs';
+	import { open } from '@tauri-apps/api/shell';
 	let world_data: any;
-	let player_data: any;
 
 	let currentPage = 1;
 	const itemsPerPage = 6;
@@ -23,18 +23,6 @@
 		try {
 			const res = await invoke('get_world_by_id', { worldId: $page.params.worldId });
 			world_data = res;
-
-			// if (world_data) {
-			// 	if (world_data.game_engine === 'Java') {
-			// 		const players: Record<string, any> = await invoke('grab_player_meta_from_uuids', {
-			// 			playerDataList: world_data.players
-			// 		});
-			// 		player_data = Object.keys(players).reduce((acc: Record<string, any>, uuid: string) => {
-			// 			acc[uuid] = players[uuid];
-			// 			return acc;
-			// 		}, {});
-			// 	}
-			// }
 		} catch (err) {
 			console.log(err);
 			error = true;
@@ -43,12 +31,29 @@
 			loading = false;
 		}
 	});
+
+
+	const handleClick = async () => {
+		try {
+			console.log('Opening world folder')
+			await invoke('open_world_in_explorer', { worldId: $page.params.worldId });
+		} catch (err) {
+			console.error(err);
+		}
+	};
+
 </script>
 
 <div class="flex flex-col justify-start w-full px-4 gap-4">
-	<button class="btn btn-ghost w-20" on:click={() => goto('/local')}>
-		<Icon icon="mdi:arrow-left" class="w-6 h-6" />
-	</button>
+	<div class="flex flex-row justify-between items-center">
+		<button class="btn btn-ghost w-20" on:click={() => goto('/local')}>
+			<Icon icon="mdi:arrow-left" class="w-6 h-6" />
+		</button>
+	
+		<button class="btn btn-sm btn-secondary" on:click={handleClick}>
+			Open World Folder
+		</button>
+	</div>
 
 	{#if loading}
 		<div class="flex flex-col items-center justify-center m-auto w-full h-full">
@@ -125,6 +130,7 @@
 							class="w-8 h-8 mr-2"
 						/>
 						{player.username ? player.username : player.id}
+						<!-- <span class="text-xs">{player.id}</span> -->
 					</div>
 
 					<a
