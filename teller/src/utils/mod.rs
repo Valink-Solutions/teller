@@ -3,7 +3,6 @@ pub mod player_handler;
 use std::{fs::File, io::Read, path::PathBuf};
 
 use chrono::NaiveDateTime;
-use log::info;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use uuid::Uuid;
