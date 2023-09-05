@@ -28,7 +28,7 @@ pub fn fetch_player_data_from_uuid(player_uuid_str: String) -> Result<Value, Str
                     Err("Player data not found in response".to_string())
                 }
             }
-            Err(_) => Err("Error parsing JSON".to_string()),
+            Err(_) => Err("Error parsing player data".to_string()),
         },
         Err(_) => Err("Error fetching player data".to_string()),
     }
@@ -62,36 +62,22 @@ pub fn grab_player_from_uuid(
             let db_path = path.join("db").to_str().unwrap().to_string();
 
             let mut db_reader = commandblock::db::DbReader::new(&db_path, 0);
-            let local_player_data = db_reader.get("~local_player".as_bytes());
             let (player_uuid, local_player_data) = if player_uuid == "~local_player" {
-                ("~local_player".to_string(), local_player_data)
+                (
+                    "~local_player".to_string(),
+                    db_reader.get("~local_player".as_bytes()),
+                )
             } else {
-                match db_reader.parse_remote_players() {
-                    Some(data) => {
-                        let mut result = ("".to_string(), None);
-                        for (uuid, remote_data) in data.iter() {
-
-                            // info!("uuid: {:?}", uuid);
-
-                            if uuid.to_string() == format!("player_server_{player_uuid}") {
-                                result = (uuid.clone(), Some(remote_data.to_owned()));
-                                break;
-                            }
-                        }
-                        result
-                    },
-                    None => ("~local_player".to_string(), local_player_data),
-                }
+                (
+                    player_uuid.clone(),
+                    db_reader.get(format!("player_server_{player_uuid}").as_bytes()),
+                )
             };
 
             if local_player_data.is_none() {
                 return Err("Failed to read player data".into());
             }
             let player_data = serde_json::to_value(local_player_data.unwrap())?;
-
-            // let player_uuid = "Main Bedrock Player".to_string();
-
-            // let player_id = "~local_player".to_string();
 
             let player_data = PlayerData {
                 id: player_uuid.to_owned(),

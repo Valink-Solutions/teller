@@ -402,7 +402,7 @@ dependencies = [
 [[package]]
 name = "commandblock"
 version = "0.5.0"
-source = "git+https://github.com/Valink-Solutions/CommandBlock?branch=add-bedrock-db-parsing#a6f889dfac44d5d4368e755a5c4bee2428e08e21"
+source = "git+https://github.com/Valink-Solutions/CommandBlock?branch=add-bedrock-db-parsing#584cd3bf086a23e9c1007db88debd3b15d57e7fc"
 dependencies = [
  "byteorder",
  "db-key",

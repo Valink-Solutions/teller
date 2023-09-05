@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 
-
-use log::{info, error};
+use log::{error, info};
 use tauri::Manager;
 use teller::world::recursive_world_search;
 
@@ -28,18 +27,22 @@ pub fn create_worlds_database() -> Result<(), String> {
 
 #[tauri::command]
 pub fn open_world_in_explorer(handle: tauri::AppHandle, world_id: &str) -> Result<(), String> {
+    let path_str = get_world_by_id(world_id, Some(true))?.to_string();
+    let path_str = path_str.replace(" ", r" ").replace("\"", "");
 
-    let path = get_world_by_id(world_id, Some(true))?.to_string();
+    let path = PathBuf::from(path_str);
 
-    info!("Opening path: {}", path);
-    
-
-    match tauri::api::shell::open(&handle.shell_scope(), &path, None).map_err(|e| e.to_string()) {
-        Ok(_) => Ok(()),
-        Err(e) => {
-            error!("Could not open path: {}", e);
-            Err(e.to_string())
+    if path.is_dir() {
+        match tauri::api::shell::open(&handle.shell_scope(), &path.to_string_lossy(), None)
+            .map_err(|e| e.to_string())
+        {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                error!("Could not open path: {}", e);
+                Err(e.to_string())
+            }
         }
+    } else {
+        Err("Path is not a valid directory".to_string())
     }
-
 }

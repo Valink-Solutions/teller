@@ -113,12 +113,12 @@ pub struct GameRules {
     pub fire_damage: bool,
     pub do_insomnia: bool,
     pub invulnerable: bool,
-    pub max_command_chain_length: i32,
-    pub random_tick_speed: i32,
+    pub max_command_chain_length: i64,
+    pub random_tick_speed: i64,
     pub reduced_debug_info: bool,
     pub send_command_feedback: bool,
     pub show_death_messages: bool,
-    pub spawn_radius: i32,
+    pub spawn_radius: i64,
     pub spectators_generate_chunks: bool,
 }
 

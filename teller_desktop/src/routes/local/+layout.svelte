@@ -57,10 +57,7 @@
 		<div class="card flex flex-col h-full p-2 bg-base-100 gap-4">
 			<div class="flex flex-row justify-center gap-2 items-center">
 				<h1 class="font-bold">Teller</h1>
-				<span
-					class="text-xs bg-black bg-opacity-10 p-1 py-0.5 border-2 border-black shadow-neu font-semibold"
-					>v0.1</span
-				>
+				<span class="badge badge-xs"> v0.1 </span>
 			</div>
 
 			<div class="flex flex-col h-full gap-2">

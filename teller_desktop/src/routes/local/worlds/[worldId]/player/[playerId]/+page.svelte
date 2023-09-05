@@ -65,7 +65,7 @@
 						<img
 							src={player_data
 								? player_data.avatar
-								: 'https://api.mineatar.io/face/8667ba71b85a4004af54457a9734eed7?scale=32&overlay=false'}
+								: 'https://crafthead.net/avatar/8667ba71b85a4004af54457a9734eed7?scale=32&overlay=false'}
 							alt={player_data ? player_data.username : 'Default Icon'}
 							class="w-8 h-8 mr-2"
 						/>
@@ -114,7 +114,7 @@
 						<img
 							src={player_data
 								? player_data.avatar
-								: 'https://api.mineatar.io/face/8667ba71b85a4004af54457a9734eed7?scale=32&overlay=false'}
+								: 'https://crafthead.net/avatar/8667ba71b85a4004af54457a9734eed7?scale=32&overlay=false'}
 							alt={player_data ? player_data.username : 'Default Icon'}
 							class="w-8 h-8 mr-2"
 						/>
@@ -130,8 +130,8 @@
 							? 'Creative'
 							: player.game_mode === 2
 							? 'Adventure'
-							: player.game_mode === 3
-							? 'Spectator'
+							: player.game_mode === 5
+							? 'Default'
 							: 'Unknown'}
 					</div>
 				</div>

@@ -32,16 +32,14 @@
 		}
 	});
 
-
 	const handleClick = async () => {
 		try {
-			console.log('Opening world folder')
+			console.log('Opening world folder');
 			await invoke('open_world_in_explorer', { worldId: $page.params.worldId });
 		} catch (err) {
 			console.error(err);
 		}
 	};
-
 </script>
 
 <div class="flex flex-col justify-start w-full px-4 gap-4">
@@ -49,10 +47,8 @@
 		<button class="btn btn-ghost w-20" on:click={() => goto('/local')}>
 			<Icon icon="mdi:arrow-left" class="w-6 h-6" />
 		</button>
-	
-		<button class="btn btn-sm btn-secondary" on:click={handleClick}>
-			Open World Folder
-		</button>
+
+		<button class="btn btn-sm btn-secondary" on:click={handleClick}> Open World Folder </button>
 	</div>
 
 	{#if loading}
@@ -67,13 +63,18 @@
 		</div>
 	{:else if world_data}
 		<div class="flex flex-row items-center space-x-4">
-			<img
-				src={world_data.icon.length > 0
-					? world_data.icon
-					: 'https://static.planetminecraft.com/files/image/minecraft/project/2020/194/13404399_l.jpg'}
-				alt={world_data.name}
-				class="object-cover w-24 h-24 self-start"
-			/>
+			<div class="relative w-28 h-24">
+				<img
+					src={world_data.icon.length > 0
+						? world_data.icon
+						: 'https://static.planetminecraft.com/files/image/minecraft/project/2020/194/13404399_l.jpg'}
+					alt={world_data.name}
+					class="object-cover w-full h-full self-start"
+				/>
+				<div class="badge badge-xs absolute -bottom-1 left-0 right-0 mx-auto">
+					{world_data.game_engine}
+				</div>
+			</div>
 			<div class="flex flex-col w-full">
 				<h1 class="text-4xl font-bold mb-2">{world_data.name}</h1>
 				<p class="flex flex-row items-center text-sm mb-1 gap-2">
@@ -152,7 +153,7 @@
 			<input type="checkbox" />
 			<div class="collapse-title text-xl font-medium">Game Rules</div>
 			<div class="collapse-content">
-				<ul class="flex flex-col gap-2">
+				<ul class="grid grid-cols-2 xl:grid-cols-3 gap-2">
 					{#each Object.entries(world_data.game_rules) as [rule, value]}
 						<li class="flex flex-row p-2 bg-base-200 justify-between">
 							<span>{rule}:</span><span>{value}</span>

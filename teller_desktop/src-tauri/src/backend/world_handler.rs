@@ -31,9 +31,9 @@ pub fn get_world_by_id(world_id: &str, return_path: Option<bool>) -> Result<Valu
         Ok(config) => {
             config.paths.iter().for_each(|(_, path)| {
                 paths.push(PathBuf::from(path));
-        });
-        },
-        Err(_e) => {},
+            });
+        }
+        Err(_e) => {}
     };
 
     for save_location in paths {
@@ -59,9 +59,7 @@ pub fn get_world_by_id(world_id: &str, return_path: Option<bool>) -> Result<Valu
                     let game_type = is_minecraft_world(&world_folder);
 
                     if let Some(true) = return_path {
-                        return Ok(Value::String(
-                            world_folder.to_string_lossy().into_owned(),
-                        ));
+                        return Ok(Value::String(world_folder.to_string_lossy().into_owned()));
                     } else {
                         match process_world_data(&world_folder, game_type) {
                             Ok(data) => {
