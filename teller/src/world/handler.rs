@@ -7,16 +7,16 @@ use std::{
 use commandblock::nbt::{read_from_file, Compression, Endian, NbtValue};
 use log::{error, info};
 use serde_json::{json, Value};
-use uuid::Uuid;
 
 use crate::utils::{
-    encode_image_to_base64, player_handler::fetch_player_data_from_uuid, GameRules, Item,
-    PlayerData, WorldLevelData,
+    encode_image_to_base64, player_handler::fetch_player_data_from_uuid, GameRules, WorldLevelData,
 };
 
 use super::{is_minecraft_folder, is_minecraft_world, GameType};
 
 pub fn create_vault_file(vault_data: Value, world_path: &PathBuf) -> Result<(), String> {
+    info!("Creating vault file for: {:?}", world_path);
+
     let vault_file_path = world_path.join(".chunkvault");
 
     if vault_file_path.exists() {
@@ -42,6 +42,8 @@ pub fn create_vault_file(vault_data: Value, world_path: &PathBuf) -> Result<(), 
 }
 
 pub fn get_vault_file(world_path: &PathBuf) -> Result<Value, String> {
+    info!("Getting vault file for: {:?}", world_path);
+
     let vault_file_path = world_path.join(".chunkvault");
 
     if !vault_file_path.exists() {
@@ -66,6 +68,8 @@ pub fn get_vault_file(world_path: &PathBuf) -> Result<Value, String> {
 }
 
 pub fn update_vault_file(vault_data: Value, world_path: &PathBuf) -> Result<(), String> {
+    info!("Updating vault file for: {:?}", world_path);
+
     let vault_file_path = world_path.join(".chunkvault");
 
     if !vault_file_path.exists() {
@@ -90,6 +94,8 @@ pub fn update_vault_file(vault_data: Value, world_path: &PathBuf) -> Result<(), 
 }
 
 pub fn get_vault_id(path: &PathBuf) -> Result<String, String> {
+    info!("Getting vault ID for: {:?}", path);
+
     let vault_data = match get_vault_file(path) {
         Ok(data) => data,
         Err(_) => {
@@ -132,6 +138,8 @@ pub fn parse_dat_file(
     file_path: PathBuf,
     game_type: GameType,
 ) -> Result<NbtValue, Box<dyn std::error::Error>> {
+    info!("Parsing {:?} dat file: {:?}", game_type, file_path);
+
     match game_type {
         GameType::Java => {
             let (_, dat_blob) =
@@ -159,6 +167,8 @@ pub fn parse_world_data(world_data: NbtValue, game_type: GameType) -> Result<Val
         Err(e) => return Err(format!("Failed to parse level.dat JSON: {:?}", e)),
     };
 
+    info!("Parsing world data for {:?}", game_type);
+
     match game_type {
         GameType::Bedrock => Ok(level_value),
         GameType::Java => {
@@ -176,6 +186,8 @@ pub fn process_world_data(
     path: &PathBuf,
     game_type: GameType,
 ) -> Result<WorldLevelData, Box<dyn std::error::Error>> {
+    info!("Processing world data for: {:?}", path);
+
     let level_dat = parse_dat_file(path.join("level.dat"), game_type)?;
 
     let level_value: serde_json::Value = serde_json::to_value(level_dat)?;
@@ -285,6 +297,8 @@ pub fn get_player_data(
 ) -> Result<Vec<Value>, Box<dyn std::error::Error>> {
     match game_type {
         GameType::Bedrock => {
+            info!("Fetching Bedrock player data");
+
             let player_uuid = "~local_player".to_string();
             let player_avatar = "https://crafthead.net/avatar/8667ba71b85a4004af54457a9734eed7?scale=32&overlay=false";
 
@@ -325,6 +339,8 @@ pub fn get_player_data(
             Ok(players)
         }
         GameType::Java => {
+            info!("Fetching Java player data");
+
             let player_data_path = path.join("playerdata");
 
             if !player_data_path.exists() {
@@ -374,211 +390,14 @@ pub fn get_player_data(
     }
 }
 
-pub fn get_player_data_old(
-    path: &PathBuf,
-    game_type: GameType,
-) -> Result<Vec<PlayerData>, Box<dyn std::error::Error>> {
-    match game_type {
-        GameType::Bedrock => {
-            let db_path = path.join("db").to_str().unwrap().to_string();
-
-            let mut db_reader = commandblock::db::DbReader::new(&db_path, 0);
-            let local_player_data = db_reader.get("~local_player".as_bytes());
-
-            if local_player_data.is_none() {
-                return Ok(Vec::new());
-            }
-
-            let player_data = serde_json::to_value(local_player_data.unwrap())?;
-
-            let player_uuid = "~local_player".to_string();
-
-            let player_data = PlayerData {
-                id: player_uuid,
-                health: None,
-                food: None,
-                game_mode: player_data.get("PlayerGameMode").unwrap().as_i64().unwrap() as i32,
-                level: player_data.get("PlayerLevel").unwrap().as_i64().unwrap() as i32,
-                xp: player_data
-                    .get("PlayerLevelProgress")
-                    .unwrap()
-                    .as_f64()
-                    .unwrap() as f32,
-                inventory: player_data
-                    .get("Inventory")
-                    .unwrap()
-                    .as_array()
-                    .unwrap()
-                    .iter()
-                    .map(|item| Item {
-                        id: item.get("Name").unwrap().as_str().unwrap().to_string(),
-                        slot: Some(item.get("Slot").unwrap().as_i64().unwrap() as i32),
-                        damage: item
-                            .get("tag")
-                            .and_then(|tag| tag.get("Damage"))
-                            .and_then(|damage| damage.as_i64())
-                            .map(|damage| damage as i32),
-                        count: item.get("Count").unwrap().as_i64().unwrap() as i32,
-                        tag: Some(item.clone()),
-                    })
-                    .collect::<Vec<Item>>(),
-            };
-
-            Ok(vec![player_data])
-
-            // Ok(Vec::new())
-        }
-        GameType::Java => {
-            let player_data_path = path.join("playerdata");
-
-            if !player_data_path.exists() {
-                // If playerdata directory does not exist, grab the single player entry from level.dat
-                let level_dat_path = path.join("level.dat");
-                let level_dat = parse_dat_file(level_dat_path, game_type)?;
-                let level_value: serde_json::Value = serde_json::to_value(level_dat)?;
-                let player_data = level_value.get("Player").unwrap();
-
-                let uuid_parts = player_data.get("UUID").unwrap().as_array().unwrap();
-                let uuid_most = uuid_parts[0].as_i64().unwrap() as u32;
-                let uuid_second = uuid_parts[1].as_i64().unwrap() as u32;
-                let uuid_third = uuid_parts[2].as_i64().unwrap() as u32;
-                let uuid_least = uuid_parts[3].as_i64().unwrap() as u32;
-
-                // Concatenate the four integers into a single 128-bit value
-                let uuid_int = ((uuid_most as u128) << 96)
-                    | ((uuid_second as u128) << 64)
-                    | ((uuid_third as u128) << 32)
-                    | uuid_least as u128;
-
-                // Create a UUID from the 128-bit value
-                let player_uuid = Uuid::from_u128(uuid_int);
-                let player_data = PlayerData {
-                    id: player_uuid.to_string(),
-                    health: Some(player_data.get("Health").unwrap().as_f64().unwrap() as f32),
-                    food: Some(player_data.get("foodLevel").unwrap().as_i64().unwrap() as i32),
-                    game_mode: player_data.get("playerGameType").unwrap().as_i64().unwrap() as i32,
-                    level: player_data.get("XpLevel").unwrap().as_i64().unwrap() as i32,
-                    xp: player_data.get("XpTotal").unwrap().as_f64().unwrap() as f32,
-                    inventory: player_data
-                        .get("Inventory")
-                        .unwrap()
-                        .as_array()
-                        .unwrap()
-                        .iter()
-                        .map(|item| Item {
-                            id: item.get("id").unwrap().as_str().unwrap().to_string(),
-                            slot: Some(item.get("Slot").unwrap().as_i64().unwrap() as i32),
-                            damage: item
-                                .get("tag")
-                                .and_then(|tag| tag.get("Damage"))
-                                .and_then(|damage| damage.as_i64())
-                                .map(|damage| damage as i32),
-                            count: item.get("Count").unwrap().as_i64().unwrap() as i32,
-                            tag: item.get("tag").cloned(),
-                        })
-                        .collect::<Vec<Item>>(),
-                };
-                return Ok(vec![player_data]);
-            }
-
-            let player_data = match std::fs::read_dir(&player_data_path) {
-                Ok(data) => data,
-                Err(e) => {
-                    return Err(format!("Failed to read player data: {:?}", e).into());
-                }
-            };
-
-            let mut all_players: Vec<PlayerData> = Vec::new();
-
-            for player in player_data {
-                let player = match player {
-                    Ok(player) => player,
-                    Err(e) => {
-                        return Err(format!("Failed to read player data: {:?}", e).into());
-                    }
-                };
-
-                let player = player.path();
-
-                if !player.is_file()
-                    || player.extension().and_then(std::ffi::OsStr::to_str) != Some("dat")
-                {
-                    continue;
-                }
-
-                let player_data = match commandblock::nbt::read_from_file(
-                    player.clone(),
-                    commandblock::nbt::Compression::Gzip,
-                    commandblock::nbt::Endian::Big,
-                    false,
-                ) {
-                    Ok((_, data)) => serde_json::to_value(data)?,
-                    Err(e) => {
-                        return Err(format!("Failed to read player data: {:?}", e).into());
-                    }
-                };
-
-                // let player_uuid = Uuid::parse_str(player.file_stem().unwrap().to_str().unwrap())
-                //     .unwrap_or_default();
-
-                let uuid_parts = player_data.get("UUID").unwrap().as_array().unwrap();
-                let uuid_most = uuid_parts[0].as_i64().unwrap() as u32;
-                let uuid_second = uuid_parts[1].as_i64().unwrap() as u32;
-                let uuid_third = uuid_parts[2].as_i64().unwrap() as u32;
-                let uuid_least = uuid_parts[3].as_i64().unwrap() as u32;
-
-                // Concatenate the four integers into a single 128-bit value
-                let uuid_int = ((uuid_most as u128) << 96)
-                    | ((uuid_second as u128) << 64)
-                    | ((uuid_third as u128) << 32)
-                    | uuid_least as u128;
-
-                // Create a UUID from the 128-bit value
-                let player_uuid = Uuid::from_u128(uuid_int);
-
-                // let player_meta = fetch_player_data_from_uuid(player_uuid)?;
-
-                let player_data = PlayerData {
-                    id: player_uuid.to_string(),
-                    health: Some(player_data.get("Health").unwrap().as_f64().unwrap() as f32),
-                    food: Some(player_data.get("foodLevel").unwrap().as_i64().unwrap() as i32),
-                    game_mode: player_data.get("playerGameType").unwrap().as_i64().unwrap() as i32,
-                    level: player_data.get("XpLevel").unwrap().as_i64().unwrap() as i32,
-                    xp: player_data.get("XpTotal").unwrap().as_f64().unwrap() as f32,
-                    inventory: player_data
-                        .get("Inventory")
-                        .unwrap()
-                        .as_array()
-                        .unwrap()
-                        .iter()
-                        .map(|item| Item {
-                            id: item.get("id").unwrap().as_str().unwrap().to_string(),
-                            slot: Some(item.get("Slot").unwrap().as_i64().unwrap() as i32),
-                            damage: item
-                                .get("tag")
-                                .and_then(|tag| tag.get("Damage"))
-                                .and_then(|damage| damage.as_i64())
-                                .map(|damage| damage as i32),
-                            count: item.get("Count").unwrap().as_i64().unwrap() as i32,
-                            tag: item.get("tag").cloned(),
-                        })
-                        .collect::<Vec<Item>>(),
-                };
-                all_players.push(player_data);
-            }
-
-            Ok(all_players)
-        }
-        GameType::None => Err("Game type not specified".into()),
-    }
-}
-
 pub fn parse_game_rules(
     game_data: &serde_json::Value,
     game_type: GameType,
 ) -> Result<GameRules, String> {
     match game_type {
         GameType::Java => {
+            info!("Parsing Java GameRules");
+
             let game_rules = match game_data.get("GameRules") {
                 Some(rules) => {
                     info!("GameRules: {:?}", rules);
@@ -703,6 +522,8 @@ pub fn parse_game_rules(
             Ok(game_rules)
         }
         GameType::Bedrock => {
+            info!("Parsing Bedrock GameRules");
+
             let game_rules = GameRules {
                 do_fire_tick: game_data
                     .get("dofiretick")
@@ -825,6 +646,8 @@ pub fn parse_game_rules(
 }
 
 pub fn get_world_data(world_path: &PathBuf) -> Result<Value, String> {
+    info!("Getting world data for {:?}", world_path);
+
     let game_type = is_minecraft_world(&world_path);
 
     let level_dat_path = world_path.join("level.dat");
@@ -898,6 +721,8 @@ pub fn recursive_world_search(
 }
 
 pub fn calculate_dir_size<P: AsRef<Path>>(path: P) -> std::io::Result<u64> {
+    info!("Calculating directory size for: {:?}", path.as_ref());
+
     let mut size = 0;
 
     for entry in fs::read_dir(path)? {

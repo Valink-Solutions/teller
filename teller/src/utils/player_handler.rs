@@ -1,3 +1,4 @@
+use log::info;
 // use log::info;
 // use log::info;
 use serde_json::Value;
@@ -57,6 +58,8 @@ pub fn grab_player_from_uuid(
     path: &PathBuf,
     game_type: GameType,
 ) -> Result<PlayerData, Box<dyn std::error::Error>> {
+    info!("Grabbing player from UUID: {}", player_uuid);
+
     match game_type {
         GameType::Bedrock => {
             let db_path = path.join("db").to_str().unwrap().to_string();

@@ -8,6 +8,8 @@ use crate::backend::get_world_by_id;
 
 #[tauri::command]
 pub fn check_path_for_save_folders(path: PathBuf) -> Result<Vec<PathBuf>, String> {
+    info!("Checking path for saves folder: {}", path.to_string_lossy());
+
     let mut save_folders = Vec::new();
     let max_depth = 6;
 
@@ -15,8 +17,6 @@ pub fn check_path_for_save_folders(path: PathBuf) -> Result<Vec<PathBuf>, String
 
     save_folders.sort();
     save_folders.dedup();
-
-    info!("Found Minecraft worlds: {:?}", save_folders);
 
     Ok(save_folders)
 }
