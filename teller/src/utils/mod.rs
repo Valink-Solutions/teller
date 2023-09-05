@@ -124,8 +124,6 @@ pub struct GameRules {
 }
 
 pub fn encode_image_to_base64(path: PathBuf) -> Result<String, Box<dyn std::error::Error>> {
-    info!("Encoding image to base64: {:?}", path);
-
     let mut file = File::open(path)?;
     let mut buf = Vec::new();
     file.read_to_end(&mut buf)?;

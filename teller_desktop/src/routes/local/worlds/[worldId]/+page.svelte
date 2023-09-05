@@ -69,9 +69,9 @@
 						? world_data.icon
 						: 'https://static.planetminecraft.com/files/image/minecraft/project/2020/194/13404399_l.jpg'}
 					alt={world_data.name}
-					class="object-cover w-full h-full self-start"
+					class="object-cover w-full h-full self-start border-4 border-black shadow-neu"
 				/>
-				<div class="badge badge-xs absolute -bottom-1 left-0 right-0 mx-auto">
+				<div class="badge badge-xs absolute -bottom-2 left-0 right-0 mx-auto">
 					{world_data.game_engine}
 				</div>
 			</div>

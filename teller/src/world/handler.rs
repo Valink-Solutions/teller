@@ -403,124 +403,121 @@ pub fn parse_game_rules(
             info!("Parsing Java GameRules");
 
             let game_rules = match game_data.get("GameRules") {
-                Some(rules) => {
-                    info!("GameRules: {:?}", rules);
-                    GameRules {
-                        do_fire_tick: rules
-                            .get("doFireTick")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("false")
-                            == "true",
-                        mob_loot: rules
-                            .get("doMobLoot")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("false")
-                            == "true",
-                        keep_inventory: rules
-                            .get("keepInventory")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("false")
-                            == "true",
-                        do_mob_spawning: rules
-                            .get("doMobSpawning")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("false")
-                            == "true",
-                        do_tile_drops: rules
-                            .get("doTileDrops")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("false")
-                            == "true",
-                        command_block_output: rules
-                            .get("commandBlockOutput")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("false")
-                            == "true",
-                        natural_regeneration: rules
-                            .get("naturalRegeneration")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("false")
-                            == "true",
-                        do_daylight_cycle: rules
-                            .get("doDaylightCycle")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("false")
-                            == "true",
-                        do_weather_cycle: rules
-                            .get("doWeatherCycle")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("false")
-                            == "true",
-                        do_immediate_respawn: rules
-                            .get("doImmediateRespawn")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("false")
-                            == "true",
-                        drowning_damage: rules
-                            .get("drowningDamage")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("false")
-                            == "true",
-                        fall_damage: rules
-                            .get("fallDamage")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("false")
-                            == "true",
-                        fire_damage: rules
-                            .get("fireDamage")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("false")
-                            == "true",
-                        do_insomnia: rules
-                            .get("doInsomnia")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("false")
-                            == "true",
-                        invulnerable: rules
-                            .get("invulnerable")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("false")
-                            == "true",
-                        max_command_chain_length: rules
-                            .get("maxCommandChainLength")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("0")
-                            .parse::<i64>()
-                            .unwrap_or_default(),
-                        random_tick_speed: rules
-                            .get("randomTickSpeed")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("0")
-                            .parse::<i64>()
-                            .unwrap_or_default(),
-                        reduced_debug_info: rules
-                            .get("reducedDebugInfo")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("false")
-                            == "true",
-                        send_command_feedback: rules
-                            .get("sendCommandFeedback")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("false")
-                            == "true",
-                        show_death_messages: rules
-                            .get("showDeathMessages")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("false")
-                            == "true",
-                        spawn_radius: rules
-                            .get("spawnRadius")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("0")
-                            .parse::<i64>()
-                            .unwrap_or_default(),
-                        spectators_generate_chunks: rules
-                            .get("spectatorsGenerateChunks")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("false")
-                            == "true",
-                    }
-                }
+                Some(rules) => GameRules {
+                    do_fire_tick: rules
+                        .get("doFireTick")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("false")
+                        == "true",
+                    mob_loot: rules
+                        .get("doMobLoot")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("false")
+                        == "true",
+                    keep_inventory: rules
+                        .get("keepInventory")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("false")
+                        == "true",
+                    do_mob_spawning: rules
+                        .get("doMobSpawning")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("false")
+                        == "true",
+                    do_tile_drops: rules
+                        .get("doTileDrops")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("false")
+                        == "true",
+                    command_block_output: rules
+                        .get("commandBlockOutput")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("false")
+                        == "true",
+                    natural_regeneration: rules
+                        .get("naturalRegeneration")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("false")
+                        == "true",
+                    do_daylight_cycle: rules
+                        .get("doDaylightCycle")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("false")
+                        == "true",
+                    do_weather_cycle: rules
+                        .get("doWeatherCycle")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("false")
+                        == "true",
+                    do_immediate_respawn: rules
+                        .get("doImmediateRespawn")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("false")
+                        == "true",
+                    drowning_damage: rules
+                        .get("drowningDamage")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("false")
+                        == "true",
+                    fall_damage: rules
+                        .get("fallDamage")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("false")
+                        == "true",
+                    fire_damage: rules
+                        .get("fireDamage")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("false")
+                        == "true",
+                    do_insomnia: rules
+                        .get("doInsomnia")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("false")
+                        == "true",
+                    invulnerable: rules
+                        .get("invulnerable")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("false")
+                        == "true",
+                    max_command_chain_length: rules
+                        .get("maxCommandChainLength")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("0")
+                        .parse::<i64>()
+                        .unwrap_or_default(),
+                    random_tick_speed: rules
+                        .get("randomTickSpeed")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("0")
+                        .parse::<i64>()
+                        .unwrap_or_default(),
+                    reduced_debug_info: rules
+                        .get("reducedDebugInfo")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("false")
+                        == "true",
+                    send_command_feedback: rules
+                        .get("sendCommandFeedback")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("false")
+                        == "true",
+                    show_death_messages: rules
+                        .get("showDeathMessages")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("false")
+                        == "true",
+                    spawn_radius: rules
+                        .get("spawnRadius")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("0")
+                        .parse::<i64>()
+                        .unwrap_or_default(),
+                    spectators_generate_chunks: rules
+                        .get("spectatorsGenerateChunks")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("false")
+                        == "true",
+                },
                 None => return Err("Could not find GameRules in level.dat".into()),
             };
             Ok(game_rules)
