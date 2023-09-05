@@ -228,7 +228,10 @@ pub fn process_world_data(
                     naive_datetime
                 },
                 players: get_player_data(path, game_type)?,
-                size_on_disk: calculate_dir_size(path)? as i64,
+                size_on_disk: {
+                    info!("Calculating directory size for: {:?}", path);
+                    calculate_dir_size(path)? as i64
+                },
                 game_rules: Some(parse_game_rules(&level_value, game_type)?),
             };
 
@@ -281,7 +284,10 @@ pub fn process_world_data(
                     naive_datetime
                 },
                 players: get_player_data(path, game_type)?,
-                size_on_disk: calculate_dir_size(path)? as i64,
+                size_on_disk: {
+                    info!("Calculating directory size for: {:?}", path);
+                    calculate_dir_size(path)? as i64
+                },
                 game_rules: Some(parse_game_rules(level_data, game_type)?),
             };
 
@@ -333,8 +339,6 @@ pub fn get_player_data(
             });
 
             players.push(local_player_data);
-
-            info!("Players: {:?}", players);
 
             Ok(players)
         }
@@ -721,8 +725,6 @@ pub fn recursive_world_search(
 }
 
 pub fn calculate_dir_size<P: AsRef<Path>>(path: P) -> std::io::Result<u64> {
-    info!("Calculating directory size for: {:?}", path.as_ref());
-
     let mut size = 0;
 
     for entry in fs::read_dir(path)? {
