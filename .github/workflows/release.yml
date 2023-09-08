@@ -32,7 +32,7 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: './src-tauri -> target'
+          workspaces: './teller_desktop/src-tauri -> target'
 
       - name: Sync node version and setup cache
         uses: actions/setup-node@v3
@@ -42,7 +42,7 @@ jobs:
 
       - name: Install frontend dependencies
         # If you don't have `beforeBuildCommand` configured you may want to build your frontend here too.
-        run: pnpm install # Change this to npm, yarn or pnpm.
+        run: cd teller_desktop && pnpm install # Change this to npm, yarn or pnpm.
 
       - name: Build the app
         uses: tauri-apps/tauri-action@v0
@@ -50,6 +50,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          projectPath: ./teller_desktop
           tagName: ${{ github.ref_name }}
           releaseName: 'ChunkVault App v__VERSION__' # tauri-action replaces \_\_VERSION\_\_ with the app version.
           releaseBody: 'See the assets to download and install this version.'
