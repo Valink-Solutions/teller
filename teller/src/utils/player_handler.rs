@@ -1,16 +1,30 @@
 use log::info;
 // use log::info;
 // use log::info;
-use serde_json::Value;
+use serde_json::{json, Value};
 use uuid::Uuid;
 
 use std::{collections::HashMap, path::PathBuf};
 
-use crate::world::GameType;
+use crate::world::{parse_world_data, read_dat_file, GameType};
 
 use super::{Item, PlayerData};
 
 pub fn fetch_player_data_from_uuid(player_uuid_str: String) -> Result<Value, String> {
+    if player_uuid_str == "~local_player".to_string() {
+        let player_avatar =
+            "https://crafthead.net/avatar/8667ba71b85a4004af54457a9734eed7?scale=32&overlay=false";
+
+        let player_meta = json!({
+            "username": "Local Player",
+            "id": player_uuid_str,
+            "avatar": player_avatar,
+            "meta": {}
+        });
+
+        return Ok(player_meta);
+    }
+
     let player_uuid = match Uuid::parse_str(&player_uuid_str) {
         Ok(uuid) => uuid,
         Err(_) => return Err("Error parsing UUID".to_string()),
@@ -23,10 +37,30 @@ pub fn fetch_player_data_from_uuid(player_uuid_str: String) -> Result<Value, Str
         Ok(data) => match data.json::<Value>() {
             Ok(mut json) => {
                 // info!("Fetched player data from playerdb.co: {:?}", json);
-                if let Some(player) = json.get_mut("data").and_then(|data| data.get_mut("player")) {
-                    Ok(player.take())
+                if json
+                    .get("success")
+                    .unwrap_or(&json!(false))
+                    .as_bool()
+                    .unwrap_or(false)
+                {
+                    if let Some(player) =
+                        json.get_mut("data").and_then(|data| data.get_mut("player"))
+                    {
+                        Ok(player.take())
+                    } else {
+                        Err("Player data not found in response".to_string())
+                    }
                 } else {
-                    Err("Player data not found in response".to_string())
+                    let player_avatar = "https://crafthead.net/avatar/8667ba71b85a4004af54457a9734eed7?scale=32&overlay=false";
+
+                    let player_meta = json!({
+                        "username": "Player",
+                        "id": player_uuid,
+                        "avatar": player_avatar,
+                        "meta": {}
+                    });
+
+                    return Ok(player_meta);
                 }
             }
             Err(_) => Err("Error parsing player data".to_string()),
@@ -86,7 +120,7 @@ pub fn grab_player_from_uuid(
                 id: player_uuid.to_owned(),
                 health: None,
                 food: None,
-                game_mode: player_data.get("PlayerGameMode").unwrap().as_i64().unwrap() as i32,
+                game_mode: Some(player_data.get("PlayerGameMode").unwrap().as_i64().unwrap() as i32),
                 level: player_data.get("PlayerLevel").unwrap().as_i64().unwrap() as i32,
                 xp: player_data
                     .get("PlayerLevelProgress")
@@ -116,17 +150,30 @@ pub fn grab_player_from_uuid(
             Ok(player_data)
         }
         GameType::Java => {
-            let player = path.join("playerdata").join(format!("{}.dat", player_uuid));
+            let player_data = if player_uuid == "~local_player" {
+                let level_dat_path = path.join("level.dat");
 
-            let player_data = match commandblock::nbt::read_from_file(
-                player.clone(),
-                commandblock::nbt::Compression::Gzip,
-                commandblock::nbt::Endian::Big,
-                false,
-            ) {
-                Ok((_, data)) => serde_json::to_value(data)?,
-                Err(e) => {
-                    return Err(format!("Failed to read player data: {:?}", e).into());
+                let level_data = read_dat_file(level_dat_path, game_type)?;
+
+                let level_data = parse_world_data(level_data, game_type)?;
+
+                match level_data.get("Player") {
+                    Some(data) => data.to_owned(),
+                    None => return Err("Could not find Player in level.dat".into()),
+                }
+            } else {
+                let player = path.join("playerdata").join(format!("{}.dat", player_uuid));
+
+                match commandblock::nbt::read_from_file(
+                    player.clone(),
+                    commandblock::nbt::Compression::Gzip,
+                    commandblock::nbt::Endian::Big,
+                    false,
+                ) {
+                    Ok((_, data)) => serde_json::to_value(data)?,
+                    Err(e) => {
+                        return Err(format!("Failed to read player data: {:?}", e).into());
+                    }
                 }
             };
 
@@ -134,7 +181,13 @@ pub fn grab_player_from_uuid(
                 id: player_uuid.to_string(),
                 health: Some(player_data.get("Health").unwrap().as_f64().unwrap() as f32),
                 food: Some(player_data.get("foodLevel").unwrap().as_i64().unwrap() as i32),
-                game_mode: player_data.get("playerGameType").unwrap().as_i64().unwrap() as i32,
+                game_mode: match player_data.get("playerGameType") {
+                    Some(game_mode) => match game_mode.as_i64() {
+                        Some(game_mode) => Some(game_mode as i32),
+                        None => None,
+                    },
+                    None => None,
+                },
                 level: player_data.get("XpLevel").unwrap().as_i64().unwrap() as i32,
                 xp: player_data.get("XpTotal").unwrap().as_f64().unwrap() as f32,
                 inventory: player_data
@@ -144,7 +197,11 @@ pub fn grab_player_from_uuid(
                     .unwrap()
                     .iter()
                     .map(|item| Item {
-                        id: item.get("id").unwrap().as_str().unwrap().to_string(),
+                        id: match item.get("id").unwrap() {
+                            Value::String(s) => s.clone(),
+                            Value::Number(n) => n.to_string(),
+                            _ => "".to_string(),
+                        },
                         slot: Some(item.get("Slot").unwrap().as_i64().unwrap() as i32),
                         damage: item
                             .get("tag")

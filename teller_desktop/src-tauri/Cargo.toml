@@ -31,6 +31,11 @@ teller = { path = "../../teller" }
 # commandblock = { version = "0.4.1", features = ["serde"] }
 commandblock = { git = "https://github.com/Valink-Solutions/CommandBlock", features = ["serde"], branch = "add-bedrock-db-parsing" }
 
+[dependencies.tauri-plugin-sql]
+git = "https://github.com/tauri-apps/plugins-workspace"
+branch = "v1"
+features = ["sqlite"]
+
 [features]
 # by default Tauri runs in production mode
 # when `tauri dev` runs it is executed with `cargo run --no-default-features` if `devPath` is an URL

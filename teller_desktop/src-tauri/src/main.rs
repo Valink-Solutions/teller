@@ -14,7 +14,7 @@ use teller::configuration::get_config_folder;
 use teller::utils::encode_image_to_base64;
 use teller::utils::WorldData;
 use teller::world::{
-    calculate_dir_size, get_vault_id, is_minecraft_world, parse_dat_file, GameType,
+    calculate_dir_size, get_vault_id, is_minecraft_world, read_dat_file, GameType,
 };
 
 fn get_level_name(
@@ -92,7 +92,7 @@ fn grab_local_worlds_list(local_saves_path: PathBuf) -> Result<Vec<WorldData>, S
             let game_type = is_minecraft_world(&path);
 
             let level_dat_path = path.join("level.dat");
-            let level_dat_blob = match parse_dat_file(level_dat_path, game_type) {
+            let level_dat_blob = match read_dat_file(level_dat_path, game_type) {
                 Ok(blob) => blob,
                 Err(e) => {
                     error!("Could not parse level.dat at {:?}: {:?}", path, e);
@@ -155,6 +155,7 @@ fn main() {
                 ])
                 .build(),
         )
+        .plugin(tauri_plugin_sql::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
             grab_local_worlds_list,
             teller_desktop::backend::folder_handler::check_path_for_save_folders,

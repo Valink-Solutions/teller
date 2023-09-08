@@ -65,7 +65,7 @@
 		<div class="flex flex-row items-center space-x-4">
 			<div class="relative w-28 h-24">
 				<img
-					src={world_data.icon.length > 0
+					src={world_data.icon
 						? world_data.icon
 						: 'https://static.planetminecraft.com/files/image/minecraft/project/2020/194/13404399_l.jpg'}
 					alt={world_data.name}
@@ -148,20 +148,34 @@
 			{/each}
 		</div>
 
-		<h1 class="border-l-4 pl-2 border-primary text-lg font-bold">World Data</h1>
-		<div class="collapse collapse-arrow border-4 border-black drop-shadow-neu">
-			<input type="checkbox" />
-			<div class="collapse-title text-xl font-medium">Game Rules</div>
-			<div class="collapse-content">
-				<ul class="grid grid-cols-2 xl:grid-cols-3 gap-2">
-					{#each Object.entries(world_data.game_rules) as [rule, value]}
-						<li class="flex flex-row p-2 bg-base-200 justify-between">
-							<span>{rule}:</span><span>{value}</span>
-						</li>
-					{/each}
-				</ul>
+		{#if world_data.game_rules}
+			<h1 class="border-l-4 pl-2 border-primary text-lg font-bold">Game Rules</h1>
+			<div class="grid grid-cols-2 xl:grid-cols-3 gap-4">
+				{#each Object.entries(world_data.game_rules) as [rule, value]}
+					<div class="card flex flex-row p-2 justify-between items-center bg-slate-200">
+						<span class="font-semibold">{rule}:</span>
+						{#if value === true || value === false}
+							<div class="flex flex-row w-12 relative">
+								<div
+									class="h-3 w-full bg-white border-[3px] border-black drop-shadow-neu-pressed"
+								/>
+								<div
+									class="-top-1 h-[20px] w-[20px] absolute border-[3px] border-black drop-shadow-neu-pressed {value ===
+									true
+										? 'bg-green-600 right-0'
+										: 'bg-red-600 left-0'}"
+								/>
+							</div>
+						{:else}
+							<span
+								class="min-w-[48px] px-2 text-center border-2 border-black bg-white drop-shadow-neu-pressed"
+								>{value}</span
+							>
+						{/if}
+					</div>
+				{/each}
 			</div>
-		</div>
+		{/if}
 	{:else}
 		<div class="flex flex-col items-center justify-center w-full h-full">
 			<Icon icon="mdi:alert" class="w-16 h-16" />

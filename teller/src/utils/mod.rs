@@ -67,7 +67,7 @@ pub struct PlayerData {
     // pub name: String,
     pub health: Option<f32>,
     pub food: Option<i32>,
-    pub game_mode: i32,
+    pub game_mode: Option<i32>,
     pub level: i32,
     pub xp: f32,
     pub inventory: Vec<Item>,

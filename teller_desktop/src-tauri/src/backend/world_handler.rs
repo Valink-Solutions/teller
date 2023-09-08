@@ -3,7 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use log::info;
+use log::{error, info};
 use serde_json::Value;
 use teller::{
     configuration::{get_config_folder, get_saves_config},
@@ -70,7 +70,10 @@ pub fn get_world_by_id(world_id: &str, return_path: Option<bool>) -> Result<Valu
                                 let data_value = serde_json::to_value(data).unwrap();
                                 return Ok(data_value);
                             }
-                            Err(_) => continue,
+                            Err(e) => {
+                                error!("Could not process world data: {:?}", e);
+                                continue;
+                            }
                         };
                     }
                 }

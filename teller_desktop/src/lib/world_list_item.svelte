@@ -22,7 +22,7 @@
 			<h2 class="font-bold md:w-72">
 				{world.name.length > 22 ? world.name.slice(0, 22) + '...' : world.name}
 			</h2>
-			<span class="badge badge-primary badge-xs whitespace-nowrap w-24"
+			<span class="badge badge-primary badge-xs font-semibold whitespace-nowrap w-24"
 				>{formatBytes(world.size)}</span
 			>
 		</div>

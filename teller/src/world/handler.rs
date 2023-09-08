@@ -7,6 +7,7 @@ use std::{
 use commandblock::nbt::{read_from_file, Compression, Endian, NbtValue};
 use log::{error, info};
 use serde_json::{json, Value};
+use uuid::Uuid;
 
 use crate::utils::{
     encode_image_to_base64, player_handler::fetch_player_data_from_uuid, GameRules, WorldLevelData,
@@ -42,8 +43,6 @@ pub fn create_vault_file(vault_data: Value, world_path: &PathBuf) -> Result<(), 
 }
 
 pub fn get_vault_file(world_path: &PathBuf) -> Result<Value, String> {
-    info!("Getting vault file for: {:?}", world_path);
-
     let vault_file_path = world_path.join(".chunkvault");
 
     if !vault_file_path.exists() {
@@ -68,8 +67,6 @@ pub fn get_vault_file(world_path: &PathBuf) -> Result<Value, String> {
 }
 
 pub fn update_vault_file(vault_data: Value, world_path: &PathBuf) -> Result<(), String> {
-    info!("Updating vault file for: {:?}", world_path);
-
     let vault_file_path = world_path.join(".chunkvault");
 
     if !vault_file_path.exists() {
@@ -94,8 +91,6 @@ pub fn update_vault_file(vault_data: Value, world_path: &PathBuf) -> Result<(), 
 }
 
 pub fn get_vault_id(path: &PathBuf) -> Result<String, String> {
-    info!("Getting vault ID for: {:?}", path);
-
     let vault_data = match get_vault_file(path) {
         Ok(data) => data,
         Err(_) => {
@@ -134,7 +129,7 @@ pub fn get_vault_id(path: &PathBuf) -> Result<String, String> {
     Ok(vault_id.to_string())
 }
 
-pub fn parse_dat_file(
+pub fn read_dat_file(
     file_path: PathBuf,
     game_type: GameType,
 ) -> Result<NbtValue, Box<dyn std::error::Error>> {
@@ -188,7 +183,7 @@ pub fn process_world_data(
 ) -> Result<WorldLevelData, Box<dyn std::error::Error>> {
     info!("Processing world data for: {:?}", path);
 
-    let level_dat = parse_dat_file(path.join("level.dat"), game_type)?;
+    let level_dat = read_dat_file(path.join("level.dat"), game_type)?;
 
     let level_value: serde_json::Value = serde_json::to_value(level_dat)?;
 
@@ -201,9 +196,12 @@ pub fn process_world_data(
                     .unwrap_or_default()
                     .to_string(),
                 folder: Some(path.to_str().unwrap().to_string()),
-                icon: Some(encode_image_to_base64(path.join("world_icon.jpeg"))?),
+                icon: match encode_image_to_base64(path.join("world_icon.jpeg")) {
+                    Ok(data) => Some(data),
+                    Err(_) => None,
+                },
                 difficulty: {
-                    let difficulty = level_value["Difficulty"].as_i64().unwrap_or_default() as i32;
+                    let difficulty = level_value["Difficulty"].as_i64().unwrap_or(2) as i32;
                     match difficulty {
                         0 => "Peaceful".to_string(),
                         1 => "Easy".to_string(),
@@ -232,7 +230,10 @@ pub fn process_world_data(
                     info!("Calculating directory size for: {:?}", path);
                     calculate_dir_size(path)? as i64
                 },
-                game_rules: Some(parse_game_rules(&level_value, game_type)?),
+                game_rules: match parse_game_rules(&level_value, game_type) {
+                    Ok(rules) => Some(rules),
+                    Err(_) => None,
+                },
             };
 
             return Ok(world_level_data);
@@ -250,22 +251,24 @@ pub fn process_world_data(
                     .unwrap_or_default()
                     .to_string(),
                 folder: Some(path.to_str().unwrap().to_string()),
-                icon: Some(encode_image_to_base64(path.join("icon.png"))?),
+                icon: match encode_image_to_base64(path.join("icon.png")) {
+                    Ok(data) => Some(data),
+                    Err(_) => None,
+                },
                 difficulty: {
-                    let difficulty = level_data["Difficulty"].as_i64().unwrap_or_default() as i32;
+                    let difficulty = level_data["Difficulty"].as_i64().unwrap_or(2) as i32;
                     let hardcore = level_data["hardcore"].as_bool().unwrap_or_default();
-                    match difficulty {
-                        0 => "Peaceful".to_string(),
-                        1 => "Easy".to_string(),
-                        2 => "Normal".to_string(),
-                        3 => {
-                            if hardcore {
-                                "Hardcore".to_string()
-                            } else {
-                                "Hard".to_string()
-                            }
+
+                    if hardcore {
+                        "Hardcore".to_string()
+                    } else {
+                        match difficulty {
+                            0 => "Peaceful".to_string(),
+                            1 => "Easy".to_string(),
+                            2 => "Normal".to_string(),
+                            3 => "Hard".to_string(),
+                            _ => "Unknown".to_string(),
                         }
-                        _ => "Unknown".to_string(),
                     }
                 },
                 game_type: {
@@ -288,7 +291,10 @@ pub fn process_world_data(
                     info!("Calculating directory size for: {:?}", path);
                     calculate_dir_size(path)? as i64
                 },
-                game_rules: Some(parse_game_rules(level_data, game_type)?),
+                game_rules: match parse_game_rules(&level_data, game_type) {
+                    Ok(rules) => Some(rules),
+                    Err(_) => None,
+                },
             };
 
             return Ok(world_level_data);
@@ -348,7 +354,47 @@ pub fn get_player_data(
             let player_data_path = path.join("playerdata");
 
             if !player_data_path.exists() {
-                return Err("Player data directory does not exist".into());
+                let level_dat_path = path.join("level.dat");
+
+                let level_data = read_dat_file(level_dat_path, game_type)?;
+
+                let level_data = parse_world_data(level_data, game_type)?;
+
+                let player_data = match level_data.get("Player") {
+                    Some(data) => data,
+                    None => return Err("Could not find Player in level.dat".into()),
+                };
+
+                let player_uuid = match player_data.get("UUID") {
+                    Some(player_uuid_values) => {
+                        let d1 = player_uuid_values[0].as_i64().unwrap_or_default() as u32; // Your most significant 32-bit value
+                        let d2 = player_uuid_values[1].as_i64().unwrap_or_default() as u32; // Your second most significant 32-bit value
+                        let d3 = player_uuid_values[2].as_i64().unwrap_or_default() as u32; // Your second least significant 32-bit value
+                        let d4 = player_uuid_values[3].as_i64().unwrap_or_default() as u32; // Your least significant 32-bit value
+
+                        // Concatenate the four integers into a single 128-bit value
+                        let uuid_int = ((d1 as u128) << 96)
+                            | ((d2 as u128) << 64)
+                            | ((d3 as u128) << 32)
+                            | d4 as u128;
+
+                        // Create a UUID from the 128-bit value
+                        let player_uuid = Uuid::from_u128(uuid_int).to_string();
+
+                        player_uuid
+                    }
+                    None => "~local_player".to_string(),
+                };
+                let player_avatar = "https://crafthead.net/avatar/8667ba71b85a4004af54457a9734eed7?scale=32&overlay=false";
+
+                let player_meta = json!({
+                    "username": "Local Player",
+                    "id": player_uuid,
+                    "avatar": player_avatar,
+                    "meta": {}
+                });
+
+                return Ok(vec![player_meta]);
             }
 
             let player_data = match std::fs::read_dir(&player_data_path) {
@@ -400,8 +446,6 @@ pub fn parse_game_rules(
 ) -> Result<GameRules, String> {
     match game_type {
         GameType::Java => {
-            info!("Parsing Java GameRules");
-
             let game_rules = match game_data.get("GameRules") {
                 Some(rules) => GameRules {
                     do_fire_tick: rules
@@ -523,84 +567,82 @@ pub fn parse_game_rules(
             Ok(game_rules)
         }
         GameType::Bedrock => {
-            info!("Parsing Bedrock GameRules");
-
             let game_rules = GameRules {
                 do_fire_tick: game_data
                     .get("dofiretick")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("false")
-                    == "true",
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0)
+                    == 1,
                 mob_loot: game_data
                     .get("mobloot")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("false")
-                    == "true",
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0)
+                    == 1,
                 keep_inventory: game_data
                     .get("keepinventory")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("false")
-                    == "true",
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0)
+                    == 1,
                 do_mob_spawning: game_data
                     .get("domobspawning")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("false")
-                    == "true",
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0)
+                    == 1,
                 do_tile_drops: game_data
                     .get("dotiledrops")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("false")
-                    == "true",
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0)
+                    == 1,
                 command_block_output: game_data
                     .get("commandblockoutput")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("false")
-                    == "true",
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0)
+                    == 1,
                 natural_regeneration: game_data
                     .get("naturalregeneration")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("false")
-                    == "true",
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0)
+                    == 1,
                 do_daylight_cycle: game_data
                     .get("dodaylightcycle")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("false")
-                    == "true",
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0)
+                    == 1,
                 do_weather_cycle: game_data
                     .get("doweathercycle")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("false")
-                    == "true",
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0)
+                    == 1,
                 do_immediate_respawn: game_data
                     .get("doimmediaterespawn")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("false")
-                    == "true",
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0)
+                    == 1,
                 drowning_damage: game_data
                     .get("drowningdamage")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("false")
-                    == "true",
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0)
+                    == 1,
                 fall_damage: game_data
                     .get("falldamage")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("false")
-                    == "true",
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0)
+                    == 1,
                 fire_damage: game_data
                     .get("firedamage")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("false")
-                    == "true",
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0)
+                    == 1,
                 do_insomnia: game_data
                     .get("doinsomnia")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("false")
-                    == "true",
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0)
+                    == 1,
                 invulnerable: game_data
                     .get("invulnerable")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("false")
-                    == "true",
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0)
+                    == 1,
                 max_command_chain_length: game_data
                     .get("maxcommandchainlength")
                     .and_then(|v| v.as_str())
@@ -615,19 +657,19 @@ pub fn parse_game_rules(
                     .unwrap_or_default(),
                 reduced_debug_info: game_data
                     .get("reduceddebuginfo")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("false")
-                    == "true",
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0)
+                    == 1,
                 send_command_feedback: game_data
                     .get("sendcommandfeedback")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("false")
-                    == "true",
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0)
+                    == 1,
                 show_death_messages: game_data
                     .get("showdeathmessages")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("false")
-                    == "true",
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0)
+                    == 1,
                 spawn_radius: game_data
                     .get("spawnradius")
                     .and_then(|v| v.as_str())
@@ -636,9 +678,9 @@ pub fn parse_game_rules(
                     .unwrap_or_default(),
                 spectators_generate_chunks: game_data
                     .get("spectatorsgeneratechunks")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("false")
-                    == "true",
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0)
+                    == 1,
             };
             Ok(game_rules)
         }
@@ -657,7 +699,7 @@ pub fn get_world_data(world_path: &PathBuf) -> Result<Value, String> {
         return Err("level.dat does not exist".to_string());
     }
 
-    let level_data = match parse_dat_file(level_dat_path, game_type) {
+    let level_data = match read_dat_file(level_dat_path, game_type) {
         Ok(data) => data,
         Err(e) => return Err(format!("Failed to parse level.dat: {:?}", e)),
     };

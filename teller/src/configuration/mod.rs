@@ -45,8 +45,6 @@ pub fn get_saves_config<P: AsRef<Path>>(config_dir: P) -> Result<DirectorySettin
 }
 
 pub fn get_config_folder() -> PathBuf {
-    info!("Getting config folder");
-
     let config_dir = directories::ProjectDirs::from("io", "valink", "teller");
 
     let config_dir = config_dir.unwrap().config_dir().to_path_buf();
