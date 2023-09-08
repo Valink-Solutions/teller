@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 
-use log::error;
+use log::{error, info};
 
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -13,6 +13,8 @@ pub struct DirectorySettings {
 
 pub fn get_saves_config<P: AsRef<Path>>(config_dir: P) -> Result<DirectorySettings, String> {
     let config_path = config_dir.as_ref().join("local-directories.json");
+
+    info!("Loading config file at {:?}", config_path);
 
     let settings = match config::Config::builder()
         .add_source(config::File::from(config_path.clone()))
@@ -49,6 +51,8 @@ pub fn get_config_folder() -> PathBuf {
 
     // check if config directory exists
     if !config_dir.exists() {
+        info!("Creating config folder at {:?}", config_dir);
+
         match fs::create_dir_all(&config_dir) {
             Ok(_) => (),
             Err(e) => {

@@ -4,46 +4,21 @@
 )]
 
 use std::env;
-use std::fs::{self, File};
-use std::io::Read;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
+use commandblock::nbt::NbtValue;
 use log::error;
 use log::info;
-
-use base64::{engine::general_purpose, Engine as _};
 use tauri_plugin_log::LogTarget;
 use teller::configuration::get_config_folder;
-use teller::world::{get_vault_id, is_minecraft_world, parse_dat_file, GameType};
+use teller::utils::encode_image_to_base64;
 use teller::utils::WorldData;
-
-fn encode_image_to_base64(path: PathBuf) -> Result<String, Box<dyn std::error::Error>> {
-    let mut file = File::open(path)?;
-    let mut buf = Vec::new();
-    file.read_to_end(&mut buf)?;
-    let res_base64 = general_purpose::STANDARD_NO_PAD.encode(&buf);
-    Ok(format!("data:image/png;base64,{}", res_base64))
-}
-
-fn calculate_dir_size<P: AsRef<Path>>(path: P) -> std::io::Result<u64> {
-    let mut size = 0;
-
-    for entry in fs::read_dir(path)? {
-        let dir = entry?;
-        let metadata = dir.metadata()?;
-
-        if metadata.is_dir() {
-            size += calculate_dir_size(dir.path())?;
-        } else {
-            size += metadata.len();
-        }
-    }
-
-    Ok(size)
-}
+use teller::world::{
+    calculate_dir_size, get_vault_id, is_minecraft_world, read_dat_file, GameType,
+};
 
 fn get_level_name(
-    level_dat_blob: commandblock::NbtValue,
+    level_dat_blob: NbtValue,
     game_type: GameType,
 ) -> Result<String, Box<dyn std::error::Error>> {
     let level_value: serde_json::Value = serde_json::to_value(level_dat_blob)?;
@@ -117,7 +92,7 @@ fn grab_local_worlds_list(local_saves_path: PathBuf) -> Result<Vec<WorldData>, S
             let game_type = is_minecraft_world(&path);
 
             let level_dat_path = path.join("level.dat");
-            let level_dat_blob = match parse_dat_file(level_dat_path, game_type) {
+            let level_dat_blob = match read_dat_file(level_dat_path, game_type) {
                 Ok(blob) => blob,
                 Err(e) => {
                     error!("Could not parse level.dat at {:?}: {:?}", path, e);
@@ -180,14 +155,19 @@ fn main() {
                 ])
                 .build(),
         )
+        .plugin(tauri_plugin_sql::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
             grab_local_worlds_list,
             teller_desktop::backend::folder_handler::check_path_for_save_folders,
+            teller_desktop::backend::folder_handler::open_world_in_explorer,
             teller_desktop::config::get_save_folders,
             teller_desktop::config::get_minecraft_save_location,
             teller_desktop::config::get_folder_path,
             teller_desktop::config::create_saves_config,
             teller_desktop::backend::world_handler::get_world_by_id,
+            teller_desktop::backend::world_handler::grab_player_meta_from_uuids,
+            teller_desktop::backend::world_handler::grab_player_meta_from_uuid,
+            teller_desktop::backend::world_handler::grab_player_from_uuid,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

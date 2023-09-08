@@ -4,7 +4,7 @@
 	import { onMount } from 'svelte';
 
 	onMount(async () => {
-		await appWindow.setTitle('Set Server Directories').catch((err) => {
+		await appWindow.setTitle('Set World Save Directories').catch((err) => {
 			console.error(err);
 		});
 	});

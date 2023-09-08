@@ -2,6 +2,7 @@ use std::path::Path;
 
 mod handler;
 pub use handler::*;
+use log::{error, info};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum GameType {
@@ -11,6 +12,8 @@ pub enum GameType {
 }
 
 pub fn is_minecraft_world(path: &Path) -> GameType {
+    info!("Checking if {:?} is a minecraft world", path);
+
     if !path.is_dir() {
         return GameType::None;
     }
@@ -26,11 +29,18 @@ pub fn is_minecraft_world(path: &Path) -> GameType {
     } else if is_bedrock {
         return GameType::Bedrock;
     } else {
+        error!(
+            "Could not determine if path is a minecraft world: {:?}",
+            path
+        );
+
         return GameType::None;
     }
 }
 
 pub fn is_minecraft_folder(path: &Path) -> GameType {
+    info!("Checking if {:?} is a minecraft folder", path);
+
     if path.is_dir() {
         if path.file_name().unwrap() == ".minecraft" || path.join("saves").exists() {
             return GameType::Java;
@@ -38,5 +48,11 @@ pub fn is_minecraft_folder(path: &Path) -> GameType {
             return GameType::Bedrock;
         }
     }
+
+    error!(
+        "Could not determine if path is a minecraft folder: {:?}",
+        path
+    );
+
     GameType::None
 }

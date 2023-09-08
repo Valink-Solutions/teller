@@ -7,7 +7,7 @@ use teller::configuration::{get_config_folder, get_saves_config, DirectorySettin
 pub async fn get_save_folders(handle: tauri::AppHandle) -> Result<DirectorySettings, String> {
     let config_dir = get_config_folder();
 
-    // get saves config and if it fails or has no paths then create a window with tauri
+    // This simply opens the window and errors out allowing the user to configure the directories
     let saves_config = match get_saves_config(&config_dir) {
         Ok(s) => s,
         Err(e) => {
@@ -24,14 +24,13 @@ pub async fn get_save_folders(handle: tauri::AppHandle) -> Result<DirectorySetti
         }
     };
 
-    // if saves_config.paths.is_empty() {
-    // }
-
     Ok(saves_config)
 }
 
 #[tauri::command]
 pub fn get_folder_path(dir_name: &str) -> Option<PathBuf> {
+    info!("Getting path for {}", dir_name);
+
     match dir_name == "default" {
         true => return get_minecraft_save_location(),
         false => (),
@@ -64,6 +63,8 @@ pub fn create_saves_config(settings_data: DirectorySettings) -> Result<Directory
 
     let config_path = config_dir.join("local-directories.json");
 
+    info!("Creating config file at {:?}", config_path);
+
     let settings = match config::Config::builder()
         .add_source(config::File::from_str(
             serde_json::to_string(&settings_data).unwrap().as_str(),
@@ -92,7 +93,6 @@ pub fn create_saves_config(settings_data: DirectorySettings) -> Result<Directory
         }
     };
 
-    // write the config file using std::fs
     match fs::write(&config_path, serde_json::to_string(&settings_data).unwrap()) {
         Ok(_) => (),
         Err(e) => {

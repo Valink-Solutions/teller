@@ -7,10 +7,10 @@
 
 <li class="card flex flex-row w-full bg-base-100 shadow-xl max-h-fit">
 	<figure
-		class="rounded-t-none rounded-l-sm bg-black border-r-4 min-w-fit min-h-fit h-24 w-24 max-w-[6rem] max-h-[6rem] border-black"
+		class="bg-black border-r-4 min-w-fit min-h-fit h-24 w-24 max-w-[6rem] max-h-[6rem] border-black"
 	>
 		<img
-			class="rounded-l-sm rounded-tl-sm rounded-t-none h-24 w-24 max-w-[6rem] max-h-[6rem] bg-black"
+			class="h-24 w-24 max-w-[6rem] max-h-[6rem] bg-black"
 			src={world.image.length > 0
 				? world.image
 				: 'https://static.planetminecraft.com/files/image/minecraft/project/2020/194/13404399_l.jpg'}
@@ -22,7 +22,7 @@
 			<h2 class="font-bold md:w-72">
 				{world.name.length > 22 ? world.name.slice(0, 22) + '...' : world.name}
 			</h2>
-			<span class="badge badge-primary badge-xs whitespace-nowrap w-24"
+			<span class="badge badge-primary badge-xs font-semibold whitespace-nowrap w-24"
 				>{formatBytes(world.size)}</span
 			>
 		</div>
@@ -41,17 +41,17 @@
 				<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 				<ul tabindex="0" class="dropdown-content z-[1] menu p-2 bg-base-100 rounded-box w-52">
 					<li>
-						<a href="http://example.com" class="flex flex-row items-center">
+						<a href={`/local/worlds/${world.id}`} class="flex flex-row items-center">
 							<Icon icon="mdi:pencil-outline" class="mr-1" />
 							Quick Edit
 						</a>
 					</li>
 					<div class="divider my-1" />
 					<li>
-						<a href="http://example.com" class="text-red-500 flex flex-row items-center">
+						<button class="text-red-500 flex flex-row items-center" disabled>
 							<Icon icon="mdi:trash-can-outline" class="mr-1" />
 							Delete
-						</a>
+						</button>
 					</li>
 				</ul>
 			</div>

@@ -103,6 +103,12 @@
 
 <div class="card min-h-full">
 	<div class="card-body">
+		<p class="text-center">
+			Teller will attempt to walk through the selected directories and find all Minecraft save
+			folders. If you have multiple save folders in a single directory, you can add them all at once
+			by selecting the parent.
+		</p>
+
 		<button on:click={addDirectory} class="btn btn-secondary">Add Directory</button>
 
 		<div class="flex flex-col gap-2">
@@ -126,5 +132,9 @@
 		</div>
 
 		<button on:click={writeDirectories} class="btn btn-primary">Save</button>
+
+		<h3 class="mt-4 mx-auto text-sm opacity-75 text-center">
+			The way this is proccessed will probably change dramatically in future versions.
+		</h3>
 	</div>
 </div>
