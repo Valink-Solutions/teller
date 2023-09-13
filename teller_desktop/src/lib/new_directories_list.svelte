@@ -8,6 +8,9 @@
 	import type { DirectorySettings, VaultEntries } from './utils.ts';
 	import Icon from '@iconify/svelte';
 
+	// If you can find a better way to do this please implement it
+	// I'm begging you
+
 	let categories: Record<string, VaultEntries>;
 	let directoryCount = 0;
 
@@ -114,7 +117,7 @@
 							delete newCategory[oldCategory].paths[evt.item.dataset.path];
 							return { ...dirs, categories: newCategory };
 						});
-						// Update the path name in the DOM
+						// Update the path in the DOM
 						evt.item.dataset.path = newPathName;
 						evt.item.dataset.pathData = pathData;
 						// Move the added item to the correct location in the DOM

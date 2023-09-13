@@ -20,10 +20,13 @@
 		/>
 	</figure>
 	<div class="flex flex-row gap-3 p-3 w-full justify-between items-center">
-		<div class="flex flex-row items-center justify-between">
-			<h2 class="font-bold md:w-72">
-				{world.name.length > 22 ? world.name.slice(0, 22) + '...' : world.name}
-			</h2>
+		<div class="flex flex-row items-center justify-between gap-2">
+			<div class="w-56 xl:w-80 2xl:w-96">
+				<h2 class="font-bold w-full overflow-hidden overflow-ellipsis whitespace-nowrap">
+					{world.name}
+				</h2>
+			</div>
+
 			<span class="badge badge-primary badge-xs font-semibold whitespace-nowrap w-24"
 				>{formatBytes(world.size)}</span
 			>

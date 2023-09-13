@@ -4,11 +4,13 @@
 	import WorldListItem from './world_list_item.svelte';
 	import { invoke } from '@tauri-apps/api/tauri';
 	import Icon from '@iconify/svelte';
+	import { open } from '@tauri-apps/api/shell';
 	import type { CurrentDir } from '../stores';
 
 	let worlds: WorldItem[] = [];
 
 	export let saves_path = '';
+	let prevPathName = '';
 
 	export let currentDir: CurrentDir = { path: 'default', category: null };
 
@@ -50,16 +52,27 @@
 				error = true;
 			});
 	}
+
+	async function openInstanceFolder() {
+		await open(saves_path);
+	}
 </script>
 
 <div class="flex flex-col justify-start h-full w-full px-2">
 	<div class="flex flex-row p-1 w-full h-fit items-center gap-2 align-top">
-		<h1 class="border-l-4 pl-2 capitalize border-primary my-2 whitespace-nowrap">
-			{currentDir.path}:
-		</h1>
-		<span class="text-xs underline whitespace-nowrap"
-			>{saves_path.slice(0, 25) + '...' + saves_path.slice(-25)}</span
+		<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+		<h1
+			class="border-l-4 pl-2 w-fit max-w-[170px] capitalize border-primary my-2 whitespace-nowrap"
 		>
+			{currentDir.path}
+		</h1>
+		<button
+			on:click={openInstanceFolder}
+			class="transition-opacity group flex flex-row items-center gap-1 text-xs underline whitespace-nowrap"
+		>
+			<span class="opacity-70">{saves_path.slice(0, 25) + '...' + saves_path.slice(-25)}</span>
+			<Icon icon="mdi:folder-open-outline" class="opacity-0 group-hover:opacity-70" />
+		</button>
 	</div>
 	<div class="flex flex-col justify-start items-center w-full h-full gap-3 align-top">
 		{#if loading}
