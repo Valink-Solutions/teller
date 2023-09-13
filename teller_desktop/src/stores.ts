@@ -8,4 +8,9 @@ export let directories: Writable<Directory> = writable({});
 
 export let localDirs = writable<Directory>({});
 
-export let currentDir = writable<string>('default');
+export interface CurrentDir {
+	category: string | null;
+	path: string;
+}
+
+export let currentDir = writable<CurrentDir>({ category: 'default', path: 'default' });

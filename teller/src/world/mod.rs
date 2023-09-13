@@ -3,6 +3,7 @@ use std::path::Path;
 mod handler;
 pub use handler::*;
 use log::{error, info};
+use std::fs;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum GameType {
@@ -12,8 +13,6 @@ pub enum GameType {
 }
 
 pub fn is_minecraft_world(path: &Path) -> GameType {
-    info!("Checking if {:?} is a minecraft world", path);
-
     if !path.is_dir() {
         return GameType::None;
     }
@@ -25,8 +24,10 @@ pub fn is_minecraft_world(path: &Path) -> GameType {
     let is_bedrock = bedrock_files.iter().all(|file| path.join(file).exists());
 
     if is_java {
+        info!("Found java world at {:?}", path);
         return GameType::Java;
     } else if is_bedrock {
+        info!("Found bedrock world at {:?}", path);
         return GameType::Bedrock;
     } else {
         error!(
@@ -39,10 +40,11 @@ pub fn is_minecraft_world(path: &Path) -> GameType {
 }
 
 pub fn is_minecraft_folder(path: &Path) -> GameType {
-    info!("Checking if {:?} is a minecraft folder", path);
-
     if path.is_dir() {
-        if path.file_name().unwrap() == ".minecraft" || path.join("saves").exists() {
+        if path.file_name().unwrap() == ".minecraft" {
+            if !path.join("saves").exists() {
+                fs::create_dir_all(path.join("saves")).expect("Failed to create saves directory");
+            }
             return GameType::Java;
         } else if path.join("minecraftWorlds").exists() {
             return GameType::Bedrock;

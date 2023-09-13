@@ -26,8 +26,12 @@ pub fn create_worlds_database() -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn open_world_in_explorer(handle: tauri::AppHandle, world_id: &str) -> Result<(), String> {
-    let path_str = get_world_by_id(world_id, Some(true))?.to_string();
+pub fn open_world_in_explorer(
+    handle: tauri::AppHandle,
+    world_id: &str,
+    category: Option<&str>,
+) -> Result<(), String> {
+    let path_str = get_world_by_id(world_id, Some(true), category)?.to_string();
     let path_str = path_str.replace(" ", r" ").replace("\"", "");
 
     let path = PathBuf::from(path_str);

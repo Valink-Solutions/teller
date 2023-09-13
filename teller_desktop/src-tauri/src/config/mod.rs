@@ -28,7 +28,7 @@ pub async fn get_save_folders(handle: tauri::AppHandle) -> Result<DirectorySetti
 }
 
 #[tauri::command]
-pub fn get_folder_path(dir_name: &str) -> Option<PathBuf> {
+pub fn get_folder_path(dir_name: &str, category: Option<&str>) -> Option<PathBuf> {
     info!("Getting path for {}", dir_name);
 
     match dir_name == "default" {
@@ -46,15 +46,24 @@ pub fn get_folder_path(dir_name: &str) -> Option<PathBuf> {
         }
     };
 
-    let path = match saves_config.paths.get(dir_name) {
-        Some(p) => p.to_owned(),
-        None => {
-            error!("Could not find path for {}", dir_name);
-            return None;
+    match category {
+        Some(category) => {
+            if let Some(vault_entries) = saves_config.categories.get(category) {
+                if let Some(path) = vault_entries.paths.get(dir_name) {
+                    return Some(path.clone());
+                }
+            }
         }
-    };
+        None => {
+            for (_category, vault_entries) in saves_config.categories.iter() {
+                if let Some(path) = vault_entries.paths.get(dir_name) {
+                    return Some(path.clone());
+                }
+            }
+        }
+    }
 
-    Some(path)
+    None
 }
 
 #[tauri::command]

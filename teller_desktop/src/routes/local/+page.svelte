@@ -13,7 +13,10 @@
 	$: {
 		currentDir.subscribe(async (value) => {
 			try {
-				const result = await invoke('get_folder_path', { dirName: value });
+				const result = await invoke('get_folder_path', {
+					dirName: value.path,
+					category: value.category
+				});
 				if (result) {
 					world_path = result as string;
 				} else {
@@ -29,7 +32,10 @@
 	}
 
 	onMount(async () => {
-		const result = await invoke('get_folder_path', { dirName: $currentDir });
+		const result = await invoke('get_folder_path', {
+			dirName: $currentDir.path,
+			category: $currentDir.category
+		});
 		if (result) {
 			world_path = result as string;
 		} else {

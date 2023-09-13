@@ -17,23 +17,31 @@ use teller::{
 use crate::config::get_minecraft_save_location;
 
 #[tauri::command]
-pub fn get_world_by_id(world_id: &str, return_path: Option<bool>) -> Result<Value, String> {
+pub fn get_world_by_id(
+    world_id: &str,
+    return_path: Option<bool>,
+    category: Option<&str>,
+) -> Result<Value, String> {
     let config_dir = get_config_folder();
 
     info!("Searching for world: {}", world_id);
 
     let mut paths: Vec<PathBuf> = Vec::new();
 
-    match get_minecraft_save_location() {
-        Some(path) => paths.push(path),
-        None => {}
-    };
-
     match get_saves_config(&config_dir) {
         Ok(config) => {
-            config.paths.iter().for_each(|(_, path)| {
-                paths.push(PathBuf::from(path));
-            });
+            if let Some(category) = category {
+                if category == "default" {
+                    match get_minecraft_save_location() {
+                        Some(path) => paths.push(path),
+                        None => {}
+                    };
+                } else if let Some(vault_entries) = config.categories.get(category) {
+                    for (_, path) in vault_entries.paths.iter() {
+                        paths.push(path.clone());
+                    }
+                }
+            }
         }
         Err(_e) => {}
     };

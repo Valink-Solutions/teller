@@ -21,7 +21,10 @@
 
 	onMount(async () => {
 		try {
-			const res = await invoke('get_world_by_id', { worldId: $page.params.worldId });
+			const res = await invoke('get_world_by_id', {
+				worldId: $page.params.worldId,
+				category: $page.params.categoryName
+			});
 			world_data = res;
 		} catch (err) {
 			console.log(err);
@@ -35,7 +38,10 @@
 	const handleClick = async () => {
 		try {
 			console.log('Opening world folder');
-			await invoke('open_world_in_explorer', { worldId: $page.params.worldId });
+			await invoke('open_world_in_explorer', {
+				worldId: $page.params.worldId,
+				category: $page.params.categoryName
+			});
 		} catch (err) {
 			console.error(err);
 		}
@@ -97,63 +103,66 @@
 			</div>
 		</div>
 
-		<div class="flex flex-row justify-between items-center">
-			<h1 class="border-l-4 pl-2 border-primary text-lg font-bold">Players</h1>
+		{#if world_data.players.length >= 1}
+			<div class="flex flex-row justify-between items-center">
+				<h1 class="border-l-4 pl-2 border-primary text-lg font-bold">Players</h1>
 
-			<div class="flex flex-row justify-center items-center space-x-4">
-				<button
-					on:click={() => (currentPage = Math.max(1, currentPage - 1))}
-					class="btn btn-sm btn-primary"
-					disabled={currentPage === 1}>Prev</button
-				>
-				<span class="text-sm font-bold">Page {currentPage}</span>
-				<button
-					on:click={() =>
-						(currentPage = Math.min(
-							Math.ceil(world_data.players.length / itemsPerPage),
-							currentPage + 1
-						))}
-					class="btn btn-sm btn-primary"
-					disabled={currentPage === Math.ceil(world_data.players.length / itemsPerPage)}
-					>Next</button
-				>
-			</div>
-		</div>
-		<div class="grid grid-cols-2 xl:grid-cols-3 gap-4 2xl:align-start">
-			{#each paginatedPlayers as player}
-				<div class="card p-4 flex flex-row justify-between select-none">
-					<div class="flex flex-row items-center">
-						<img
-							src={player.avatar
-								? player.avatar
-								: 'https://api.mineatar.io/face/8667ba71b85a4004af54457a9734eed7?scale=32&overlay=false'}
-							alt={player.username ? player.username : 'Default Icon'}
-							class="w-8 h-8 mr-2"
-						/>
-						{player.username ? player.username : player.id}
-						<!-- <span class="text-xs">{player.id}</span> -->
-					</div>
-
-					<a
-						class="btn btn-ghost"
-						href={`/local/worlds/${$page.params.worldId}/player/${player.id}`}
+				<div class="flex flex-row justify-center items-center space-x-4">
+					<button
+						on:click={() => (currentPage = Math.max(1, currentPage - 1))}
+						class="btn btn-sm btn-primary"
+						disabled={currentPage === 1}>Prev</button
 					>
-						<Icon icon="mdi:arrow-right" />
-					</a>
+					<span class="text-sm font-bold">Page {currentPage}</span>
+					<button
+						on:click={() =>
+							(currentPage = Math.min(
+								Math.ceil(world_data.players.length / itemsPerPage),
+								currentPage + 1
+							))}
+						class="btn btn-sm btn-primary"
+						disabled={currentPage === Math.ceil(world_data.players.length / itemsPerPage)}
+						>Next</button
+					>
+				</div>
+			</div>
 
-					<!-- <button class="btn btn-ghost" on:click={() => handleClick(player)}>
+			<div class="grid grid-cols-2 xl:grid-cols-3 gap-4 2xl:align-start">
+				{#each paginatedPlayers as player}
+					<div class="card p-4 flex flex-row justify-between select-none">
+						<div class="flex flex-row items-center">
+							<img
+								src={player.avatar
+									? player.avatar
+									: 'https://api.mineatar.io/face/8667ba71b85a4004af54457a9734eed7?scale=32&overlay=false'}
+								alt={player.username ? player.username : 'Default Icon'}
+								class="w-8 h-8 mr-2"
+							/>
+							{player.username ? player.username : player.id}
+							<!-- <span class="text-xs">{player.id}</span> -->
+						</div>
+
+						<a
+							class="btn btn-ghost"
+							href={`/local/worlds/${$page.params.categoryName}/${$page.params.worldId}/player/${player.id}`}
+						>
+							<Icon icon="mdi:arrow-right" />
+						</a>
+
+						<!-- <button class="btn btn-ghost" on:click={() => handleClick(player)}>
 						<Icon icon="mdi:arrow-right" />
 					</button> -->
-				</div>
-			{/each}
-		</div>
+					</div>
+				{/each}
+			</div>
+		{/if}
 
 		{#if world_data.game_rules}
 			<h1 class="border-l-4 pl-2 border-primary text-lg font-bold">Game Rules</h1>
 			<div class="grid grid-cols-2 xl:grid-cols-3 gap-4">
 				{#each Object.entries(world_data.game_rules) as [rule, value]}
 					<div class="card flex flex-row p-2 justify-between items-center bg-slate-200">
-						<span class="font-semibold">{rule}:</span>
+						<span class="text-sm font-semibold">{rule}:</span>
 						{#if value === true || value === false}
 							<div class="flex flex-row w-12 relative">
 								<div

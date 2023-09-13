@@ -17,11 +17,13 @@
 		try {
 			const world_res = await invoke('get_world_by_id', {
 				worldId: $page.params.worldId,
-				returnPath: true
+				returnPath: true,
+				category: $page.params.categoryName
 			});
 			world_data = world_res;
 
 			if (world_data) {
+				console.log(world_data);
 				const player_res = await invoke('grab_player_from_uuid', {
 					playerUuid: $page.params.playerId,
 					path: world_data
@@ -43,7 +45,10 @@
 </script>
 
 <div class="flex flex-col justify-start w-full px-4 gap-4">
-	<button class="btn btn-ghost w-20" on:click={() => goto(`/local/worlds/${$page.params.worldId}`)}>
+	<button
+		class="btn btn-ghost w-20"
+		on:click={() => goto(`/local/worlds/${$page.params.categoryName}/${$page.params.worldId}`)}
+	>
 		<Icon icon="mdi:arrow-left" class="w-6 h-6" />
 	</button>
 
