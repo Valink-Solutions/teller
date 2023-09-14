@@ -6,7 +6,7 @@
 	import { invoke } from '@tauri-apps/api/tauri';
 	import { listen } from '@tauri-apps/api/event';
 	import type { DirectorySettings } from '$lib/utils';
-	import { currentDir, type CurrentDir } from '../../stores';
+	import { currentDir, type CurrentDir } from '$lib/stores';
 
 	let sideBar: HTMLElement | null = null;
 

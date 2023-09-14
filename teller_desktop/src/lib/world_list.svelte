@@ -5,7 +5,7 @@
 	import { invoke } from '@tauri-apps/api/tauri';
 	import Icon from '@iconify/svelte';
 	import { open } from '@tauri-apps/api/shell';
-	import type { CurrentDir } from '../stores';
+	import type { CurrentDir } from './stores';
 
 	let worlds: WorldItem[] = [];
 

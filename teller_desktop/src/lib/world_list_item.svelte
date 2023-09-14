@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
 	import { formatBytes, type WorldItem } from './utils';
-	import type { CurrentDir } from '../stores';
+	import type { CurrentDir } from './stores';
 
 	export let world: WorldItem;
 	export let currentDir: CurrentDir = { path: 'default', category: null };

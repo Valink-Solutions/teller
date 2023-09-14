@@ -5,7 +5,8 @@
 	import { invoke } from '@tauri-apps/api/tauri';
 	import { onMount } from 'svelte';
 	import dayjs from 'dayjs';
-	import { open } from '@tauri-apps/api/shell';
+	import { addToCache, removeFromCache, worldCache } from '$lib/stores';
+	import type { WorldLevelData } from '$lib/utils';
 	let world_data: any;
 
 	let currentPage = 1;
@@ -21,15 +22,24 @@
 
 	onMount(async () => {
 		try {
-			const res = await invoke('get_world_by_id', {
-				worldId: $page.params.worldId,
-				category: $page.params.categoryName
-			});
-			world_data = res;
+			const cacheKey = `${$page.params.worldId}-${$page.params.categoryName}`;
+			const cacheItem = $worldCache.find((item) => item.name === cacheKey);
+
+			if (cacheItem) {
+				world_data = cacheItem.data;
+			} else {
+				const res = await invoke('get_world_by_id', {
+					worldId: $page.params.worldId,
+					category: $page.params.categoryName
+				});
+				if (res) {
+					world_data = res;
+					addToCache({ name: cacheKey, data: res as WorldLevelData });
+				}
+			}
 		} catch (err) {
 			console.log(err);
 			error = true;
-			// goto('/local');
 		} finally {
 			loading = false;
 		}

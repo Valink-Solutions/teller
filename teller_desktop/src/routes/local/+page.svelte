@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/tauri';
 	import { onMount } from 'svelte';
-	import { currentDir } from '../../stores';
+	import { currentDir } from '$lib/stores';
 	import WorldList from '$lib/world_list.svelte';
 	import Icon from '@iconify/svelte';
 
