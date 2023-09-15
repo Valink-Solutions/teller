@@ -4,9 +4,10 @@
 	import { goto } from '$app/navigation';
 	import Icon from '@iconify/svelte';
 	import { invoke } from '@tauri-apps/api/tauri';
+	import { WebviewWindow } from '@tauri-apps/api/window';
 	import { listen } from '@tauri-apps/api/event';
 	import type { DirectorySettings } from '$lib/utils';
-	import { currentDir, type CurrentDir } from '$lib/stores';
+	import { currentDir, directories, type CurrentDir } from '$lib/stores';
 
 	let sideBar: HTMLElement | null = null;
 
@@ -19,6 +20,7 @@
 	invoke('get_save_folders').then((result) => {
 		if (result) {
 			save_paths = result as DirectorySettings;
+
 			let tempPaths: string[] = [];
 			for (let category in save_paths.categories) {
 				tempPaths = Object.keys(save_paths.categories[category].paths);
@@ -58,6 +60,20 @@
 		currentDir.set(item);
 		goto(`/local`, { replaceState: true, invalidateAll: true });
 	};
+
+	const handleEditDirClick = () => {
+		const webview = new WebviewWindow('configure-saves-directories', {
+			url: 'config/setDirs'
+		});
+
+		webview.once('tauri://created', function () {
+			console.log('webview created');
+		});
+
+		webview.once('tauri://error', function (e) {
+			console.log(e);
+		});
+	};
 </script>
 
 <div class="flex flex-row max-h-screen max-w-screen" data-name="sidebar">
@@ -69,7 +85,12 @@
 			</div>
 
 			<div class="flex flex-col h-full gap-2">
-				<h2 class="w-full text-center text-xs">This Device</h2>
+				<div class="flex flex-row gap-2 items-center w-full justify-center">
+					<h2 class="text-center text-xs">This Device</h2>
+					<button on:click={handleEditDirClick}>
+						<Icon icon="mdi:pencil" />
+					</button>
+				</div>
 				<div class="max-h-[500px] overflow-hidden overflow-y-auto">
 					<ul class="menu menu-vertical min-w-[190px] w-full rounded-box gap-2">
 						<li>

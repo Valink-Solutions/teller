@@ -77,6 +77,17 @@
 			},
 			animation: 200
 		});
+
+		try {
+			let savesFolders = await invoke('load_saves_folders');
+			if (typeof savesFolders === 'string') {
+				console.error(`Failed to load saves folders: ${savesFolders}`);
+			} else {
+				directorySettings.set(savesFolders as DirectorySettings);
+			}
+		} catch (error) {
+			console.error(`Error invoking load_saves_folders: ${error}`);
+		}
 	});
 
 	afterUpdate(() => {
@@ -165,7 +176,7 @@
 	const writeDirectories = async () => {
 		console.log($directorySettings);
 		try {
-			await invoke('create_saves_config', { settingsData: $directorySettings });
+			await invoke('update_saves_config', { settingsData: $directorySettings });
 
 			await emit('saves_config_updated');
 
@@ -180,7 +191,7 @@
 	<button on:click={addDirectory} class="btn btn-secondary">Add Directory</button>
 
 	<div class="flex flex-grow flex-col gap-4 min-h-full h-full overflow-auto" id="categories">
-		{#each Object.entries($directorySettings.categories) as [category, value], i}
+		{#each Object.entries($directorySettings.categories) as [category, value], i (category)}
 			<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 			<div data-category={category} class="collapse collapse-arrow max-w-full">
 				<input id={`checkbox-${category}`} type="checkbox" />
@@ -209,7 +220,7 @@
 					</span>
 				</div>
 				<div id={category} class="collapse-content flex flex-col max-w-full gap-2">
-					{#each Object.entries(value.paths) as [pathName, pathValue]}
+					{#each Object.entries(value.paths) as [pathName, pathValue] (pathName)}
 						<div
 							data-path={pathName}
 							data-path-data={pathValue}
