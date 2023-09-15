@@ -1,4 +1,4 @@
-import type { WorldLevelData } from '$lib/utils';
+import type { WorldItem, WorldLevelData } from '$lib/utils';
 import { writable, type Writable } from 'svelte/store';
 
 interface Directory {
@@ -22,7 +22,7 @@ export interface WorldCacheItem {
 
 export let worldCache = writable<WorldCacheItem[]>([]);
 
-export function addToCache(item: WorldCacheItem) {
+export function addToWorldCache(item: WorldCacheItem) {
 	worldCache.update((cache) => {
 		cache.push(item);
 
@@ -34,7 +34,7 @@ export function addToCache(item: WorldCacheItem) {
 	});
 }
 
-export function removeFromCache() {
+export function removeFromWorldCache() {
 	worldCache.update((cache) => {
 		if (cache.length > 0) {
 			cache.shift();
@@ -42,3 +42,15 @@ export function removeFromCache() {
 		return cache;
 	});
 }
+
+export interface WorldListCacheItem {
+	category: string;
+	instance: string;
+	data: WorldItem[];
+}
+
+export let worldListCache = writable<WorldListCacheItem>({
+	category: '',
+	instance: '',
+	data: []
+});

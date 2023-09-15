@@ -5,7 +5,7 @@
 	import { invoke } from '@tauri-apps/api/tauri';
 	import { onMount } from 'svelte';
 	import dayjs from 'dayjs';
-	import { addToCache, removeFromCache, worldCache } from '$lib/stores';
+	import { addToWorldCache, worldCache } from '$lib/stores';
 	import type { WorldLevelData } from '$lib/utils';
 	let world_data: any;
 
@@ -34,7 +34,7 @@
 				});
 				if (res) {
 					world_data = res;
-					addToCache({ name: cacheKey, data: res as WorldLevelData });
+					addToWorldCache({ name: cacheKey, data: res as WorldLevelData });
 				}
 			}
 		} catch (err) {

@@ -5,7 +5,7 @@
 	import { invoke } from '@tauri-apps/api/tauri';
 	import Icon from '@iconify/svelte';
 	import { open } from '@tauri-apps/api/shell';
-	import type { CurrentDir } from './stores';
+	import { worldListCache, type CurrentDir } from './stores';
 
 	let worlds: WorldItem[] = [];
 
@@ -19,12 +19,24 @@
 
 	onMount(async () => {
 		try {
-			let result = await invoke('grab_local_worlds_list', { localSavesPath: saves_path });
-
-			if (Array.isArray(result)) {
-				worlds = result as WorldItem[];
+			if (
+				$worldListCache.category === (currentDir.category as string) &&
+				$worldListCache.instance === currentDir.path
+			) {
+				worlds = $worldListCache.data;
 			} else {
-				console.log(result);
+				let result = await invoke('grab_local_worlds_list', { localSavesPath: saves_path });
+
+				if (Array.isArray(result)) {
+					worlds = result as WorldItem[];
+					worldListCache.set({
+						category: currentDir.category as string,
+						instance: currentDir.path,
+						data: result as WorldItem[]
+					});
+				} else {
+					console.log(result);
+				}
 			}
 		} catch (err) {
 			console.log(err);
@@ -38,19 +50,32 @@
 		loading = true;
 		error = false;
 
-		invoke('grab_local_worlds_list', { localSavesPath: saves_path })
-			.then((result) => {
-				if (Array.isArray(result)) {
-					worlds = result as WorldItem[];
-					loading = false;
-				} else {
-					console.log(result);
-				}
-			})
-			.catch((err) => {
-				console.log(err);
-				error = true;
-			});
+		if (
+			$worldListCache.category === (currentDir.category as string) &&
+			$worldListCache.instance === currentDir.path
+		) {
+			worlds = $worldListCache.data;
+			loading = false;
+		} else {
+			invoke('grab_local_worlds_list', { localSavesPath: saves_path })
+				.then((result) => {
+					if (Array.isArray(result)) {
+						worlds = result as WorldItem[];
+						worldListCache.set({
+							category: currentDir.category as string,
+							instance: currentDir.path,
+							data: result as WorldItem[]
+						});
+						loading = false;
+					} else {
+						console.log(result);
+					}
+				})
+				.catch((err) => {
+					console.log(err);
+					error = true;
+				});
+		}
 	}
 
 	async function openInstanceFolder() {
