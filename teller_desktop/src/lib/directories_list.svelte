@@ -2,7 +2,7 @@
 	import { dialog, invoke } from '@tauri-apps/api';
 	import { appWindow } from '@tauri-apps/api/window';
 	import { emit } from '@tauri-apps/api/event';
-	import { directories, localDirs } from '../stores';
+	import { directories, localDirs } from '$lib/stores';
 
 	// If you can find a better way to do this please implement it
 	// I'm begging you

@@ -155,7 +155,6 @@ fn main() {
                 ])
                 .build(),
         )
-        .plugin(tauri_plugin_sql::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
             grab_local_worlds_list,
             teller_desktop::backend::folder_handler::check_path_for_save_folders,
@@ -164,6 +163,8 @@ fn main() {
             teller_desktop::config::get_minecraft_save_location,
             teller_desktop::config::get_folder_path,
             teller_desktop::config::create_saves_config,
+            teller_desktop::config::update_saves_config,
+            teller_desktop::config::load_saves_folders,
             teller_desktop::backend::world_handler::get_world_by_id,
             teller_desktop::backend::world_handler::grab_player_meta_from_uuids,
             teller_desktop::backend::world_handler::grab_player_meta_from_uuid,

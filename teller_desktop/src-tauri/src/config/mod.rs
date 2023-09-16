@@ -28,7 +28,21 @@ pub async fn get_save_folders(handle: tauri::AppHandle) -> Result<DirectorySetti
 }
 
 #[tauri::command]
-pub fn get_folder_path(dir_name: &str) -> Option<PathBuf> {
+pub async fn load_saves_folders() -> Result<DirectorySettings, String> {
+    let config_dir = get_config_folder();
+
+    let saves_config = match get_saves_config(&config_dir) {
+        Ok(s) => s,
+        Err(e) => {
+            return Err(format!("Could not get saves config: {:?}", e));
+        }
+    };
+
+    Ok(saves_config)
+}
+
+#[tauri::command]
+pub fn get_folder_path(dir_name: &str, category: Option<&str>) -> Option<PathBuf> {
     info!("Getting path for {}", dir_name);
 
     match dir_name == "default" {
@@ -46,15 +60,24 @@ pub fn get_folder_path(dir_name: &str) -> Option<PathBuf> {
         }
     };
 
-    let path = match saves_config.paths.get(dir_name) {
-        Some(p) => p.to_owned(),
-        None => {
-            error!("Could not find path for {}", dir_name);
-            return None;
+    match category {
+        Some(category) => {
+            if let Some(vault_entries) = saves_config.categories.get(category) {
+                if let Some(path) = vault_entries.paths.get(dir_name) {
+                    return Some(path.clone());
+                }
+            }
         }
-    };
+        None => {
+            for (_category, vault_entries) in saves_config.categories.iter() {
+                if let Some(path) = vault_entries.paths.get(dir_name) {
+                    return Some(path.clone());
+                }
+            }
+        }
+    }
 
-    Some(path)
+    None
 }
 
 #[tauri::command]
@@ -105,6 +128,58 @@ pub fn create_saves_config(settings_data: DirectorySettings) -> Result<Directory
     }
 
     info!("Created config file at {:?}", config_path);
+
+    Ok(parsed_settings)
+}
+
+#[tauri::command]
+pub fn update_saves_config(settings_data: DirectorySettings) -> Result<DirectorySettings, String> {
+    let config_dir = get_config_folder();
+
+    let config_path = config_dir.join("local-directories.json");
+
+    info!("Updating config file at {:?}", config_path);
+
+    let settings = match config::Config::builder()
+        .add_source(config::File::from_str(
+            serde_json::to_string(&settings_data).unwrap().as_str(),
+            config::FileFormat::Json,
+        ))
+        .build()
+    {
+        Ok(s) => s,
+        Err(e) => {
+            error!("Could not load config file at {:?}: {:?}", config_path, e);
+            return Err(format!(
+                "Could not load config file at {:?}: {:?}",
+                config_path, e
+            ));
+        }
+    };
+
+    let parsed_settings = match settings.try_deserialize::<DirectorySettings>() {
+        Ok(s) => s,
+        Err(e) => {
+            error!("Could not parse config file at {:?}: {:?}", config_path, e);
+            return Err(format!(
+                "Could not parse config file at {:?}: {:?}",
+                config_path, e
+            ));
+        }
+    };
+
+    match fs::write(&config_path, serde_json::to_string(&settings_data).unwrap()) {
+        Ok(_) => (),
+        Err(e) => {
+            error!("Could not write config file at {:?}: {:?}", config_path, e);
+            return Err(format!(
+                "Could not write config file at {:?}: {:?}",
+                config_path, e
+            ));
+        }
+    }
+
+    info!("Updated config file at {:?}", config_path);
 
     Ok(parsed_settings)
 }

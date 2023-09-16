@@ -8,20 +8,24 @@ html,
 body {
 	font-family: 'Martian Mono', monospace;
 }
-
 /* This will apply to the scrollbar thumb (the part you drag) */
 ::-webkit-scrollbar-thumb {
 	background: rgba(0, 0, 0, 1); /* Change this to whatever color you want */
 	border-radius: 0;
-	box-shadow: 0px 4px 0px 0px rgba(0, 0, 0, 0.7);
+	box-shadow: 0px 2px 0px 0px rgba(0, 0, 0, 0.7);
+	margin: 0 1rem 0 0;
 }
-
-/* This will apply to the scrollbar track (the part the thumb moves along) */
 
 /* This will apply to the scrollbar itself */
 ::-webkit-scrollbar {
-	width: 12px;
+	width: 8px;
+	height: 8px; /* Make horizontal scrollbar the same size as vertical */
 }
+
+/* This will apply to the horizontal scrollbar */
+/* ::-webkit-scrollbar-track {
+	padding: 0 1rem 0 0;
+}  */
 
 [data-theme='neubrutalism'] .btn {
 	border-width: 4px;

@@ -1,8 +1,10 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
 	import { formatBytes, type WorldItem } from './utils';
+	import type { CurrentDir } from './stores';
 
 	export let world: WorldItem;
+	export let currentDir: CurrentDir = { path: 'default', category: null };
 </script>
 
 <li class="card flex flex-row w-full bg-base-100 shadow-xl max-h-fit">
@@ -18,10 +20,13 @@
 		/>
 	</figure>
 	<div class="flex flex-row gap-3 p-3 w-full justify-between items-center">
-		<div class="flex flex-row items-center justify-between">
-			<h2 class="font-bold md:w-72">
-				{world.name.length > 22 ? world.name.slice(0, 22) + '...' : world.name}
-			</h2>
+		<div class="flex flex-row items-center justify-between gap-2">
+			<div class="w-56 xl:w-80 2xl:w-96">
+				<h2 class="font-bold w-full overflow-hidden overflow-ellipsis whitespace-nowrap">
+					{world.name}
+				</h2>
+			</div>
+
 			<span class="badge badge-primary badge-xs font-semibold whitespace-nowrap w-24"
 				>{formatBytes(world.size)}</span
 			>
@@ -41,7 +46,10 @@
 				<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 				<ul tabindex="0" class="dropdown-content z-[1] menu p-2 bg-base-100 rounded-box w-52">
 					<li>
-						<a href={`/local/worlds/${world.id}`} class="flex flex-row items-center">
+						<a
+							href={`/local/worlds/${currentDir.category}/${world.id}`}
+							class="flex flex-row items-center"
+						>
 							<Icon icon="mdi:pencil-outline" class="mr-1" />
 							Quick Edit
 						</a>
@@ -58,7 +66,9 @@
 			<div class="join">
 				<button class="btn btn-sm join-item btn-disabled" disabled>Share</button>
 				<button class="btn btn-sm join-item btn-disabled" disabled>Backup</button>
-				<a href={`/local/worlds/${world.id}`} class="btn btn-sm join-item">View</a>
+				<a href={`/local/worlds/${currentDir.category}/${world.id}`} class="btn btn-sm join-item"
+					>View</a
+				>
 			</div>
 		</div>
 	</div>
