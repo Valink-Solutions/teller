@@ -155,7 +155,6 @@ fn main() {
                 ])
                 .build(),
         )
-        .plugin(tauri_plugin_sql::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
             grab_local_worlds_list,
             teller_desktop::backend::folder_handler::check_path_for_save_folders,

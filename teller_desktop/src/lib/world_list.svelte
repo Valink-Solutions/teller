@@ -10,7 +10,6 @@
 	let worlds: WorldItem[] = [];
 
 	export let saves_path = '';
-	let prevPathName = '';
 
 	export let currentDir: CurrentDir = { path: 'default', category: null };
 
@@ -87,7 +86,7 @@
 	<div class="flex flex-row p-1 w-full h-fit items-center gap-2 align-top">
 		<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 		<h1
-			class="border-l-4 pl-2 w-fit max-w-[170px] capitalize border-primary my-2 whitespace-nowrap"
+			class="border-l-4 pl-2 w-fit max-w-[240px] capitalize border-primary my-2 whitespace-nowrap text-elipsis overflow-hidden overflow-ellipsis"
 		>
 			{currentDir.path}
 		</h1>
