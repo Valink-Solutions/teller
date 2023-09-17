@@ -23,7 +23,7 @@
 	const addDirectory = async () => {
 		let path = await dialog.open({ directory: true });
 		if (typeof path === 'string') {
-			await invoke('check_path_for_save_folders', { path: path })
+			await invoke('plugin:folder_handler|check_path_for_save_folders', { path: path })
 				.then((res) => {
 					if (res instanceof Array) {
 						// for each save location, add it to the list
@@ -79,7 +79,7 @@
 		});
 
 		try {
-			let savesFolders = await invoke('load_saves_folders');
+			let savesFolders = await invoke('plugin:config|load_saves_folders');
 			if (typeof savesFolders === 'string') {
 				console.error(`Failed to load saves folders: ${savesFolders}`);
 			} else {
@@ -176,7 +176,7 @@
 	const writeDirectories = async () => {
 		console.log($directorySettings);
 		try {
-			await invoke('update_saves_config', { settingsData: $directorySettings });
+			await invoke('plugin:config|update_saves_config', { settingsData: $directorySettings });
 
 			await emit('saves_config_updated');
 

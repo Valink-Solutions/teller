@@ -16,6 +16,22 @@ use teller::{
 
 use crate::config::get_minecraft_save_location;
 
+use tauri::{
+    plugin::{Builder, TauriPlugin},
+    Wry,
+};
+
+pub fn init() -> TauriPlugin<Wry> {
+    Builder::new("world_handler")
+        .invoke_handler(tauri::generate_handler![
+            get_world_by_id,
+            grab_player_meta_from_uuids,
+            grab_player_meta_from_uuid,
+            grab_player_from_uuid
+        ])
+        .build()
+}
+
 #[tauri::command]
 pub fn get_world_by_id(
     world_id: &str,
@@ -93,7 +109,7 @@ pub fn get_world_by_id(
 }
 
 #[tauri::command]
-pub fn grab_player_meta_from_uuids(
+fn grab_player_meta_from_uuids(
     player_data_list: Vec<PlayerData>,
 ) -> Result<HashMap<String, Value>, String> {
     info!("Fetching  {} player's meta data", player_data_list.len());
@@ -107,7 +123,7 @@ pub fn grab_player_meta_from_uuids(
 }
 
 #[tauri::command]
-pub fn grab_player_meta_from_uuid(player_uuid: String) -> Result<Value, String> {
+fn grab_player_meta_from_uuid(player_uuid: String) -> Result<Value, String> {
     info!("Fetching player meta data with UUID: {}", player_uuid);
 
     let player_meta_data = match fetch_player_data_from_uuid(player_uuid) {
@@ -119,7 +135,7 @@ pub fn grab_player_meta_from_uuid(player_uuid: String) -> Result<Value, String> 
 }
 
 #[tauri::command]
-pub fn grab_player_from_uuid(player_uuid: String, path: &Path) -> Result<PlayerData, String> {
+fn grab_player_from_uuid(player_uuid: String, path: &Path) -> Result<PlayerData, String> {
     info!("Fetching player data with UUID: {}", player_uuid);
 
     let game_type = is_minecraft_world(path);

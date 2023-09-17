@@ -10,10 +10,16 @@ use serde_json::{json, Value};
 use uuid::Uuid;
 
 use crate::utils::{
-    encode_image_to_base64, player_handler::fetch_player_data_from_uuid, GameRules, WorldLevelData,
+    calculate_dir_size, encode_image_to_base64, player_handler::fetch_player_data_from_uuid,
+    GameRules, WorldLevelData,
 };
 
-use super::{is_minecraft_folder, is_minecraft_world, GameType};
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum GameType {
+    Java,
+    Bedrock,
+    None,
+}
 
 pub fn create_vault_file(vault_data: Value, world_path: &PathBuf) -> Result<(), String> {
     info!("Creating vault file for: {:?}", world_path);
@@ -129,6 +135,108 @@ pub fn get_vault_id(path: &PathBuf) -> Result<String, String> {
     Ok(vault_id.to_string())
 }
 
+// Minecraft save finder
+
+pub fn is_minecraft_world(path: &Path) -> GameType {
+    if !path.is_dir() {
+        return GameType::None;
+    }
+
+    let java_files = ["level.dat", "region", "data"];
+    let bedrock_files = ["level.dat", "db"];
+
+    let is_java = java_files.iter().all(|file| path.join(file).exists());
+    let is_bedrock = bedrock_files.iter().all(|file| path.join(file).exists());
+
+    if is_java {
+        info!("Found java world at {:?}", path);
+        return GameType::Java;
+    } else if is_bedrock {
+        info!("Found bedrock world at {:?}", path);
+        return GameType::Bedrock;
+    } else {
+        error!(
+            "Could not determine if path is a minecraft world: {:?}",
+            path
+        );
+
+        return GameType::None;
+    }
+}
+
+pub fn is_minecraft_folder(path: &Path) -> GameType {
+    if path.is_dir() {
+        if path.file_name().unwrap() == ".minecraft" {
+            if !path.join("saves").exists() {
+                fs::create_dir_all(path.join("saves")).expect("Failed to create saves directory");
+            }
+            return GameType::Java;
+        } else if path.join("minecraftWorlds").exists() {
+            return GameType::Bedrock;
+        }
+    }
+
+    error!(
+        "Could not determine if path is a minecraft folder: {:?}",
+        path
+    );
+
+    GameType::None
+}
+
+pub fn recursive_world_search(
+    path: &Path,
+    depth: usize,
+    max_depth: usize,
+    save_folders: &mut Vec<PathBuf>,
+) -> Result<(), String> {
+    if depth > max_depth {
+        return Ok(());
+    }
+
+    if !path.exists() {
+        return Err(format!("Path {:?} does not exist", path));
+    }
+
+    match is_minecraft_world(path) {
+        GameType::Java => {
+            save_folders.push(path.parent().unwrap().to_path_buf());
+        }
+        GameType::Bedrock => {
+            save_folders.push(path.parent().unwrap().to_path_buf());
+        }
+        GameType::None => match is_minecraft_folder(path) {
+            GameType::Java => {
+                save_folders.push(path.join("saves"));
+            }
+            GameType::Bedrock => {
+                save_folders.push(path.join("minecraftWorlds"));
+            }
+            GameType::None => {
+                if let Ok(entries) = path.read_dir() {
+                    for entry in entries {
+                        if let Ok(entry) = entry {
+                            let entry_path = entry.path();
+                            if entry_path.is_dir() {
+                                recursive_world_search(
+                                    &entry_path,
+                                    depth + 1,
+                                    max_depth,
+                                    save_folders,
+                                )?;
+                            }
+                        }
+                    }
+                }
+            }
+        },
+    }
+
+    Ok(())
+}
+
+// Data parsing & processing
+
 pub fn read_dat_file(
     file_path: PathBuf,
     game_type: GameType,
@@ -154,6 +262,30 @@ pub fn read_dat_file(
         }
         GameType::None => Err("Game type not specified".into()),
     }
+}
+
+pub fn get_world_data(world_path: &PathBuf) -> Result<Value, String> {
+    info!("Getting world data for {:?}", world_path);
+
+    let game_type = is_minecraft_world(&world_path);
+
+    let level_dat_path = world_path.join("level.dat");
+
+    if !level_dat_path.exists() {
+        return Err("level.dat does not exist".to_string());
+    }
+
+    let level_data = match read_dat_file(level_dat_path, game_type) {
+        Ok(data) => data,
+        Err(e) => return Err(format!("Failed to parse level.dat: {:?}", e)),
+    };
+
+    let level_data = match parse_world_data(level_data, game_type) {
+        Ok(data) => data,
+        Err(e) => return Err(e),
+    };
+
+    Ok(level_data)
 }
 
 pub fn parse_world_data(world_data: NbtValue, game_type: GameType) -> Result<Value, String> {
@@ -688,94 +820,38 @@ pub fn parse_game_rules(
     }
 }
 
-pub fn get_world_data(world_path: &PathBuf) -> Result<Value, String> {
-    info!("Getting world data for {:?}", world_path);
+pub fn get_level_name(
+    level_dat_blob: NbtValue,
+    game_type: GameType,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let level_value: serde_json::Value = serde_json::to_value(level_dat_blob)?;
 
-    let game_type = is_minecraft_world(&world_path);
-
-    let level_dat_path = world_path.join("level.dat");
-
-    if !level_dat_path.exists() {
-        return Err("level.dat does not exist".to_string());
-    }
-
-    let level_data = match read_dat_file(level_dat_path, game_type) {
-        Ok(data) => data,
-        Err(e) => return Err(format!("Failed to parse level.dat: {:?}", e)),
-    };
-
-    let level_data = match parse_world_data(level_data, game_type) {
-        Ok(data) => data,
-        Err(e) => return Err(e),
-    };
-
-    Ok(level_data)
-}
-
-pub fn recursive_world_search(
-    path: &Path,
-    depth: usize,
-    max_depth: usize,
-    save_folders: &mut Vec<PathBuf>,
-) -> Result<(), String> {
-    if depth > max_depth {
-        return Ok(());
-    }
-
-    if !path.exists() {
-        return Err(format!("Path {:?} does not exist", path));
-    }
-
-    match is_minecraft_world(path) {
+    match game_type {
         GameType::Java => {
-            save_folders.push(path.parent().unwrap().to_path_buf());
+            let level_data = match level_value.get("Data") {
+                Some(data) => data,
+                None => return Err("Could not find Data in level.dat".into()),
+            };
+
+            let level_name = match level_data.get("LevelName") {
+                Some(name) => name.to_string(),
+                None => return Err("Could not find LevelName in level.dat".into()),
+            };
+
+            let parsed_level_name = level_name[1..level_name.len() - 1].to_string();
+
+            Ok(parsed_level_name)
         }
         GameType::Bedrock => {
-            save_folders.push(path.parent().unwrap().to_path_buf());
+            let level_name = match level_value.get("LevelName") {
+                Some(name) => name.to_string(),
+                None => return Err("Could not find levelName in level.dat".into()),
+            };
+
+            let parsed_level_name = level_name[1..level_name.len() - 1].to_string();
+
+            Ok(parsed_level_name)
         }
-        GameType::None => match is_minecraft_folder(path) {
-            GameType::Java => {
-                save_folders.push(path.join("saves"));
-            }
-            GameType::Bedrock => {
-                save_folders.push(path.join("minecraftWorlds"));
-            }
-            GameType::None => {
-                if let Ok(entries) = path.read_dir() {
-                    for entry in entries {
-                        if let Ok(entry) = entry {
-                            let entry_path = entry.path();
-                            if entry_path.is_dir() {
-                                recursive_world_search(
-                                    &entry_path,
-                                    depth + 1,
-                                    max_depth,
-                                    save_folders,
-                                )?;
-                            }
-                        }
-                    }
-                }
-            }
-        },
+        GameType::None => Err("Could not find game type".into()),
     }
-
-    Ok(())
-}
-
-pub fn calculate_dir_size<P: AsRef<Path>>(path: P) -> std::io::Result<u64> {
-    let mut size = 0;
-
-    for entry in fs::read_dir(path)? {
-        let dir = entry?;
-        let metadata = dir.metadata()?;
-
-        if metadata.is_dir() {
-            size += calculate_dir_size(dir.path())?;
-        } else {
-            size += metadata.len();
-        }
-    }
-
-    Ok(size)
 }

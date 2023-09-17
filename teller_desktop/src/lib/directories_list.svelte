@@ -16,7 +16,7 @@
 	const addDirectory = async () => {
 		let path = await dialog.open({ directory: true });
 		if (typeof path === 'string') {
-			await invoke('check_path_for_save_folders', { path: path })
+			await invoke('plugin:folder_handler|check_path_for_save_folders', { path: path })
 				.then((res) => {
 					if (res instanceof Array) {
 						// for each save location, add it to the list
@@ -37,7 +37,7 @@
 		} else if (typeof path === 'object' && path instanceof Array) {
 			// handle multiple directories
 			path.forEach(async (dir) => {
-				await invoke('check_path_for_save_folders', { path: path })
+				await invoke('plugin:folder_handler|check_path_for_save_folders', { path: path })
 					.then((res) => {
 						if (res instanceof Array) {
 							// for each save location, add it to the list

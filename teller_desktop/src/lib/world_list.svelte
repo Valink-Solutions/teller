@@ -24,7 +24,7 @@
 			) {
 				worlds = $worldListCache.data;
 			} else {
-				let result = await invoke('grab_local_worlds_list', { localSavesPath: saves_path });
+				let result = await invoke('plugin:folder_handler|grab_local_worlds_list', { localSavesPath: saves_path });
 
 				if (Array.isArray(result)) {
 					worlds = result as WorldItem[];
@@ -56,7 +56,7 @@
 			worlds = $worldListCache.data;
 			loading = false;
 		} else {
-			invoke('grab_local_worlds_list', { localSavesPath: saves_path })
+			invoke('plugin:folder_handler|grab_local_worlds_list', { localSavesPath: saves_path })
 				.then((result) => {
 					if (Array.isArray(result)) {
 						worlds = result as WorldItem[];

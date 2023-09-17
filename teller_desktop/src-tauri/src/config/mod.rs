@@ -3,8 +3,26 @@ use std::{env, fs, path::PathBuf};
 use log::{error, info};
 use teller::configuration::{get_config_folder, get_saves_config, DirectorySettings};
 
+use tauri::{
+    plugin::{Builder, TauriPlugin},
+    Wry,
+};
+
+pub fn init() -> TauriPlugin<Wry> {
+    Builder::new("config")
+        .invoke_handler(tauri::generate_handler![
+            get_save_folders,
+            load_saves_folders,
+            get_folder_path,
+            create_saves_config,
+            update_saves_config,
+            get_minecraft_save_location
+        ])
+        .build()
+}
+
 #[tauri::command]
-pub async fn get_save_folders(handle: tauri::AppHandle) -> Result<DirectorySettings, String> {
+async fn get_save_folders(handle: tauri::AppHandle) -> Result<DirectorySettings, String> {
     let config_dir = get_config_folder();
 
     // This simply opens the window and errors out allowing the user to configure the directories
@@ -28,7 +46,7 @@ pub async fn get_save_folders(handle: tauri::AppHandle) -> Result<DirectorySetti
 }
 
 #[tauri::command]
-pub async fn load_saves_folders() -> Result<DirectorySettings, String> {
+async fn load_saves_folders() -> Result<DirectorySettings, String> {
     let config_dir = get_config_folder();
 
     let saves_config = match get_saves_config(&config_dir) {
@@ -42,7 +60,7 @@ pub async fn load_saves_folders() -> Result<DirectorySettings, String> {
 }
 
 #[tauri::command]
-pub fn get_folder_path(dir_name: &str, category: Option<&str>) -> Option<PathBuf> {
+fn get_folder_path(dir_name: &str, category: Option<&str>) -> Option<PathBuf> {
     info!("Getting path for {}", dir_name);
 
     match dir_name == "default" {
@@ -81,7 +99,7 @@ pub fn get_folder_path(dir_name: &str, category: Option<&str>) -> Option<PathBuf
 }
 
 #[tauri::command]
-pub fn create_saves_config(settings_data: DirectorySettings) -> Result<DirectorySettings, String> {
+fn create_saves_config(settings_data: DirectorySettings) -> Result<DirectorySettings, String> {
     let config_dir = get_config_folder();
 
     let config_path = config_dir.join("local-directories.json");
@@ -133,7 +151,7 @@ pub fn create_saves_config(settings_data: DirectorySettings) -> Result<Directory
 }
 
 #[tauri::command]
-pub fn update_saves_config(settings_data: DirectorySettings) -> Result<DirectorySettings, String> {
+fn update_saves_config(settings_data: DirectorySettings) -> Result<DirectorySettings, String> {
     let config_dir = get_config_folder();
 
     let config_path = config_dir.join("local-directories.json");

@@ -13,7 +13,7 @@
 	$: {
 		currentDir.subscribe(async (value) => {
 			try {
-				const result = await invoke('get_folder_path', {
+				const result = await invoke('plugin:config|get_folder_path', {
 					dirName: value.path,
 					category: value.category
 				});
@@ -32,7 +32,7 @@
 	}
 
 	onMount(async () => {
-		const result = await invoke('get_folder_path', {
+		const result = await invoke('plugin:config|get_folder_path', {
 			dirName: $currentDir.path,
 			category: $currentDir.category
 		});
