@@ -9,9 +9,10 @@ use log::{error, info};
 use serde_json::{json, Value};
 use uuid::Uuid;
 
-use crate::utils::{
-    calculate_dir_size, encode_image_to_base64, player_handler::fetch_player_data_from_uuid,
-    GameRules, WorldLevelData,
+use crate::{
+    handlers::player::fetch_player_data_from_uuid,
+    types::world::{GameRules, WorldLevelData},
+    utils::{calculate_dir_size, encode_image_to_base64},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq)]

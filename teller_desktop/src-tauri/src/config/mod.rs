@@ -1,7 +1,7 @@
 use std::{env, fs, path::PathBuf};
 
 use log::{error, info};
-use teller::configuration::{get_config_folder, get_saves_config, DirectorySettings};
+use teller::handlers::config::{get_config_folder, get_saves_config, DirectorySettings};
 
 use tauri::{
     plugin::{Builder, TauriPlugin},

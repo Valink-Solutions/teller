@@ -5,7 +5,7 @@
 
 use std::env;
 use tauri_plugin_log::LogTarget;
-use teller::configuration::get_config_folder;
+use teller::handlers::config::get_config_folder;
 
 fn main() {
     let config_dir = get_config_folder();

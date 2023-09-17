@@ -6,11 +6,12 @@ use tauri::{
     Manager, Wry,
 };
 use teller::{
-    utils::{calculate_dir_size, encode_image_to_base64, WorldData},
-    world::{
+    handlers::world::{
         get_level_name, get_vault_id, is_minecraft_world, read_dat_file, recursive_world_search,
         GameType,
     },
+    types::world::WorldData,
+    utils::{calculate_dir_size, encode_image_to_base64},
 };
 
 pub fn init() -> TauriPlugin<Wry> {

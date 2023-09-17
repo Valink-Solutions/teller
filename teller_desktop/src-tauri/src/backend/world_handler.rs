@@ -6,12 +6,12 @@ use std::{
 use log::{error, info};
 use serde_json::Value;
 use teller::{
-    configuration::{get_config_folder, get_saves_config},
-    utils::{
-        player_handler::{fetch_player_data_from_uuid, fetch_players_meta_data},
-        PlayerData,
+    handlers::{
+        config::{get_config_folder, get_saves_config},
+        player::{fetch_player_data_from_uuid, fetch_players_meta_data},
+        world::{get_vault_id, is_minecraft_world, process_world_data},
     },
-    world::{get_vault_id, is_minecraft_world, process_world_data},
+    types::player::PlayerData,
 };
 
 use crate::config::get_minecraft_save_location;
@@ -140,7 +140,7 @@ fn grab_player_from_uuid(player_uuid: String, path: &Path) -> Result<PlayerData,
 
     let game_type = is_minecraft_world(path);
 
-    let player_data = match teller::utils::player_handler::grab_player_from_uuid(
+    let player_data = match teller::handlers::player::grab_player_from_uuid(
         player_uuid,
         &path.to_path_buf(),
         game_type,
