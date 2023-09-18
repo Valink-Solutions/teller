@@ -5,7 +5,7 @@ use uuid::Uuid;
 use std::{collections::HashMap, path::PathBuf};
 
 use crate::{
-    handlers::world::{parse_world_data, read_dat_file, GameType},
+    handlers::world::{is_minecraft_world, parse_world_data, read_dat_file, GameType},
     types::player::{Item, PlayerData},
 };
 
@@ -89,9 +89,10 @@ pub fn fetch_players_meta_data(
 pub fn grab_player_from_uuid(
     player_uuid: String,
     path: &PathBuf,
-    game_type: GameType,
 ) -> Result<PlayerData, Box<dyn std::error::Error>> {
     info!("Grabbing player from UUID: {}", player_uuid);
+
+    let game_type = is_minecraft_world(path);
 
     match game_type {
         GameType::Bedrock => {

@@ -8,12 +8,11 @@ use tauri_plugin_log::LogTarget;
 use teller::handlers::config::get_config_folder;
 
 fn main() {
-    let config_dir = get_config_folder();
     tauri::Builder::default()
         .plugin(
             tauri_plugin_log::Builder::default()
                 .targets([
-                    LogTarget::Folder(config_dir),
+                    LogTarget::Folder(get_config_folder()),
                     LogTarget::Stdout,
                     LogTarget::Webview,
                 ])
