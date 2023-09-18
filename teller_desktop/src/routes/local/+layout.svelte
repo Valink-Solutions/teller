@@ -7,7 +7,7 @@
 	import { WebviewWindow } from '@tauri-apps/api/window';
 	import { listen } from '@tauri-apps/api/event';
 	import type { DirectorySettings } from '$lib/utils';
-	import { currentDir, type CurrentDir, worldListCache } from '$lib/stores';
+	import { currentDir, type CurrentDir } from '$lib/stores';
 
 	let sideBar: HTMLElement | null = null;
 

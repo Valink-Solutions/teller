@@ -1,140 +1,210 @@
 <script lang="ts">
-	import { dialog, invoke } from '@tauri-apps/api';
-	import { appWindow } from '@tauri-apps/api/window';
-	import { emit } from '@tauri-apps/api/event';
-	import { directories, localDirs } from '$lib/stores';
+	import Sortable from 'sortablejs';
+	import { onMount, afterUpdate } from 'svelte';
+	import Icon from '@iconify/svelte';
+	import type { VaultEntries } from './utils';
+	import { directorySettings } from './stores';
 
 	// If you can find a better way to do this please implement it
 	// I'm begging you
 
-	directories.subscribe((value) => {
-		localDirs.set({ ...value });
+	let categories: Record<string, VaultEntries>;
+
+	directorySettings.subscribe((value) => {
+		categories = value.categories;
 	});
 
-	let directoryCount = 0;
+	const deleteDirectory = (category: string, path?: string) => {
+		directorySettings.update((dirs) => {
+			let newCategory = { ...dirs.categories };
+			if (newCategory[category]) {
+				if (path) {
+					// delete specific path from category
+					newCategory[category].paths = Object.fromEntries(
+						Object.entries(newCategory[category].paths).filter(([key, value]) => value !== path)
+					);
+				} else {
+					// delete entire category
+					delete newCategory[category];
+				}
+			}
+			return { ...dirs, categories: newCategory };
+		});
+	};
 
-	const addDirectory = async () => {
-		let path = await dialog.open({ directory: true });
-		if (typeof path === 'string') {
-			await invoke('plugin:folder_handler|check_path_for_save_folders', { path: path })
-				.then((res) => {
-					if (res instanceof Array) {
-						// for each save location, add it to the list
-						res.forEach((save_location) => {
-							if (!Object.values($directories).includes(save_location)) {
-								directoryCount++;
-								let name: string = `Local Vault ${directoryCount}`;
-								directories.update((dirs) => {
-									return { ...dirs, [name]: save_location };
-								});
+	onMount(async function () {
+		Sortable.create(document.getElementById('categories'), {
+			group: {
+				name: 'categories',
+				put: false,
+				pull: false
+			},
+			animation: 200
+		});
+	});
+
+	afterUpdate(() => {
+		Object.entries(categories).forEach(([category, _]) => {
+			const checkboxElement = document.getElementById(`checkbox-${category}`);
+			const categoryElement = document.getElementById(category);
+
+			if (categoryElement && checkboxElement && categoryElement.parentNode) {
+				const parentDiv = categoryElement.parentNode.parentNode;
+
+				Sortable.create(checkboxElement, {
+					group: {
+						name: 'paths',
+						put: true,
+						pull: true
+					},
+					onAdd: function (evt: any) {
+						// Get the old category from the evt.from.id
+						const oldCategory = evt.from.id;
+						// Get the path name from the evt.item.dataset.path
+						let pathName = evt.item.dataset.path;
+						// Get the path data from the evt.item.dataset.pathData
+						let pathData = evt.item.dataset.pathData;
+						let newPathName = pathName;
+						// Update the categories object
+						directorySettings.update((dirs) => {
+							let newCategory = { ...dirs.categories };
+							let copyCount = 1;
+							// Check if the new item has the same name as an item already in the list
+							while (newCategory[category].paths.hasOwnProperty(newPathName)) {
+								// Append " (copy x)" to the name
+								newPathName = `${pathName} (copy ${copyCount})`;
+								copyCount++;
 							}
+							// Add the path to the new category
+							newCategory[category].paths[newPathName] = pathData;
+							// Remove the path from the old category
+							delete newCategory[oldCategory].paths[evt.item.dataset.path];
+							return { ...dirs, categories: newCategory };
 						});
+						// Update the path in the DOM
+						evt.item.dataset.path = newPathName;
+						evt.item.dataset.pathData = pathData;
+						// Move the added item to the correct location in the DOM
+						categoryElement.appendChild(evt.item);
 					}
-				})
-				.catch((err) => {
-					console.error(err);
 				});
-		} else if (typeof path === 'object' && path instanceof Array) {
-			// handle multiple directories
-			path.forEach(async (dir) => {
-				await invoke('plugin:folder_handler|check_path_for_save_folders', { path: path })
-					.then((res) => {
-						if (res instanceof Array) {
-							// for each save location, add it to the list
-							res.forEach((save_location) => {
-								if (!Object.values($directories).includes(save_location)) {
-									directoryCount++;
-									let name: string = `Local Vault ${directoryCount}`;
-									directories.update((dirs) => {
-										return { ...dirs, [name]: save_location };
-									});
-								}
-							});
+
+				Sortable.create(categoryElement, {
+					group: {
+						name: 'paths',
+						put: true,
+						pull: true
+					},
+					onRemove: function (evt: any) {
+						if (!categoryElement.children.length) {
 						}
-					})
-					.catch((err) => {
-						console.error(err);
-					});
+					}
+				});
+			}
+		});
+	});
+
+	const updateCategoryName = (oldName: string, newName: string) => {
+		if (oldName !== newName) {
+			directorySettings.update((dirs) => {
+				let newCategory = { ...dirs.categories };
+				newCategory[newName] = newCategory[oldName];
+				delete newCategory[oldName];
+				return { ...dirs, categories: newCategory };
 			});
 		}
 	};
 
-	const removeEntry = (name: string) => {
-		directories.update((dirs) => {
-			const { [name]: _, ...rest } = dirs;
-			return rest;
-		});
-	};
-
-	const handleNameChange = (path: string, newName: string) => {
-		directories.update((dirs) => {
-			const oldName = Object.keys(dirs).find((key) => dirs[key] === path);
-			if (oldName) {
-				const { [oldName]: _, ...rest } = dirs;
-				return { ...rest, [newName]: path };
-			}
-			return dirs;
-		});
-	};
-
-	const writeDirectories = async () => {
-		let settings_data = { paths: $localDirs };
-		console.log(settings_data);
-		try {
-			await invoke('create_saves_config', { settingsData: settings_data });
-
-			await emit('saves_config_updated');
-
-			await appWindow.close();
-		} catch (error) {
-			console.error(error);
-		}
-	};
-
-	let inputValues: { [key: string]: string } = {};
-
-	const handleBlur = (path: string, newName: string) => {
-		if (newName !== inputValues[path]) {
-			handleNameChange(path, newName);
-			inputValues[path] = newName;
+	const updatePathName = (category: string, oldName: string, newName: string) => {
+		if (oldName !== newName) {
+			directorySettings.update((dirs) => {
+				let newCategory = { ...dirs.categories };
+				newCategory[category].paths[newName] = newCategory[category].paths[oldName];
+				delete newCategory[category].paths[oldName];
+				return { ...dirs, categories: newCategory };
+			});
 		}
 	};
 </script>
 
-<div class="card min-h-full">
-	<div class="card-body">
-		<p class="text-center">
-			Teller will attempt to walk through the selected directories and find all Minecraft save
-			folders. If you have multiple save folders in a single directory, you can add them all at once
-			by selecting the parent.
-		</p>
-
-		<button on:click={addDirectory} class="btn btn-secondary">Add Directory</button>
-
-		<div class="flex flex-col gap-2">
-			{#each Object.entries($localDirs) as [name, path]}
-				<div class="flex flex-row gap-2 justify-between items-center w-full h-fit">
-					<input
-						bind:value={name}
-						on:blur={(e) => {
-							if (typeof path === 'string' && e.target instanceof HTMLInputElement) {
-								handleBlur(path, e.target.value);
-							}
-						}}
-						class="input"
-					/>
-					<div class="overflow-x-scroll overflow-y-hidden">
-						<span class="w-full whitespace-nowrap">{path}</span>
+<div class="flex flex-grow flex-col gap-4 min-h-full h-full overflow-auto" id="categories">
+	{#each Object.entries($directorySettings.categories) as [category, value], i (category)}
+		<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
+		<div data-category={category} class="collapse collapse-arrow max-w-full">
+			<input id={`checkbox-${category}`} type="checkbox" />
+			<div class="collapse-title text-xl font-medium">
+				<button
+					style="position: absolute; z-index: 1;"
+					on:click={() => deleteDirectory(category)}
+					class="btn btn-sm btn-error hover:bg-red-700 z-auto"
+				>
+					<Icon icon="mdi:trash-can-outline" />
+				</button>
+				<!-- svelte-ignore a11y-no-static-element-interactions -->
+				<span
+					class="ml-14 w-full max-w-lg overflow-x-auto whitespace-nowrap"
+					style="position: absolute; z-index: 1;"
+					contenteditable="true"
+					on:keydown={(e) => {
+						if (e.key === 'Enter') {
+							e.preventDefault();
+							e.target.blur();
+						}
+					}}
+					on:blur={(e) => {
+						if (e.target.textContent.length > 15) {
+							e.target.textContent = category; // reset to old name if new name is too long
+						} else {
+							updateCategoryName(category, e.target.textContent);
+						}
+					}}
+				>
+					{category}
+				</span>
+			</div>
+			<div id={category} class="collapse-content flex flex-col max-w-full gap-2">
+				{#each Object.entries(value.paths) as [pathName, pathValue] (pathName)}
+					<div
+						data-path={pathName}
+						data-path-data={pathValue}
+						class="flex flex-row gap-2 card items-center max-w-full h-fit odd:bg-slate-200 p-2"
+					>
+						<button
+							on:click={() => deleteDirectory(category, pathValue)}
+							class="btn btn-sm btn-ghost"
+						>
+							<Icon icon="mdi:close-thick" />
+						</button>
+						<!-- svelte-ignore a11y-no-static-element-interactions -->
+						<span
+							class="whitespace-nowrap w-24 overflow-x-auto"
+							contenteditable="true"
+							on:keydown={(e) => {
+								if (e.key === 'Enter') {
+									e.preventDefault();
+									e.target.blur();
+								}
+							}}
+							on:blur={(e) => {
+								if (e.target.textContent.length > 15) {
+									e.target.textContent = pathName; // reset to old name if new name is too long
+								} else {
+									updatePathName(category, pathName, e.target.textContent);
+								}
+							}}
+						>
+							{pathName}
+						</span>
+						<!-- <span class="overflow-x-scroll">{pathValue}</span> -->
+						<div
+							class="overflow-x-auto overflow-y-hidden h-fit max-w-md md:max-w-lg lg:max-w-xl d-flex align-items-center justify-content-center"
+						>
+							<span class="w-full whitespace-nowrap px-2">{pathValue}</span>
+						</div>
+						<Icon icon="mdi:drag" class="cursor-move ml-auto opacity-50" />
 					</div>
-					<button on:click={() => removeEntry(name)} class="btn btn-error btn-sm">Remove</button>
-				</div>
-			{/each}
+				{/each}
+			</div>
 		</div>
-
-		<button on:click={writeDirectories} class="btn btn-primary">Save</button>
-
-		<h3 class="mt-4 mx-auto text-sm opacity-75 text-center">
-			The way this is proccessed will probably change dramatically in future versions.
-		</h3>
-	</div>
+	{/each}
 </div>
