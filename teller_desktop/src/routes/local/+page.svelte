@@ -62,8 +62,11 @@
 		}
 	});
 
-	async function openInstanceFolder() {
-		await open(world_path);
+	// This had to be done to fix path issues caused by how the functions return data
+	async function openInstanceFolder(path: string) {
+		await invoke('plugin:folder_handler|open_path_in_explorer', {
+			path: path
+		});
 	}
 </script>
 
@@ -76,7 +79,7 @@
 			{$currentDir.path}
 		</h1>
 		<button
-			on:click={openInstanceFolder}
+			on:click={() => openInstanceFolder(world_path)}
 			class="transition-opacity group flex flex-row items-center gap-1 text-xs underline whitespace-nowrap"
 		>
 			<span class="opacity-70">{world_path.slice(0, 25) + '...' + world_path.slice(-25)}</span>
