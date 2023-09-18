@@ -15,7 +15,7 @@ use crate::{
     utils::{calculate_dir_size, encode_image_to_base64},
 };
 
-pub fn grab_local_worlds_list(local_saves_path: PathBuf) -> Result<Vec<WorldData>, String> {
+pub fn fetch_worlds_from_path(local_saves_path: PathBuf) -> Result<Vec<WorldData>, String> {
     let mut worlds_list: Vec<WorldData> = Vec::new();
 
     info!("Grabbing local worlds list from {:?}", local_saves_path);
@@ -104,7 +104,7 @@ pub fn grab_local_worlds_list(local_saves_path: PathBuf) -> Result<Vec<WorldData
     Ok(worlds_list)
 }
 
-pub fn get_world_by_id(
+pub fn grab_world_by_id(
     world_id: &str,
     return_path: Option<bool>,
     category: Option<&str>,

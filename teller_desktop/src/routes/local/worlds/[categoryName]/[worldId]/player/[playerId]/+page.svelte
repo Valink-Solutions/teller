@@ -24,13 +24,15 @@
 
 			if (world_data) {
 				console.log(world_data);
-				const player_res = await invoke('plugin:world_handler|grab_player_from_uuid', {
+				const player_res = await invoke('plugin:world_handler|get_player_from_uuid', {
 					playerUuid: $page.params.playerId,
 					path: world_data
 				});
 				player = player_res;
 
-				invoke('plugin:world_handler|grab_player_meta_from_uuid', { playerUuid: $page.params.playerId }).then((res) => {
+				invoke('plugin:world_handler|get_player_meta_from_uuid', {
+					playerUuid: $page.params.playerId
+				}).then((res) => {
 					player_data = res;
 				});
 			}

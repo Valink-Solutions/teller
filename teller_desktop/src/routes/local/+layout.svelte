@@ -57,13 +57,6 @@
 	};
 
 	const handleItemClick = (item: CurrentDir) => {
-		if ($worldListCache.category !== item.category || $worldListCache.instance !== item.path) {
-			worldListCache.set({
-				category: '',
-				instance: '',
-				data: []
-			});
-		}
 		currentDir.set(item);
 		goto(`/local`, { replaceState: true, invalidateAll: true });
 	};
