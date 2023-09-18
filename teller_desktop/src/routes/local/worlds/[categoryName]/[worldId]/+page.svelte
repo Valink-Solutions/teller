@@ -28,7 +28,7 @@
 			if (cacheItem) {
 				world_data = cacheItem.data;
 			} else {
-				const res = await invoke('get_world_by_id', {
+				const res = await invoke('plugin:world_handler|get_world_by_id', {
 					worldId: $page.params.worldId,
 					category: $page.params.categoryName
 				});
@@ -48,7 +48,7 @@
 	const handleClick = async () => {
 		try {
 			console.log('Opening world folder');
-			await invoke('open_world_in_explorer', {
+			await invoke('plugin:folder_handler|open_world_in_explorer', {
 				worldId: $page.params.worldId,
 				category: $page.params.categoryName
 			});

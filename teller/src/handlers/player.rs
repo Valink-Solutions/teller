@@ -1,14 +1,13 @@
 use log::info;
-// use log::info;
-// use log::info;
 use serde_json::{json, Value};
 use uuid::Uuid;
 
 use std::{collections::HashMap, path::PathBuf};
 
-use crate::world::{parse_world_data, read_dat_file, GameType};
-
-use super::{Item, PlayerData};
+use crate::{
+    handlers::world::{is_minecraft_world, parse_world_data, read_dat_file, GameType},
+    types::player::{Item, PlayerData},
+};
 
 pub fn fetch_player_data_from_uuid(player_uuid_str: String) -> Result<Value, String> {
     if player_uuid_str == "~local_player".to_string() {
@@ -90,9 +89,10 @@ pub fn fetch_players_meta_data(
 pub fn grab_player_from_uuid(
     player_uuid: String,
     path: &PathBuf,
-    game_type: GameType,
 ) -> Result<PlayerData, Box<dyn std::error::Error>> {
     info!("Grabbing player from UUID: {}", player_uuid);
+
+    let game_type = is_minecraft_world(path);
 
     match game_type {
         GameType::Bedrock => {

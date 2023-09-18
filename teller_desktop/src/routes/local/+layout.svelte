@@ -7,7 +7,7 @@
 	import { WebviewWindow } from '@tauri-apps/api/window';
 	import { listen } from '@tauri-apps/api/event';
 	import type { DirectorySettings } from '$lib/utils';
-	import { currentDir, directories, type CurrentDir } from '$lib/stores';
+	import { currentDir, type CurrentDir } from '$lib/stores';
 
 	let sideBar: HTMLElement | null = null;
 
@@ -17,7 +17,7 @@
 
 	let paths: string[] = [];
 
-	invoke('get_save_folders').then((result) => {
+	invoke('plugin:config|get_save_folders').then((result) => {
 		if (result) {
 			save_paths = result as DirectorySettings;
 
@@ -34,7 +34,7 @@
 	onMount(() => {
 		sideBar = document.querySelector('.side-bar');
 		listen('saves_config_updated', () => {
-			invoke('get_save_folders').then((result) => {
+			invoke('plugin:config|get_save_folders').then((result) => {
 				if (result) {
 					save_paths = result as DirectorySettings;
 					let tempPaths: string[] = [];

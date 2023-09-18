@@ -1,115 +1,15 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import type { WorldItem } from './utils';
 	import WorldListItem from './world_list_item.svelte';
-	import { invoke } from '@tauri-apps/api/tauri';
-	import Icon from '@iconify/svelte';
-	import { open } from '@tauri-apps/api/shell';
-	import { worldListCache, type CurrentDir } from './stores';
+	import type { CurrentDir } from './stores';
 
-	let worlds: WorldItem[] = [];
-
-	export let saves_path = '';
-
+	export let worlds: WorldItem[] = [];
 	export let currentDir: CurrentDir = { path: 'default', category: null };
-
-	let loading = true;
-	let error = false;
-
-	onMount(async () => {
-		try {
-			if (
-				$worldListCache.category === (currentDir.category as string) &&
-				$worldListCache.instance === currentDir.path
-			) {
-				worlds = $worldListCache.data;
-			} else {
-				let result = await invoke('grab_local_worlds_list', { localSavesPath: saves_path });
-
-				if (Array.isArray(result)) {
-					worlds = result as WorldItem[];
-					worldListCache.set({
-						category: currentDir.category as string,
-						instance: currentDir.path,
-						data: result as WorldItem[]
-					});
-				} else {
-					console.log(result);
-				}
-			}
-		} catch (err) {
-			console.log(err);
-			error = true;
-		} finally {
-			loading = false;
-		}
-	});
-
-	$: {
-		loading = true;
-		error = false;
-
-		if (
-			$worldListCache.category === (currentDir.category as string) &&
-			$worldListCache.instance === currentDir.path
-		) {
-			worlds = $worldListCache.data;
-			loading = false;
-		} else {
-			invoke('grab_local_worlds_list', { localSavesPath: saves_path })
-				.then((result) => {
-					if (Array.isArray(result)) {
-						worlds = result as WorldItem[];
-						worldListCache.set({
-							category: currentDir.category as string,
-							instance: currentDir.path,
-							data: result as WorldItem[]
-						});
-						loading = false;
-					} else {
-						console.log(result);
-					}
-				})
-				.catch((err) => {
-					console.log(err);
-					error = true;
-				});
-		}
-	}
-
-	async function openInstanceFolder() {
-		await open(saves_path);
-	}
 </script>
 
-<div class="flex flex-col justify-start h-full w-full px-2">
-	<div class="flex flex-row p-1 w-full h-fit items-center gap-2 align-top">
-		<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-		<h1
-			class="border-l-4 pl-2 w-fit max-w-[240px] capitalize border-primary my-2 whitespace-nowrap text-elipsis overflow-hidden overflow-ellipsis"
-		>
-			{currentDir.path}
-		</h1>
-		<button
-			on:click={openInstanceFolder}
-			class="transition-opacity group flex flex-row items-center gap-1 text-xs underline whitespace-nowrap"
-		>
-			<span class="opacity-70">{saves_path.slice(0, 25) + '...' + saves_path.slice(-25)}</span>
-			<Icon icon="mdi:folder-open-outline" class="opacity-0 group-hover:opacity-70" />
-		</button>
-	</div>
+<div class="flex flex-col justify-start h-full w-full">
 	<div class="flex flex-col justify-start items-center w-full h-full gap-3 align-top">
-		{#if loading}
-			<div class="flex flex-col justify-center items-center h-full w-full gap-3 align-middle">
-				<Icon icon="mdi:loading" class="w-16 h-16 animate-spin" />
-				<p class="text-lg font-semibold">Loading...</p>
-			</div>
-		{:else if error}
-			<div class="flex flex-col justify-center items-center h-full w-full gap-3 align-middle">
-				<h1 class="text-2xl font-bold">Error</h1>
-				<p class="text-center">There was an error loading the worlds.</p>
-			</div>
-		{:else if worlds.length > 0}
+		{#if worlds.length > 0}
 			{#each worlds as world}
 				<WorldListItem {world} {currentDir} />
 			{/each}

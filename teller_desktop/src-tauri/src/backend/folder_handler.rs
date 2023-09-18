@@ -1,13 +1,30 @@
 use std::path::PathBuf;
 
 use log::{error, info};
-use tauri::Manager;
-use teller::world::recursive_world_search;
+use tauri::{
+    plugin::{Builder, TauriPlugin},
+    Manager, Wry,
+};
+use teller::{
+    handlers::{
+        search::worlds::{fetch_worlds_from_path, grab_world_by_id},
+        world::recursive_world_search,
+    },
+    types::world::WorldData,
+};
 
-use crate::backend::get_world_by_id;
+pub fn init() -> TauriPlugin<Wry> {
+    Builder::new("folder_handler")
+        .invoke_handler(tauri::generate_handler![
+            check_path_for_save_folders,
+            grab_local_worlds_list,
+            open_world_in_explorer,
+        ])
+        .build()
+}
 
 #[tauri::command]
-pub fn check_path_for_save_folders(path: PathBuf) -> Result<Vec<PathBuf>, String> {
+fn check_path_for_save_folders(path: PathBuf) -> Result<Vec<PathBuf>, String> {
     info!("Checking path for saves folder: {}", path.to_string_lossy());
 
     let mut save_folders = Vec::new();
@@ -21,17 +38,18 @@ pub fn check_path_for_save_folders(path: PathBuf) -> Result<Vec<PathBuf>, String
     Ok(save_folders)
 }
 
-pub fn create_worlds_database() -> Result<(), String> {
-    Ok(())
+#[tauri::command]
+fn grab_local_worlds_list(local_saves_path: PathBuf) -> Result<Vec<WorldData>, String> {
+    fetch_worlds_from_path(local_saves_path)
 }
 
 #[tauri::command]
-pub fn open_world_in_explorer(
+fn open_world_in_explorer(
     handle: tauri::AppHandle,
     world_id: &str,
     category: Option<&str>,
 ) -> Result<(), String> {
-    let path_str = get_world_by_id(world_id, Some(true), category)?.to_string();
+    let path_str = grab_world_by_id(world_id, Some(true), category)?.to_string();
     let path_str = path_str.replace(" ", r" ").replace("\"", "");
 
     let path = PathBuf::from(path_str);

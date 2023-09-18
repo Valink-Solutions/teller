@@ -15,7 +15,7 @@
 
 	onMount(async () => {
 		try {
-			const world_res = await invoke('get_world_by_id', {
+			const world_res = await invoke('plugin:world_handler|get_world_by_id', {
 				worldId: $page.params.worldId,
 				returnPath: true,
 				category: $page.params.categoryName
@@ -24,13 +24,15 @@
 
 			if (world_data) {
 				console.log(world_data);
-				const player_res = await invoke('grab_player_from_uuid', {
+				const player_res = await invoke('plugin:world_handler|get_player_from_uuid', {
 					playerUuid: $page.params.playerId,
 					path: world_data
 				});
 				player = player_res;
 
-				invoke('grab_player_meta_from_uuid', { playerUuid: $page.params.playerId }).then((res) => {
+				invoke('plugin:world_handler|get_player_meta_from_uuid', {
+					playerUuid: $page.params.playerId
+				}).then((res) => {
 					player_data = res;
 				});
 			}
