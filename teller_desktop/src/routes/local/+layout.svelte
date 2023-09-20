@@ -8,6 +8,9 @@
 	import { listen } from '@tauri-apps/api/event';
 	import type { DirectorySettings } from '$lib/utils';
 	import { currentDir, type CurrentDir } from '$lib/stores';
+	import { SvelteToast } from '@zerodevx/svelte-toast';
+	import { Modals, closeModal, openModal } from 'svelte-modals';
+	import DirectoriesModal from '$lib/directories_modal.svelte';
 
 	let sideBar: HTMLElement | null = null;
 
@@ -58,26 +61,39 @@
 
 	const handleItemClick = (item: CurrentDir) => {
 		currentDir.set(item);
-		goto(`/local`, { replaceState: true, invalidateAll: true });
+		// goto(`/local`, { replaceState: true, invalidateAll: true });
 	};
 
-	const handleEditDirClick = () => {
-		const webview = new WebviewWindow('configure-saves-directories', {
-			url: 'config/setDirs'
-		});
+	// const handleEditDirClick = () => {
+	// 	const webview = new WebviewWindow('configure-saves-directories', {
+	// 		url: 'config/setDirs'
+	// 	});
 
-		webview.once('tauri://created', function () {
-			console.log('webview created');
-		});
+	// 	webview.once('tauri://created', function () {
+	// 		console.log('webview created');
+	// 	});
 
-		webview.once('tauri://error', function (e) {
-			console.log(e);
-		});
+	// 	webview.once('tauri://error', function (e) {
+	// 		console.log(e);
+	// 	});
+	// };
+
+	function handleEditDirClick() {
+		openModal(DirectoriesModal);
+	}
+
+	const options = {
+		theme: {
+			// '--toastBackground': '#1f2937',
+			// '--toastProgressBackground': '#fff',
+			// '--toastProgressFill': '#1f2937',
+			// '--toastColor': '#fff'
+		}
 	};
 </script>
 
 <div class="flex flex-row max-h-screen max-w-screen" data-name="sidebar">
-	<div class="h-screen w-[348px] lg:w-[400px] p-2 overflow-hidden">
+	<div class="h-screen min-w-[270px] w-[348px] lg:w-[400px] p-2 overflow-hidden">
 		<div class="card flex flex-col h-fit min-h-full p-2 bg-base-100 gap-4 overflow-hidden">
 			<div class="flex flex-row justify-center gap-2 items-center">
 				<h1 class="font-bold">ChunkVault</h1>
@@ -149,3 +165,41 @@
 		</div>
 	</div>
 </div>
+<Modals>
+	<!-- svelte-ignore a11y-click-events-have-key-events -->
+	<!-- svelte-ignore a11y-no-static-element-interactions -->
+	<div slot="backdrop" class="backdrop" on:click={closeModal} />
+</Modals>
+<SvelteToast {options} />
+
+<style>
+	:root {
+		--toastContainerTop: auto;
+		--toastContainerBottom: 1.5rem;
+		--toastWidth: 20rem;
+		--toastBackground: rgb(244, 244, 244);
+		--toastColor: #000000;
+		--toastBoxShadow: 0px 4px 0px 0px rgb(0, 0, 0);
+		--toastBorder: 4px solid rgb(0, 0, 0);
+		--toastBorderRadius: 0;
+		--toastMsgPadding: 0.75rem 0.5rem;
+		--toastBtnWidth: 2rem;
+		--toastBtnHeight: 100%;
+		--toastBtnFont: 1rem 'Martian Mono', monospace;
+		--toastBarBackground: rgb(71, 213, 109);
+		--toastBarTop: auto;
+		--toastBarRight: auto;
+		--toastBarBottom: 0;
+		--toastBarLeft: 0;
+		--toastBarHeight: 6px;
+		--toastBarWidth: 100%;
+	}
+	.backdrop {
+		position: fixed;
+		top: 0;
+		bottom: 0;
+		right: 0;
+		left: 0;
+		background: rgba(0, 0, 0, 0.5);
+	}
+</style>

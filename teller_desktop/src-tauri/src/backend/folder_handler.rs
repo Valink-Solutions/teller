@@ -6,10 +6,7 @@ use tauri::{
     Manager, Wry,
 };
 use teller::{
-    handlers::{
-        search::worlds::{fetch_worlds_from_path, grab_world_by_id},
-        world::recursive_world_search,
-    },
+    handlers::search::worlds::{fetch_worlds_from_path, grab_world_by_id, recursive_world_search},
     types::world::WorldData,
 };
 

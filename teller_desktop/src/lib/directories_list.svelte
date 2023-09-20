@@ -127,12 +127,12 @@
 	};
 </script>
 
-<div class="flex flex-grow flex-col gap-4 min-h-full h-full overflow-auto" id="categories">
+<div class="flex flex-grow flex-col gap-2 min-h-full h-full overflow-auto" id="categories">
 	{#each Object.entries($directorySettings.categories) as [category, value], i (category)}
 		<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 		<div data-category={category} class="collapse collapse-arrow max-w-full">
 			<input id={`checkbox-${category}`} type="checkbox" />
-			<div class="collapse-title text-xl font-medium">
+			<div class="flex flex-row collapse-title items-center font-medium">
 				<button
 					style="position: absolute; z-index: 1;"
 					on:click={() => deleteDirectory(category)}

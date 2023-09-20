@@ -4,6 +4,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use chrono::NaiveDateTime;
 use commandblock::nbt::{read_from_file, Compression, Endian, NbtValue};
 use log::{error, info};
 use serde_json::{json, Value};
@@ -11,7 +12,7 @@ use uuid::Uuid;
 
 use crate::{
     handlers::player::fetch_player_data_from_uuid,
-    types::world::{GameRules, WorldLevelData},
+    types::world::{GameRules, WorldData, WorldLevelData},
     utils::{calculate_dir_size, encode_image_to_base64},
 };
 
@@ -821,10 +822,10 @@ pub fn parse_game_rules(
     }
 }
 
-pub fn get_level_name(
+pub fn get_level_info(
     level_dat_blob: NbtValue,
     game_type: GameType,
-) -> Result<String, Box<dyn std::error::Error>> {
+) -> Result<(String, Option<NaiveDateTime>), Box<dyn std::error::Error>> {
     let level_value: serde_json::Value = serde_json::to_value(level_dat_blob)?;
 
     match game_type {
@@ -839,9 +840,16 @@ pub fn get_level_name(
                 None => return Err("Could not find LevelName in level.dat".into()),
             };
 
+            let last_played = match level_data.get("LastPlayed") {
+                Some(time) => time.as_i64().unwrap_or_default(),
+                None => return Err("Could not find LastPlayed in level.dat".into()),
+            };
+
             let parsed_level_name = level_name[1..level_name.len() - 1].to_string();
 
-            Ok(parsed_level_name)
+            let parsed_last_played = chrono::NaiveDateTime::from_timestamp_millis(last_played);
+
+            Ok((parsed_level_name, parsed_last_played))
         }
         GameType::Bedrock => {
             let level_name = match level_value.get("LevelName") {
@@ -849,10 +857,70 @@ pub fn get_level_name(
                 None => return Err("Could not find levelName in level.dat".into()),
             };
 
+            let last_played = match level_value.get("LastPlayed") {
+                Some(time) => time.as_i64().unwrap_or_default(),
+                None => return Err("Could not find LastPlayed in level.dat".into()),
+            };
+
             let parsed_level_name = level_name[1..level_name.len() - 1].to_string();
 
-            Ok(parsed_level_name)
+            let parsed_last_played = chrono::NaiveDateTime::from_timestamp_opt(last_played, 0);
+
+            Ok((parsed_level_name, parsed_last_played))
         }
         GameType::None => Err("Could not find game type".into()),
     }
+}
+
+pub fn parse_world_entry_data(path: PathBuf) -> Result<WorldData, String> {
+    let game_type = is_minecraft_world(&path);
+
+    let level_dat_path = path.join("level.dat");
+    let level_dat_blob = match read_dat_file(level_dat_path, game_type) {
+        Ok(blob) => blob,
+        Err(e) => {
+            error!("Could not parse level.dat at {:?}: {:?}", path, e);
+            return Err(format!("Could not parse level.dat at {:?}: {:?}", path, e));
+        }
+    };
+
+    let (level_name, last_played) = match get_level_info(level_dat_blob, game_type) {
+        Ok((name, time)) => (name, time),
+        Err(e) => {
+            error!("Could not get level name at {:?}: {:?}", path, e);
+            return Err(format!("Could not get level name at {:?}: {:?}", path, e));
+        }
+    };
+
+    let world_size = match calculate_dir_size(&path) {
+        Ok(size) => size,
+        Err(_) => 0,
+    };
+
+    let vault_id = match get_vault_id(&path) {
+        Ok(id) => id,
+        Err(e) => {
+            error!("Could not get vault id at {:?}: {:?}", path, e);
+            return Err(format!("Could not get vault id at {:?}: {:?}", path, e));
+        }
+    };
+
+    let world_data = WorldData {
+        id: vault_id,
+        name: level_name,
+        image: match game_type {
+            GameType::Java => {
+                encode_image_to_base64(path.join("icon.png")).unwrap_or("".to_string())
+            }
+            GameType::Bedrock => {
+                encode_image_to_base64(path.join("world_icon.jpeg")).unwrap_or("".to_string())
+            }
+            GameType::None => "".to_string(),
+        },
+        path: path.to_string_lossy().into_owned(),
+        size: world_size,
+        last_played: last_played,
+    };
+
+    Ok(world_data)
 }

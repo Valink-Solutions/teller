@@ -1,18 +1,17 @@
-use std::path::PathBuf;
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 use log::{error, info};
 use serde_json::Value;
 
 use crate::{
     handlers::{
-        config::{get_config_folder, get_minecraft_save_location, get_saves_config},
-        world::{
-            get_level_name, get_vault_id, is_minecraft_world, process_world_data, read_dat_file,
-            GameType,
-        },
+        config::{get_config_folder, get_local_directories_config, get_minecraft_save_location},
+        world::{get_vault_id, parse_world_entry_data, process_world_data, GameType},
     },
     types::world::WorldData,
-    utils::{calculate_dir_size, encode_image_to_base64},
 };
 
 pub fn fetch_worlds_from_path(local_saves_path: PathBuf) -> Result<Vec<WorldData>, String> {
@@ -49,55 +48,11 @@ pub fn fetch_worlds_from_path(local_saves_path: PathBuf) -> Result<Vec<WorldData
             Err(_) => continue,
         };
         let path = entry.path();
-        if path.is_dir() {
-            let game_type = is_minecraft_world(&path);
-
-            let level_dat_path = path.join("level.dat");
-            let level_dat_blob = match read_dat_file(level_dat_path, game_type) {
-                Ok(blob) => blob,
-                Err(e) => {
-                    error!("Could not parse level.dat at {:?}: {:?}", path, e);
-                    continue;
-                }
-            };
-
-            let level_name = match get_level_name(level_dat_blob, game_type) {
-                Ok(name) => name,
-                Err(e) => {
-                    error!("Could not get level name at {:?}: {:?}", path, e);
-                    continue;
-                }
-            };
-
-            let world_size = match calculate_dir_size(&path) {
-                Ok(size) => size,
-                Err(_) => 0,
-            };
-
-            let vault_id = match get_vault_id(&path) {
-                Ok(id) => id,
-                Err(e) => {
-                    error!("Could not get vault id at {:?}: {:?}", path, e);
-                    continue;
-                }
-            };
-
-            let world_data = WorldData {
-                id: vault_id,
-                name: level_name,
-                image: match game_type {
-                    GameType::Java => {
-                        encode_image_to_base64(path.join("icon.png")).unwrap_or("".to_string())
-                    }
-                    GameType::Bedrock => encode_image_to_base64(path.join("world_icon.jpeg"))
-                        .unwrap_or("".to_string()),
-                    GameType::None => "".to_string(),
-                },
-                path: path.to_string_lossy().into_owned(),
-                size: world_size,
-            };
-
-            worlds_list.push(world_data);
+        if path.is_dir() && path.extension().map_or(true, |ext| ext != "zip") {
+            match parse_world_entry_data(path.clone()) {
+                Ok(world_data) => worlds_list.push(world_data),
+                Err(_) => continue,
+            }
         }
     }
 
@@ -115,7 +70,7 @@ pub fn grab_world_by_id(
 
     let mut paths: Vec<PathBuf> = Vec::new();
 
-    match get_saves_config(&config_dir) {
+    match get_local_directories_config(&config_dir) {
         Ok(config) => {
             if let Some(category) = category {
                 if category == "default" {
@@ -177,4 +132,106 @@ pub fn grab_world_by_id(
     }
 
     Err("Could not find world".to_string())
+}
+
+pub fn is_minecraft_world(path: &Path) -> GameType {
+    if !path.is_dir() {
+        return GameType::None;
+    }
+
+    let java_files = ["level.dat", "region", "data"];
+    let bedrock_files = ["level.dat", "db"];
+
+    let is_java = java_files.iter().all(|file| path.join(file).exists());
+    let is_bedrock = bedrock_files.iter().all(|file| path.join(file).exists());
+
+    if is_java {
+        info!("Found java world at {:?}", path);
+        return GameType::Java;
+    } else if is_bedrock {
+        info!("Found bedrock world at {:?}", path);
+        return GameType::Bedrock;
+    } else {
+        error!(
+            "Could not determine if path is a minecraft world: {:?}",
+            path
+        );
+
+        return GameType::None;
+    }
+}
+
+pub fn is_minecraft_folder(path: &Path) -> GameType {
+    if path.is_dir() {
+        if path.file_name().unwrap() == ".minecraft" {
+            if !path.join("saves").exists() {
+                fs::create_dir_all(path.join("saves")).expect("Failed to create saves directory");
+            }
+            return GameType::Java;
+        } else if path.join("minecraftWorlds").exists() {
+            return GameType::Bedrock;
+        }
+    }
+
+    error!(
+        "Could not determine if path is a minecraft folder: {:?}",
+        path
+    );
+
+    GameType::None
+}
+
+pub fn recursive_world_search(
+    path: &Path,
+    depth: usize,
+    max_depth: usize,
+    save_folders: &mut Vec<PathBuf>,
+) -> Result<(), String> {
+    if depth > max_depth {
+        return Ok(());
+    }
+
+    if !path.exists() {
+        return Err(format!("Path {:?} does not exist", path));
+    }
+
+    if path.ends_with("node_modules") || path.extension().map_or(false, |ext| ext == "zip") {
+        return Ok(());
+    }
+
+    match is_minecraft_world(path) {
+        GameType::Java => {
+            save_folders.push(path.parent().unwrap().to_path_buf());
+        }
+        GameType::Bedrock => {
+            save_folders.push(path.parent().unwrap().to_path_buf());
+        }
+        GameType::None => match is_minecraft_folder(path) {
+            GameType::Java => {
+                save_folders.push(path.join("saves"));
+            }
+            GameType::Bedrock => {
+                save_folders.push(path.join("minecraftWorlds"));
+            }
+            GameType::None => {
+                if let Ok(entries) = path.read_dir() {
+                    for entry in entries {
+                        if let Ok(entry) = entry {
+                            let entry_path = entry.path();
+                            if entry_path.is_dir() {
+                                recursive_world_search(
+                                    &entry_path,
+                                    depth + 1,
+                                    max_depth,
+                                    save_folders,
+                                )?;
+                            }
+                        }
+                    }
+                }
+            }
+        },
+    }
+
+    Ok(())
 }

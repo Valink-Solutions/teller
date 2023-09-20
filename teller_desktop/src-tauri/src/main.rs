@@ -32,6 +32,7 @@ fn main() {
                 .unwrap();
         }))
         .plugin(teller_desktop::config::init())
+        .plugin(teller_desktop::backend::backup_handler::init())
         .plugin(teller_desktop::backend::folder_handler::init())
         .plugin(teller_desktop::backend::world_handler::init())
         .run(tauri::generate_context!())

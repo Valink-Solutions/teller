@@ -46,13 +46,17 @@ export function removeFromWorldCache() {
 }
 
 export interface WorldListCacheItem {
-	category: string;
+	category: string | null;
 	instance: string;
+	path: string;
 	data: WorldItem[];
 }
 
 export let worldListCache = writable<WorldListCacheItem>({
 	category: '',
 	instance: '',
+	path: '',
 	data: []
 });
+
+export const worldSortOption = writable({ option: 'size', direction: 'desc' });

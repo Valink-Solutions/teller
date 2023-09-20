@@ -1,12 +1,15 @@
 use std::path::PathBuf;
 
 use log::error;
-use teller::handlers::{
-    config::{
-        create_local_directories_config, get_config_folder, get_saves_config,
-        update_local_directories_config, DirectorySettings,
+use teller::{
+    handlers::{
+        config::{
+            create_local_directories_config, get_config_folder, get_local_directories_config,
+            update_local_directories_config,
+        },
+        search::directories::get_directory_by_name,
     },
-    search::directories::get_directory_by_name,
+    types::config::DirectorySettings,
 };
 
 use tauri::{
@@ -32,7 +35,7 @@ async fn get_save_folders(handle: tauri::AppHandle) -> Result<DirectorySettings,
     let config_dir = get_config_folder();
 
     // This simply opens the window and errors out allowing the user to configure the directories
-    let saves_config = match get_saves_config(&config_dir) {
+    let saves_config = match get_local_directories_config(&config_dir) {
         Ok(s) => s,
         Err(e) => {
             let _config_saves_window = tauri::WindowBuilder::new(
@@ -55,7 +58,7 @@ async fn get_save_folders(handle: tauri::AppHandle) -> Result<DirectorySettings,
 async fn load_saves_folders() -> Result<DirectorySettings, String> {
     let config_dir = get_config_folder();
 
-    let saves_config = match get_saves_config(&config_dir) {
+    let saves_config = match get_local_directories_config(&config_dir) {
         Ok(s) => s,
         Err(e) => {
             return Err(format!("Could not get saves config: {:?}", e));

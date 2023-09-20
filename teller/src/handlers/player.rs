@@ -5,7 +5,10 @@ use uuid::Uuid;
 use std::{collections::HashMap, path::PathBuf};
 
 use crate::{
-    handlers::world::{is_minecraft_world, parse_world_data, read_dat_file, GameType},
+    handlers::{
+        search::worlds::is_minecraft_world,
+        world::{parse_world_data, read_dat_file, GameType},
+    },
     types::player::{Item, PlayerData},
 };
 
@@ -217,5 +220,142 @@ pub fn grab_player_from_uuid(
             Ok(player_data)
         }
         GameType::None => Err("Game type not found".into()),
+    }
+}
+
+pub fn get_player_data(
+    path: &PathBuf,
+    game_type: GameType,
+) -> Result<Vec<Value>, Box<dyn std::error::Error>> {
+    match game_type {
+        GameType::Bedrock => {
+            info!("Fetching Bedrock player data");
+
+            let player_uuid = "~local_player".to_string();
+            let player_avatar = "https://crafthead.net/avatar/8667ba71b85a4004af54457a9734eed7?scale=32&overlay=false";
+
+            let db_path = path.join("db").to_str().unwrap().to_string();
+
+            let mut db_reader = commandblock::db::DbReader::new(&db_path, 0);
+
+            let remote_player_data = db_reader.parse_remote_players();
+
+            let mut players: Vec<Value> = Vec::new();
+
+            if remote_player_data.is_some() {
+                for (uuid, _) in remote_player_data.unwrap().iter() {
+                    info!("Fetching player data for: {:?}", uuid);
+
+                    let player_meta = json!({
+                        "username": "Remote Player",
+                        "id": uuid.strip_prefix("player_server_").unwrap_or(uuid),
+                        "avatar": player_avatar,
+                        "meta": {}
+                    });
+
+                    players.push(player_meta);
+                }
+            }
+
+            let local_player_data = json!({
+                "username": "Local Player",
+                "id": player_uuid,
+                "avatar": player_avatar,
+                "meta": {}
+            });
+
+            players.push(local_player_data);
+
+            Ok(players)
+        }
+        GameType::Java => {
+            info!("Fetching Java player data");
+
+            let player_data_path = path.join("playerdata");
+
+            if !player_data_path.exists() {
+                let level_dat_path = path.join("level.dat");
+
+                let level_data = read_dat_file(level_dat_path, game_type)?;
+
+                let level_data = parse_world_data(level_data, game_type)?;
+
+                let player_data = match level_data.get("Player") {
+                    Some(data) => data,
+                    None => return Err("Could not find Player in level.dat".into()),
+                };
+
+                let player_uuid = match player_data.get("UUID") {
+                    Some(player_uuid_values) => {
+                        let d1 = player_uuid_values[0].as_i64().unwrap_or_default() as u32; // Your most significant 32-bit value
+                        let d2 = player_uuid_values[1].as_i64().unwrap_or_default() as u32; // Your second most significant 32-bit value
+                        let d3 = player_uuid_values[2].as_i64().unwrap_or_default() as u32; // Your second least significant 32-bit value
+                        let d4 = player_uuid_values[3].as_i64().unwrap_or_default() as u32; // Your least significant 32-bit value
+
+                        // Concatenate the four integers into a single 128-bit value
+                        let uuid_int = ((d1 as u128) << 96)
+                            | ((d2 as u128) << 64)
+                            | ((d3 as u128) << 32)
+                            | d4 as u128;
+
+                        // Create a UUID from the 128-bit value
+                        let player_uuid = Uuid::from_u128(uuid_int).to_string();
+
+                        player_uuid
+                    }
+                    None => "~local_player".to_string(),
+                };
+                let player_avatar = "https://crafthead.net/avatar/8667ba71b85a4004af54457a9734eed7?scale=32&overlay=false";
+
+                let player_meta = json!({
+                    "username": "Local Player",
+                    "id": player_uuid,
+                    "avatar": player_avatar,
+                    "meta": {}
+                });
+
+                return Ok(vec![player_meta]);
+            }
+
+            let player_data = match std::fs::read_dir(&player_data_path) {
+                Ok(data) => data,
+                Err(e) => {
+                    return Err(format!("Failed to read player data: {:?}", e).into());
+                }
+            };
+
+            let mut all_players: Vec<Value> = Vec::new();
+
+            for player in player_data {
+                let player = match player {
+                    Ok(player) => player,
+                    Err(e) => {
+                        return Err(format!("Failed to read player data: {:?}", e).into());
+                    }
+                };
+
+                let player = player.path();
+
+                if !player.is_file()
+                    || player.extension().and_then(std::ffi::OsStr::to_str) != Some("dat")
+                {
+                    continue;
+                }
+
+                let player_uuid = player.file_stem().unwrap().to_str().unwrap().to_string();
+
+                let player_meta = match fetch_player_data_from_uuid(player_uuid) {
+                    Ok(data) => data,
+                    Err(e) => {
+                        return Err(format!("Failed to fetch player data: {:?}", e).into());
+                    }
+                };
+
+                all_players.push(player_meta);
+            }
+
+            Ok(all_players)
+        }
+        GameType::None => Err("Game type not specified".into()),
     }
 }

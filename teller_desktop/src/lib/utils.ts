@@ -18,6 +18,7 @@ export interface WorldItem {
 	path: string;
 	image: string;
 	size: number;
+	last_played: string | null;
 }
 
 export interface WorldLevelData {

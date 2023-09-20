@@ -10,6 +10,7 @@ pub struct WorldData {
     pub image: String,
     pub path: String,
     pub size: u64,
+    pub last_played: Option<NaiveDateTime>,
 }
 
 #[allow(non_snake_case)]
