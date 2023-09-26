@@ -1,4 +1,5 @@
-use log::info;
+use log::{error, info};
+use std::collections::HashMap;
 use std::io::{Read, Seek, Write};
 use std::path::Path;
 use std::{fs::File, path::PathBuf};
@@ -7,75 +8,128 @@ use zip::ZipWriter;
 
 use serde_json::json;
 
-use crate::handlers::config::{get_local_directories_config, get_minecraft_save_location};
-use crate::handlers::world::get_vault_id;
+use crate::types::backup::BackupMetadata;
 
+use super::config::backup::get_backup_config;
+use super::search::worlds::grab_world_by_id;
 use super::world::parse_world_entry_data;
 use super::{
     config::get_config_folder, search::worlds::is_minecraft_world, world::process_world_data,
 };
 
-pub fn create_backup_from_id(world_id: &str, category: Option<&str>) -> Result<String, String> {
-    let config_dir = get_config_folder();
+pub fn create_backup_from_id(
+    world_id: &str,
+    category: Option<&str>,
+    vaults: Option<Vec<String>>,
+) -> Result<String, String> {
+    info!("Creating backup for world id: {}", world_id);
+    match grab_world_by_id(world_id, Some(true), category) {
+        Ok(value) => {
+            let world_path = value.as_str().unwrap();
+            let world_backup_path = match create_world_backup(PathBuf::from(world_path)) {
+                Ok(backup_path) => backup_path,
+                Err(e) => {
+                    error!(
+                        "Failed to create backup for world folder {}: {:?}",
+                        world_path, e
+                    );
+                    return Err(format!(
+                        "Failed to create backup for world folder {}: {:?}",
+                        world_path, e
+                    ));
+                }
+            };
 
-    info!("Searching for world: {}", world_id);
+            let backup_name = match world_backup_path.file_name() {
+                Some(name) => name,
+                None => {
+                    error!(
+                        "Could not get backup name from path: {:?}",
+                        world_backup_path
+                    );
+                    return Err(format!(
+                        "Could not get backup name from path: {:?}",
+                        world_backup_path
+                    ));
+                }
+            };
 
-    let mut paths: Vec<PathBuf> = Vec::new();
+            if vaults.is_some() {
+                let mut vault_locations = HashMap::new();
 
-    match get_local_directories_config(&config_dir) {
-        Ok(config) => {
-            if let Some(category) = category {
-                if category == "default" {
-                    match get_minecraft_save_location() {
-                        Some(path) => paths.push(path),
-                        None => {}
-                    };
-                } else if let Some(vault_entries) = config.categories.get(category) {
-                    for (_, path) in vault_entries.paths.iter() {
-                        paths.push(path.clone());
+                let backup_settings = get_backup_config()?;
+
+                for vault_id in vaults.unwrap() {
+                    if let Some(vault) = backup_settings.vaults.get(&vault_id) {
+                        vault_locations.insert(vault_id, vault);
                     }
                 }
-            }
-        }
-        Err(_e) => {}
-    };
 
-    for save_location in paths {
-        let world_folders = match std::fs::read_dir(&save_location) {
-            Ok(folders) => folders,
-            Err(_) => continue,
-        };
+                info!("Copying backup to all {} vaults", vault_locations.len());
 
-        for entry in world_folders {
-            if let Ok(world_folder) = entry {
-                let world_folder = world_folder.path();
-
-                if !world_folder.is_dir() {
-                    continue;
-                }
-
-                let vault_id = match get_vault_id(&world_folder) {
-                    Ok(id) => id,
-                    Err(_) => continue,
-                };
-
-                if vault_id == world_id {
-                    info!("Found world: {world_id}");
-
-                    match create_world_backup(world_folder.clone()) {
-                        Ok(backup_path) => {
-                            return Ok(backup_path.to_string_lossy().to_string());
-                        }
+                for (vault_id, vault_path) in vault_locations {
+                    let backup_location = vault_path.join(world_id);
+                    if !backup_location.exists() {
+                        match std::fs::create_dir_all(&backup_location) {
+                            Ok(_) => {}
+                            Err(e) => {
+                                error!("Failed to create vault folder {}: {:?}", vault_id, e);
+                                continue;
+                            }
+                        };
+                    }
+                    match std::fs::copy(
+                        &world_backup_path,
+                        backup_location.join(backup_name.clone()),
+                    ) {
+                        Ok(_) => {}
                         Err(e) => {
-                            return Err(format!("Could not create backup: {:?}", e));
+                            error!(
+                                "Failed to move backup to vault folder {}: {:?}",
+                                vault_id, e
+                            );
+                            continue;
                         }
                     };
                 }
+
+                if let Err(e) = std::fs::remove_file(&world_backup_path) {
+                    error!(
+                        "Failed to remove backup file {}: {:?}",
+                        world_backup_path.display(),
+                        e
+                    );
+                    return Err(format!(
+                        "Failed to remove backup file {}: {:?}",
+                        world_backup_path.display(),
+                        e
+                    ));
+                }
+            } else {
+                let default_vault = get_default_vault();
+                match std::fs::rename(&world_backup_path, default_vault.join(backup_name)) {
+                    Ok(_) => {}
+                    Err(e) => {
+                        error!(
+                            "Failed to move backup to default vault {}: {:?}",
+                            default_vault.display(),
+                            e
+                        );
+                        return Err(format!(
+                            "Failed to move backup to default vault {}: {:?}",
+                            default_vault.display(),
+                            e
+                        ));
+                    }
+                };
             }
+            Ok("Successfully Createad Backup.".to_string())
+        }
+        Err(e) => {
+            error!("Failed to grab world by id {}: {:?}", world_id, e);
+            return Err(format!("Failed to grab world by id {}: {:?}", world_id, e));
         }
     }
-
-    Err("Could not find world".to_string())
 }
 
 pub fn create_world_backup(world_path: PathBuf) -> Result<PathBuf, String> {
@@ -107,14 +161,10 @@ pub fn create_world_backup(world_path: PathBuf) -> Result<PathBuf, String> {
         "data": world_data,
     });
 
-    let backup_id = format!(
-        "{}-{}.chunkvault-snapshot",
-        world_entry_data.id,
-        chrono::Utc::now().timestamp()
-    );
+    let backup_id = format!("{}.chunkvault-snapshot", chrono::Utc::now().timestamp());
     let backup_path = temp_dir.join(backup_id);
 
-    let world_zip_path = temp_dir.join("world_data.zip");
+    let world_zip_path = temp_dir.join(format!("{}_data.zip", world_entry_data.id));
     let mut world_zip = zip::ZipWriter::new(std::fs::File::create(&world_zip_path).unwrap());
     let options = FileOptions::default()
         .compression_method(zip::CompressionMethod::Deflated)
@@ -134,7 +184,7 @@ pub fn create_world_backup(world_path: PathBuf) -> Result<PathBuf, String> {
     let mut buffer = Vec::new();
     world_zip_file.read_to_end(&mut buffer).unwrap();
     zip.start_file(
-        "world_data.zip",
+        format!("{}_data.zip", world_entry_data.id),
         FileOptions::default().compression_method(zip::CompressionMethod::Stored),
     )
     .unwrap();
@@ -182,4 +232,54 @@ fn get_default_vault() -> PathBuf {
             vault_dir
         }
     }
+}
+
+pub fn grab_backup_metadata(backup_path: PathBuf) -> Result<BackupMetadata, String> {
+    let mut zip = match zip::ZipArchive::new(File::open(backup_path.clone()).unwrap()) {
+        Ok(zip) => zip,
+        Err(e) => {
+            return Err(format!(
+                "Failed to open backup file {}: {:?}",
+                backup_path.display(),
+                e
+            ));
+        }
+    };
+
+    let mut metadata = String::new();
+
+    let mut metadata_file = match zip.by_name("metadata.json") {
+        Ok(file) => file,
+        Err(e) => {
+            return Err(format!(
+                "Failed to open metadata file in backup {}: {:?}",
+                backup_path.display(),
+                e
+            ));
+        }
+    };
+
+    match metadata_file.read_to_string(&mut metadata) {
+        Ok(_) => {}
+        Err(e) => {
+            return Err(format!(
+                "Failed to read metadata file in backup {}: {:?}",
+                backup_path.display(),
+                e
+            ));
+        }
+    };
+
+    let metadata: BackupMetadata = match serde_json::from_str(&metadata) {
+        Ok(metadata) => metadata,
+        Err(e) => {
+            return Err(format!(
+                "Failed to parse metadata file in backup {}: {:?}",
+                backup_path.display(),
+                e
+            ));
+        }
+    };
+
+    Ok(metadata)
 }

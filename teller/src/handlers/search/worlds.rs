@@ -8,7 +8,10 @@ use serde_json::Value;
 
 use crate::{
     handlers::{
-        config::{get_config_folder, get_local_directories_config, get_minecraft_save_location},
+        config::{
+            get_config_folder,
+            instance::{get_local_directories_config, get_minecraft_save_location},
+        },
         world::{get_vault_id, parse_world_entry_data, process_world_data, GameType},
     },
     types::world::WorldData,

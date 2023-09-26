@@ -49,12 +49,11 @@
 				.then((res) => {
 					if (res instanceof Array) {
 						// for each save location, add it to the list
-						directoryCount++;
-						let directoryName: string = `Local Vault ${directoryCount}`;
-						let saveLocationCount = 0;
-						res.forEach((save_location) => {
-							saveLocationCount++;
-							let name: string = `Save ${saveLocationCount}`;
+						let directoryName: string = `Instance ${
+							Object.keys($directorySettings.categories).length + 1
+						}`;
+						res.forEach((save_location, index) => {
+							let name: string = `Save ${index + 1}`;
 							directorySettings.update((dirs) => {
 								let newCategory = { ...dirs.categories };
 								if (!newCategory[directoryName]) {
@@ -79,18 +78,20 @@
 
 {#if isOpen}
 	<div role="dialog" class="fixed inset-0 flex items-center justify-center z-50 py-2">
-		<div class="card bg-slate-100 min-w-[25rem] max-h-screen">
+		<div
+			class="card bg-slate-100 h-full min-w-[25rem] max-w-[66.666667%] max-h-[85%] overflow-auto"
+		>
 			<div class="card-body">
-				<h2 class="card-title">Manage Local Directories</h2>
-				<button on:click={addDirectory} class="btn btn-secondary">Add Directory</button>
+				<h2 class="card-title">Manage Local Instances</h2>
+				<button on:click={addDirectory} class="btn btn-secondary">Add Instance</button>
 
-				<div class="flex w-full overflow-auto" style="max-height: 500px;">
+				<div class="flex w-full">
 					<DirectoriesList />
 				</div>
 
 				<div class="justify-end card-actions">
 					{#if stackIndex > 1}
-						<button on:click={closeModal} class="btn">Close One</button>
+						<button on:click={closeModal} class="btn">Close</button>
 					{:else}
 						<button on:click={closeModal} class="btn">Close</button>
 					{/if}

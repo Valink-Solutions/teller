@@ -4,6 +4,6 @@
 	import { onMount } from 'svelte';
 
 	onMount(() => {
-		goto('/local');
+		goto('/local/worlds/default/default');
 	});
 </script>

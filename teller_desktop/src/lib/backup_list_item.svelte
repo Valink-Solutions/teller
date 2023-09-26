@@ -3,19 +3,8 @@
 	import { formatBytes, type WorldItem } from './utils';
 	import type { CurrentDir } from './stores';
 
-	import { openModal } from 'svelte-modals';
-	import BackupModal from './modals/backup_modal.svelte';
-
 	export let world: WorldItem;
 	export let currentDir: CurrentDir = { path: 'default', category: null };
-
-	function openBackupWindow() {
-		openModal(BackupModal, {
-			worldName: world.name,
-			worldId: world.id,
-			category: currentDir.category
-		});
-	}
 </script>
 
 <li class="card flex flex-row w-full bg-base-100 shadow-xl max-h-fit">
@@ -75,10 +64,8 @@
 				</ul>
 			</div>
 			<div class="join">
-				<button on:click={openBackupWindow} class="btn btn-sm join-item">Backup</button>
-				<a
-					href={`/local/worlds/${currentDir.category}/${currentDir.path}/${world.id}`}
-					class="btn btn-sm join-item">View</a
+				<a href={`/local/vaults/${currentDir.category}/${world.id}`} class="btn btn-sm join-item"
+					>View</a
 				>
 			</div>
 		</div>

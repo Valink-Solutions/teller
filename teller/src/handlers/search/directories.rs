@@ -3,7 +3,8 @@ use std::path::PathBuf;
 use log::{error, info};
 
 use crate::handlers::config::{
-    get_config_folder, get_local_directories_config, get_minecraft_save_location,
+    get_config_folder,
+    instance::{get_local_directories_config, get_minecraft_save_location},
 };
 
 pub fn get_directory_by_name(dir_name: &str, category: Option<&str>) -> Option<PathBuf> {

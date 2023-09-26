@@ -59,6 +59,20 @@ export interface GameRules {
 	spectators_generate_chunks: boolean;
 }
 
+export interface RemoteBackup {
+	remote_url: string;
+	api_key: string;
+}
+
+export interface BackupSettings {
+	schedule: string;
+	auto_backup: boolean;
+	enable_remote_backup: boolean;
+	default_vaults: string[] | null;
+	vaults: Record<string, string>;
+	remote_vaults: Record<string, RemoteBackup>;
+}
+
 export interface DirectorySettings {
 	categories: Record<string, VaultEntries>;
 }

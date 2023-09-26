@@ -37,11 +37,10 @@
 					addToWorldCache({ name: cacheKey, data: res as WorldLevelData });
 				}
 			}
+			loading = false;
 		} catch (err) {
 			console.log(err);
 			error = true;
-		} finally {
-			loading = false;
 		}
 	});
 
@@ -60,7 +59,10 @@
 
 <div class="flex flex-col justify-start w-full px-4 gap-4">
 	<div class="flex flex-row justify-between items-center">
-		<button class="btn btn-ghost w-20" on:click={() => goto('/local')}>
+		<button
+			class="btn btn-ghost w-20"
+			on:click={() => goto(`/local/worlds/${$page.params.categoryName}/${$page.params.pathName}`)}
+		>
 			<Icon icon="mdi:arrow-left" class="w-6 h-6" />
 		</button>
 

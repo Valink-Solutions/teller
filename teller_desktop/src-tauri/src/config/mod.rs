@@ -4,12 +4,15 @@ use log::error;
 use teller::{
     handlers::{
         config::{
-            create_local_directories_config, get_config_folder, get_local_directories_config,
-            update_local_directories_config,
+            get_config_folder,
+            instance::{
+                create_local_directories_config, get_local_directories_config,
+                update_local_directories_config,
+            },
         },
         search::directories::get_directory_by_name,
     },
-    types::config::DirectorySettings,
+    types::{backup::BackupSettings, config::DirectorySettings},
 };
 
 use tauri::{
@@ -25,7 +28,9 @@ pub fn init() -> TauriPlugin<Wry> {
             get_folder_path,
             create_saves_config,
             update_saves_config,
-            get_minecraft_save_location
+            get_minecraft_save_location,
+            get_backup_settings,
+            update_backup_settings
         ])
         .build()
 }
@@ -85,5 +90,15 @@ fn update_saves_config(settings_data: DirectorySettings) -> Result<DirectorySett
 
 #[tauri::command]
 pub fn get_minecraft_save_location() -> Option<PathBuf> {
-    teller::handlers::config::get_minecraft_save_location()
+    teller::handlers::config::instance::get_minecraft_save_location()
+}
+
+#[tauri::command]
+fn get_backup_settings() -> Result<BackupSettings, String> {
+    teller::handlers::config::backup::get_backup_config()
+}
+
+#[tauri::command]
+fn update_backup_settings(settings_data: BackupSettings) -> Result<BackupSettings, String> {
+    teller::handlers::config::backup::update_backup_config(settings_data)
 }
