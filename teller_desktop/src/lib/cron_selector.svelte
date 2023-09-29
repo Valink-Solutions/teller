@@ -1,5 +1,7 @@
 <script>
-	import { backupSettings } from '$lib/stores';
+	import { backupSettings } from '$lib/stores/settings';
+
+	export let disabled = false;
 
 	let cronSchedule = '0 0 * * *';
 	let minute = 0;
@@ -19,7 +21,6 @@
 	];
 
 	function updateCronSchedule() {
-		console.log(selectedOption);
 		if (selectedOption === 'custom') {
 			cronSchedule = `${minute} ${hour} ${day} * *`;
 		} else {
@@ -31,20 +32,11 @@
 	$: selectedOption, updateCronSchedule();
 
 	$: $backupSettings.schedule = cronSchedule;
-
-	// $: {
-	//   const matchingOption = options.find(option => option.value === $backupSettings.schedule);
-	//   if (matchingOption) {
-	//     selectedOption = matchingOption.value;
-	//   } else {
-	//     selectedOption = 'custom';
-	//   }
-	// }
 </script>
 
 <div class="form-control w-full gap-2">
 	<div class="flex flex-col items-center gap-2 w-full">
-		<select bind:value={selectedOption} class="select w-full">
+		<select bind:value={selectedOption} class="select w-full" {disabled}>
 			{#each options as option}
 				<option value={option.value}>{option.label}</option>
 			{/each}

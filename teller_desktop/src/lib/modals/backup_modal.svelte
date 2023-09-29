@@ -3,7 +3,7 @@
 	import { invoke } from '@tauri-apps/api';
 	import { toast } from '@zerodevx/svelte-toast';
 	import { onMount } from 'svelte';
-	import type { BackupSettings } from '$lib/utils';
+	import type { BackupSettings } from '$lib/types/backups';
 
 	export let isOpen: boolean;
 

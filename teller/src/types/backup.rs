@@ -37,3 +37,10 @@ pub struct BackupMetadata {
     pub entry: WorldData,
     pub data: WorldLevelData,
 }
+
+#[derive(Deserialize, Serialize, Clone)]
+pub struct SnapshotInfo {
+    pub created: i64,
+    pub size: u64,
+    pub path: PathBuf,
+}

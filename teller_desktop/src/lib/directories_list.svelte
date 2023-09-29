@@ -2,8 +2,8 @@
 	import Sortable from 'sortablejs';
 	import { onMount, afterUpdate } from 'svelte';
 	import Icon from '@iconify/svelte';
-	import type { VaultEntries } from './utils';
-	import { directorySettings } from './stores';
+	import { directorySettings } from './stores/settings';
+	import type { VaultEntries } from './types/config';
 
 	// If you can find a better way to do this please implement it
 	// I'm begging you

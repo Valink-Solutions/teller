@@ -49,7 +49,10 @@
 <div class="flex flex-col justify-start w-full px-4 gap-4">
 	<button
 		class="btn btn-ghost w-20"
-		on:click={() => goto(`/local/worlds/${$page.params.categoryName}/${$page.params.worldId}`)}
+		on:click={() =>
+			goto(
+				`/local/worlds/${$page.params.categoryName}/${$page.params.pathName}/${$page.params.worldId}`
+			)}
 	>
 		<Icon icon="mdi:arrow-left" class="w-6 h-6" />
 	</button>

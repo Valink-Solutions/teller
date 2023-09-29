@@ -1,8 +1,9 @@
 <script lang="ts">
 	import Sortable from 'sortablejs';
 	import { onMount, afterUpdate } from 'svelte';
-	import { localVaults, backupSettings } from './stores';
 	import Icon from '@iconify/svelte';
+	import { localVaults } from './stores/settings';
+	import { backupSettings } from './stores/settings';
 
 	const updateVaultName = (oldName: string, newName: string) => {
 		if (oldName !== newName) {

@@ -6,16 +6,16 @@
 	import { invoke } from '@tauri-apps/api/tauri';
 	import { WebviewWindow } from '@tauri-apps/api/window';
 	import { listen } from '@tauri-apps/api/event';
-	import type { BackupSettings, DirectorySettings } from '$lib/utils';
-	import { currentDir, type CurrentDir } from '$lib/stores';
+	import type { CurrentDir } from '$lib/types/navigation';
+	import { activeItem, currentDir, currentVault } from '$lib/stores/navigation';
 	import { SvelteToast } from '@zerodevx/svelte-toast';
 	import { Modals, closeModal, openModal } from 'svelte-modals';
 	import DirectoriesModal from '$lib/modals/directories_modal.svelte';
 	import SettingsModal from '$lib/modals/settings_modal.svelte';
+	import type { DirectorySettings } from '$lib/types/config';
+	import type { BackupSettings } from '$lib/types/backups';
 
 	let sideBar: HTMLElement | null = null;
-
-	$: activeItem = $currentDir;
 
 	let save_paths: DirectorySettings;
 
@@ -76,27 +76,17 @@
 			currentDir.set(item);
 			await goto(`/local/worlds/${item.category}/${item.path}`);
 		} else if (item?.type === 'localBackup') {
-			currentDir.set(item);
-			await goto(`/local/vaults`);
+			currentVault.set(item.category as string);
+			await goto(`/local/vaults/${item.category}`);
 		}
-	}
-
-	function handleEditDirClick() {
-		openModal(DirectoriesModal);
+		activeItem.set(item);
 	}
 
 	function handleSettingsClick() {
 		openModal(SettingsModal);
 	}
 
-	const options = {
-		theme: {
-			// '--toastBackground': '#1f2937',
-			// '--toastProgressBackground': '#fff',
-			// '--toastProgressFill': '#1f2937',
-			// '--toastColor': '#fff'
-		}
-	};
+	const options = {};
 
 	let activeTab = 'local';
 
@@ -130,7 +120,9 @@
 							<button
 								on:click={() =>
 									handleItemClick({ type: 'world', category: 'default', path: 'default' })}
-								class:active={activeItem.path === 'default' && activeItem.category === 'default'}
+								class:active={$activeItem?.type === 'world' &&
+									$activeItem?.category === 'default' &&
+									$activeItem?.path === 'default'}
 								class="text-xs">Default</button
 							>
 						</li>
@@ -151,8 +143,9 @@
 													<button
 														on:click={() =>
 															handleItemClick({ type: 'world', category: category, path: path })}
-														class:active={activeItem.path === path &&
-															activeItem.category === category}
+														class:active={$activeItem?.type === 'world' &&
+															$activeItem?.category === category &&
+															$activeItem?.path === path}
 														class="text-xs"
 													>
 														{#if path.length > 18}
@@ -199,7 +192,8 @@
 										<button
 											on:click={() =>
 												handleItemClick({ type: 'localBackup', category: vault, path: path })}
-											class:active={activeItem.path === path && activeItem.category === vault}
+											class:active={$activeItem?.type === 'localBackup' &&
+												$activeItem?.category === vault}
 											class="text-xs"
 										>
 											{#if vault.length > 18}

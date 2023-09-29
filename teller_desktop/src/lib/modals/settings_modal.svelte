@@ -4,11 +4,11 @@
 	import { toast } from '@zerodevx/svelte-toast';
 	import DirectoriesModal from '$lib/modals/directories_modal.svelte';
 	import LocalVaultModal from './local_vault_modal.svelte';
-	import { backupSettings } from '../stores';
+	import { backupSettings } from '../stores/settings';
 	import CronSelector from '../cron_selector.svelte';
 	import Icon from '@iconify/svelte';
 	import { onMount } from 'svelte';
-	import type { BackupSettings } from '$lib/utils';
+	import type { BackupSettings } from '$lib/types/backups';
 
 	export let isOpen: boolean;
 
@@ -52,20 +52,21 @@
 				<p class="text-sm text-gray-500 mx-auto">Auto Backup isn't enabled yet.</p>
 				<div>
 					<div class="flex flex-col gap-2">
-						<span>Backup Schedule</span>
-						<CronSelector />
+						<span class="opacity-50">Backup Schedule</span>
+						<CronSelector disabled />
 						<div class="form-control">
 							<label for="auto_backup" class="label cursor-pointer">
-								<span class="label-text">Auto Backup</span>
+								<span class="label-text opacity-50">Auto Backup</span>
 								<input
 									id="auto_backup"
 									type="checkbox"
 									bind:checked={$backupSettings.auto_backup}
 									class="checkbox"
+									disabled
 								/>
 							</label>
 						</div>
-						<button on:click={saveBackupSettings} class="btn btn-primary"
+						<button on:click={saveBackupSettings} class="btn btn-primary" disabled
 							>Save Backup Settings</button
 						>
 					</div>
@@ -92,7 +93,7 @@
 								<p class="text-sm text-gray-500">Edit the remote vaults.</p>
 							</div>
 						</div>
-						<button disabled class="btn">Edit Remote Vaults</button>
+						<button class="btn" disabled>Edit Remote Vaults</button>
 					</div>
 				</div>
 

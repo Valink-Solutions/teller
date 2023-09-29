@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { currentDir, type CurrentDir } from '$lib/stores';
 	import BackupList from '$lib/backup_list.svelte';
 	import { invoke } from '@tauri-apps/api/tauri';
 	import Icon from '@iconify/svelte';
-	import type { WorldItem } from '$lib/utils';
+	import type { WorldItem } from '$lib/types/worlds';
 	import { toast } from '@zerodevx/svelte-toast';
+	import { currentVault } from '$lib/stores/navigation';
 
 	let worlds: WorldItem[] = [];
 
@@ -13,17 +13,14 @@
 
 	let timer: NodeJS.Timeout;
 
-	async function handleCurrentDirChange(value: CurrentDir) {
-		if (value?.type !== 'localBackup') {
-			console.log(`Invalid type: ${value.type} meant to be localBackup`);
-			return;
-		} else {
+	async function handleCurrentDirChange(value: string | null) {
+		if (value) {
 			loading = true;
 			clearTimeout(timer);
 			timer = setTimeout(async () => {
 				loading = true;
 				invoke('plugin:backup_handler|grab_local_backup_list', {
-					localBackupsPath: value.path
+					vault: value
 				})
 					.then((worldResult) => {
 						worlds = worldResult as WorldItem[];
@@ -48,7 +45,13 @@
 	}
 
 	$: {
-		currentDir.subscribe(handleCurrentDirChange);
+		currentVault.subscribe(handleCurrentDirChange);
+	}
+
+	async function openInstanceFolder(path: string) {
+		await invoke('plugin:folder_handler|open_path_in_explorer', {
+			path: path
+		});
 	}
 </script>
 
@@ -63,24 +66,24 @@
 			<Icon icon="mdi:error" class="w-16 h-16" />
 			<p class="text-lg font-semibold">Error loading data</p>
 		</div>
-	{:else if worlds.length > 0}
+	{:else}
 		<div class="flex flex-row w-full justify-between items-center pb-2 px-2">
 			<div class="flex flex-row w-full h-full items-center gap-2">
 				<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 				<h1
 					class="border-l-4 pl-2 w-fit max-w-[190px] xl:max-w-[240px] capitalize border-primary my-2 whitespace-nowrap text-elipsis overflow-hidden overflow-ellipsis"
 				>
-					{$currentDir.category}
+					{$currentVault}
 				</h1>
-				<button
-					on:click={() => open($currentDir.path)}
+				<!-- <button
+					on:click={() => openInstanceFolder($currentDir.path)}
 					class="transition-opacity group flex flex-row items-center gap-1 text-xs underline whitespace-nowrap"
 				>
 					<span class="opacity-70"
 						>{$currentDir.path.slice(0, 20) + '...' + $currentDir.path.slice(-20)}</span
 					>
 					<Icon icon="mdi:folder-open-outline" class="opacity-0 group-hover:opacity-70" />
-				</button>
+				</button> -->
 			</div>
 			<!-- <div class="join join-vertical lg:join-horizontal h-full items-center">
 				<button on:click={toggleSortDirection} class="btn btn-secondary btn-sm">
@@ -97,12 +100,7 @@
 			</div> -->
 		</div>
 		<div class="flex px-2 h-full">
-			<BackupList {worlds} on:visible currentDir={$currentDir} />
-		</div>
-	{:else}
-		<div class="flex flex-col items-center justify-center w-full h-full">
-			<Icon icon="mdi:alert" class="w-16 h-16" />
-			<p class="text-lg font-semibold">No data available</p>
+			<BackupList {worlds} on:visible currentVault={$currentVault} />
 		</div>
 	{/if}
 </div>

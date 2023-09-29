@@ -1,6 +1,12 @@
 use std::{fs, path::PathBuf};
 
-use crate::{handlers::backup::grab_backup_metadata, types::world::WorldData};
+use crate::{
+    handlers::{backup::grab_backup_metadata, config::backup::get_backup_config},
+    types::{
+        backup::{BackupMetadata, SnapshotInfo},
+        world::WorldData,
+    },
+};
 
 fn get_backups_from_path(directory_path: &str) -> Result<Vec<std::fs::DirEntry>, std::io::Error> {
     let entries = fs::read_dir(directory_path)?;
@@ -28,7 +34,15 @@ fn find_newest_backup(files: &[std::fs::DirEntry]) -> Option<PathBuf> {
     newest_file
 }
 
-pub fn fetch_backups_list(local_backups_path: PathBuf) -> Result<Vec<WorldData>, String> {
+pub fn fetch_backups_list(vault: &str) -> Result<Vec<WorldData>, String> {
+    let backup_settings = get_backup_config()?;
+
+    let local_backups_path = if let Some(vault_path) = backup_settings.vaults.get(vault) {
+        vault_path
+    } else {
+        return Err(format!("Vault {} does not exist", vault));
+    };
+
     let backup_entries = fs::read_dir(local_backups_path)
         .map_err(|e| format!("Failed to read backups directory: {}", e))?;
 
@@ -61,4 +75,109 @@ pub fn fetch_backups_list(local_backups_path: PathBuf) -> Result<Vec<WorldData>,
     }
 
     Ok(backups)
+}
+
+pub fn fetch_backups_for_world(
+    world_id: &str,
+    selected_vault: Option<&str>,
+) -> Result<Vec<SnapshotInfo>, String> {
+    let backup_settings = get_backup_config()?;
+
+    let world_path = if let Some(selected_vault) = selected_vault {
+        if let Some(vault_path) = backup_settings.vaults.get(selected_vault) {
+            vault_path.join(world_id)
+        } else {
+            return Err(format!("Vault {} does not exist", selected_vault));
+        }
+    } else {
+        return Err("No vault selected".to_string());
+    };
+
+    let files = get_backups_from_path(world_path.to_str().unwrap())
+        .map_err(|e| format!("Failed to read backups directory: {}", e))?;
+
+    let mut backups = Vec::new();
+
+    for entry in files {
+        if entry
+            .file_name()
+            .to_str()
+            .unwrap()
+            .contains(".chunkvault-snapshot")
+        {
+            let path = entry.path();
+
+            let created = path
+                .file_name()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .replace(".chunkvault-snapshot", "");
+            let created = created.parse::<i64>().unwrap();
+
+            let metadata = fs::metadata(&path).unwrap();
+            let size = metadata.len();
+
+            let data = SnapshotInfo {
+                created,
+                size,
+                path,
+            };
+
+            backups.push(data);
+        }
+    }
+
+    Ok(backups)
+}
+
+pub fn fetch_metadata_for_world(
+    world_id: &str,
+    selected_vault: Option<&str>,
+) -> Result<BackupMetadata, String> {
+    let backup_settings = get_backup_config()?;
+
+    let world_path = if let Some(selected_vault) = selected_vault {
+        if let Some(vault_path) = backup_settings.vaults.get(selected_vault) {
+            vault_path.join(world_id).to_owned()
+        } else {
+            return Err(format!("Vault {} does not exist", selected_vault));
+        }
+    } else {
+        return Err("No vault selected".to_string());
+    };
+
+    let files = get_backups_from_path(world_path.to_str().unwrap())
+        .map_err(|e| format!("Failed to read backups directory: {}", e))?;
+
+    match find_newest_backup(&files) {
+        Some(newest_backup) => return grab_backup_metadata(newest_backup),
+        None => Err("No backups found".to_string()),
+    }
+}
+
+pub fn fetch_metadata_for_backup(
+    world_id: &str,
+    selected_vault: Option<&str>,
+    backup_id: &str,
+) -> Result<BackupMetadata, String> {
+    let backup_settings = get_backup_config()?;
+
+    let world_path = if let Some(selected_vault) = selected_vault {
+        if let Some(vault_path) = backup_settings.vaults.get(selected_vault) {
+            vault_path.join(world_id).to_owned()
+        } else {
+            return Err(format!("Vault {} does not exist", selected_vault));
+        }
+    } else {
+        return Err("No vault selected".to_string());
+    };
+
+    let backup_path = world_path.join(format!("{}.chunkvault-snapshot", backup_id));
+
+    if backup_path.exists() {
+        return grab_backup_metadata(backup_path);
+    } else {
+        return Err("Backup does not exist".to_string());
+    }
 }

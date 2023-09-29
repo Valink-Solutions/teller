@@ -1,10 +1,11 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
-	import { formatBytes, type WorldItem } from './utils';
-	import type { CurrentDir } from './stores';
+	import { formatBytes } from './utils';
+	import type { CurrentDir } from './types/navigation';
+	import type { WorldItem } from './types/worlds';
 
 	export let world: WorldItem;
-	export let currentDir: CurrentDir = { path: 'default', category: null };
+	export let currentVault: string | null;
 </script>
 
 <li class="card flex flex-row w-full bg-base-100 shadow-xl max-h-fit">
@@ -34,39 +35,9 @@
 		<!-- <h2 class="card-title">world</h2>
       <p>no backups</p> -->
 		<div class="card-actions justify-around items-center">
-			<div class="dropdown dropdown-end">
-				<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
-				<!-- svelte-ignore a11y-label-has-associated-control -->
-				<label
-					tabindex="0"
-					class="drop-shadow-none btn btn-square btn-ghost btn-xs border-none m-1 text-lg"
-				>
-					<Icon icon="mdi:dots-vertical" />
-				</label>
-				<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
-				<ul tabindex="0" class="dropdown-content z-[1] menu p-2 bg-base-100 rounded-box w-52">
-					<li>
-						<a
-							href={`/local/worlds/${currentDir.category}/${world.id}`}
-							class="flex flex-row items-center"
-						>
-							<Icon icon="mdi:pencil-outline" class="mr-1" />
-							Quick Edit
-						</a>
-					</li>
-					<div class="divider my-1" />
-					<li>
-						<button class="text-red-500 flex flex-row items-center" disabled>
-							<Icon icon="mdi:trash-can-outline" class="mr-1" />
-							Delete
-						</button>
-					</li>
-				</ul>
-			</div>
 			<div class="join">
-				<a href={`/local/vaults/${currentDir.category}/${world.id}`} class="btn btn-sm join-item"
-					>View</a
-				>
+				<button class="btn btn-warning btn-sm join-item" disabled>Delete</button>
+				<a href={`/local/vaults/${currentVault}/${world.id}`} class="btn btn-sm join-item">View</a>
 			</div>
 		</div>
 	</div>

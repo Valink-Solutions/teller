@@ -3,10 +3,10 @@
 	import { invoke } from '@tauri-apps/api';
 	import { toast } from '@zerodevx/svelte-toast';
 	import LocalVaultList from '../local_vault_list.svelte';
-	import { localVaults, backupSettings as bSStore } from '../stores';
+	import { localVaults, backupSettings as bSStore } from '../stores/settings';
 	import { dialog } from '@tauri-apps/api';
 	import { onMount } from 'svelte';
-	import type { BackupSettings } from '$lib/utils';
+	import type { BackupSettings } from '$lib/types/backups';
 
 	export let isOpen: boolean;
 

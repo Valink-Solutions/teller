@@ -1,12 +1,15 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/tauri';
-	import { currentDir, worldSortOption, worldListCache, type CurrentDir } from '$lib/stores';
 	import { page } from '$app/stores';
 	import WorldList from '$lib/world_list.svelte';
 	import Icon from '@iconify/svelte';
-	import type { WorldItem } from '$lib/utils';
+	import type { WorldItem } from '$lib/types/worlds';
 	import { toast } from '@zerodevx/svelte-toast';
-	import { onMount } from 'svelte';
+	import { currentDir } from '$lib/stores/navigation';
+	import { worldListCache } from '$lib/stores/caches';
+	import { writable } from 'svelte/store';
+
+	let worldSortOption = writable({ option: 'size', direction: 'desc' });
 
 	let world_path: string = '';
 	let worlds: WorldItem[] = [];

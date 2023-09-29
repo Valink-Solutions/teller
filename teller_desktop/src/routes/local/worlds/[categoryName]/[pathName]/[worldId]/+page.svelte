@@ -5,8 +5,8 @@
 	import { invoke } from '@tauri-apps/api/tauri';
 	import { onMount } from 'svelte';
 	import dayjs from 'dayjs';
-	import { addToWorldCache, worldCache } from '$lib/stores';
-	import type { WorldLevelData } from '$lib/utils';
+	import type { WorldLevelData } from '$lib/types/worlds';
+	import { addToWorldCache, worldCache } from '$lib/stores/caches';
 	let world_data: any;
 
 	let currentPage = 1;
@@ -156,7 +156,7 @@
 
 						<a
 							class="btn btn-ghost"
-							href={`/local/worlds/${$page.params.categoryName}/${$page.params.worldId}/player/${player.id}`}
+							href={`/local/worlds/${$page.params.categoryName}/${$page.params.pathName}/${$page.params.worldId}/player/${player.id}`}
 						>
 							<Icon icon="mdi:arrow-right" />
 						</a>

@@ -1,10 +1,11 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
-	import { formatBytes, type WorldItem } from './utils';
-	import type { CurrentDir } from './stores';
+	import { formatBytes } from './utils';
+	import type { CurrentDir } from './types/navigation';
 
 	import { openModal } from 'svelte-modals';
 	import BackupModal from './modals/backup_modal.svelte';
+	import type { WorldItem } from './types/worlds';
 
 	export let world: WorldItem;
 	export let currentDir: CurrentDir = { path: 'default', category: null };

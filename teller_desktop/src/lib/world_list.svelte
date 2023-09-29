@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { WorldItem } from './utils';
+	import type { WorldItem } from './types/worlds';
 	import WorldListItem from './world_list_item.svelte';
-	import type { CurrentDir } from './stores';
+	import type { CurrentDir } from './types/navigation';
 
 	export let worlds: WorldItem[] = [];
 	export let currentDir: CurrentDir = { path: 'default', category: null };

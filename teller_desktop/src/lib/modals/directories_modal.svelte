@@ -4,8 +4,8 @@
 	import { dialog, invoke } from '@tauri-apps/api';
 	import { onMount } from 'svelte';
 	import { emit } from '@tauri-apps/api/event';
-	import { directorySettings } from '$lib/stores';
-	import type { DirectorySettings } from '$lib/utils';
+	import { directorySettings } from '$lib/stores/settings';
+	import type { DirectorySettings } from '$lib/types/config';
 	import { toast } from '@zerodevx/svelte-toast';
 
 	let directoryCount = 0;
