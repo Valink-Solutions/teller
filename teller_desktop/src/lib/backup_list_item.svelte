@@ -3,9 +3,42 @@
 	import { formatBytes } from './utils';
 	import type { CurrentDir } from './types/navigation';
 	import type { WorldItem } from './types/worlds';
+	import { closeModal, openModal } from 'svelte-modals';
+	import { invoke } from '@tauri-apps/api';
+	import { toast } from '@zerodevx/svelte-toast';
+	import DeleteModal from './modals/delete_modal.svelte';
+	import { emit } from '@tauri-apps/api/event';
 
 	export let world: WorldItem;
 	export let currentVault: string | null;
+
+	function openDeleteWindow() {
+		openModal(DeleteModal, {
+			deleteTitle: 'Delete Backups',
+			deleteMessage: 'Are you sure you want to delete the backups for this world?',
+			deleteFunction: () => {
+				invoke('plugin:backup_handler|delete_world_backups', {
+					selectedVault: currentVault,
+					worldId: world.id
+				})
+					.then((res) => {
+						toast.push(`Successfully deleted backups for ${world.name} from ${currentVault}`);
+						emit('backup_list_updated');
+						closeModal();
+					})
+					.catch((err) => {
+						toast.push(`Failed to delete Backups. ${err}`, {
+							theme: {
+								'--toastBackground': '#EF4444',
+								'--toastProgressBackground': '#F87171',
+								'--toastProgressText': '#fff',
+								'--toastText': '#fff'
+							}
+						});
+					});
+			}
+		});
+	}
 </script>
 
 <li class="card flex flex-row w-full bg-base-100 shadow-xl max-h-fit">
@@ -36,7 +69,7 @@
       <p>no backups</p> -->
 		<div class="card-actions justify-around items-center">
 			<div class="join">
-				<button class="btn btn-warning btn-sm join-item" disabled>Delete</button>
+				<button class="btn btn-error btn-sm join-item" on:click={openDeleteWindow}>Delete</button>
 				<a href={`/local/vaults/${currentVault}/${world.id}`} class="btn btn-sm join-item">View</a>
 			</div>
 		</div>

@@ -14,7 +14,9 @@ pub fn init() -> TauriPlugin<Wry> {
             grab_local_backup_list,
             grab_world_metadata,
             grab_world_backups,
-            grab_backup_metadata
+            grab_backup_metadata,
+            delete_backup_from_id,
+            delete_world_backups
         ])
         .build()
 }
@@ -69,4 +71,18 @@ fn grab_backup_metadata(
         selected_vault,
         backup_id,
     )
+}
+
+#[tauri::command]
+fn delete_backup_from_id(
+    world_id: &str,
+    selected_vault: Option<&str>,
+    backup_id: &str,
+) -> Result<(), String> {
+    teller::handlers::backup::delete_backup(world_id, selected_vault, backup_id)
+}
+
+#[tauri::command]
+fn delete_world_backups(world_id: &str, selected_vault: Option<&str>) -> Result<(), String> {
+    teller::handlers::backup::delete_all_backups(world_id, selected_vault)
 }

@@ -11,7 +11,7 @@ use serde_json::{json, Value};
 use uuid::Uuid;
 
 use crate::{
-    handlers::player::fetch_player_data_from_uuid,
+    handlers::{player::fetch_player_data_from_uuid, search::worlds::world_path_from_id},
     types::world::{GameRules, WorldData, WorldLevelData},
     utils::{calculate_dir_size, encode_image_to_base64},
 };
@@ -923,4 +923,21 @@ pub fn parse_world_entry_data(path: PathBuf) -> Result<WorldData, String> {
     };
 
     Ok(world_data)
+}
+
+pub fn delete_world(world_id: &str, category: Option<&str>) -> Result<(), String> {
+    let world_path = world_path_from_id(world_id, category)?;
+
+    if !world_path.exists() {
+        error!("World does not exist: {:?}", world_path);
+        return Err("World does not exist".into());
+    }
+
+    info!("Deleting world at {:?}", world_path);
+
+    if let Err(e) = fs::remove_dir_all(world_path) {
+        return Err(format!("Failed to delete world: {:?}", e));
+    }
+
+    Ok(())
 }

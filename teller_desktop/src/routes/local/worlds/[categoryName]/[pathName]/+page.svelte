@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { listen } from '@tauri-apps/api/event';
 	import { invoke } from '@tauri-apps/api/tauri';
 	import { page } from '$app/stores';
 	import WorldList from '$lib/world_list.svelte';
@@ -8,6 +9,7 @@
 	import { currentDir } from '$lib/stores/navigation';
 	import { worldListCache } from '$lib/stores/caches';
 	import { writable } from 'svelte/store';
+	import { onMount } from 'svelte';
 
 	let worldSortOption = writable({ option: 'size', direction: 'desc' });
 
@@ -18,6 +20,42 @@
 	let error = false;
 
 	let timer: NodeJS.Timeout;
+
+	function handleWorldListUpdate() {
+		invoke('plugin:config|get_folder_path', {
+			dirName: $page.params.pathName,
+			category: $page.params.categoryName
+		}).then((result) => {
+			world_path = result as string;
+			invoke('plugin:folder_handler|grab_local_worlds_list', {
+				instance: $page.params.pathName,
+				category: $page.params.categoryName
+			})
+				.then((worldResult) => {
+					worlds = sortWorlds(worldResult as WorldItem[], $worldSortOption);
+					worldListCache.set({
+						category: $page.params.categoryName,
+						instance: $page.params.pathName,
+						path: world_path,
+						data: worlds
+					});
+					error = false;
+				})
+				.catch((err) => {
+					console.log(err);
+					toast.push(`${err}`, {
+						theme: {
+							'--toastBackground': '#f44336',
+							'--toastProgressBackground': '#d32f2f'
+						}
+					});
+					error = true;
+				})
+				.finally(() => {
+					loading = false;
+				});
+		});
+	}
 
 	async function handleCurrentDirChange(value: { category: string | null; path: string }) {
 		loading = true;
@@ -33,38 +71,7 @@
 				loading = false;
 				error = false;
 			} else {
-				invoke('plugin:config|get_folder_path', {
-					dirName: $page.params.pathName,
-					category: $page.params.categoryName
-				}).then((result) => {
-					world_path = result as string;
-					invoke('plugin:folder_handler|grab_local_worlds_list', {
-						localSavesPath: world_path
-					})
-						.then((worldResult) => {
-							worlds = sortWorlds(worldResult as WorldItem[], $worldSortOption);
-							worldListCache.set({
-								category: $page.params.categoryName,
-								instance: $page.params.pathName,
-								path: world_path,
-								data: worlds
-							});
-							error = false;
-						})
-						.catch((err) => {
-							console.log(err);
-							toast.push(`${err}`, {
-								theme: {
-									'--toastBackground': '#f44336',
-									'--toastProgressBackground': '#d32f2f'
-								}
-							});
-							error = true;
-						})
-						.finally(() => {
-							loading = false;
-						});
-				});
+				handleWorldListUpdate();
 			}
 		}, 750);
 	}
@@ -78,6 +85,12 @@
 			worlds = sortWorlds(worlds, value);
 		});
 	}
+
+	onMount(() => {
+		listen('world_list_updated', () => {
+			handleWorldListUpdate();
+		});
+	});
 
 	function sortWorlds(
 		worlds: WorldItem[],

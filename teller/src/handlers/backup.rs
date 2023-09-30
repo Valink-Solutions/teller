@@ -11,7 +11,7 @@ use serde_json::json;
 use crate::types::backup::BackupMetadata;
 
 use super::config::backup::get_backup_config;
-use super::search::worlds::grab_world_by_id;
+use super::search::worlds::world_path_from_id;
 use super::world::parse_world_entry_data;
 use super::{
     config::get_config_folder, search::worlds::is_minecraft_world, world::process_world_data,
@@ -23,19 +23,20 @@ pub fn create_backup_from_id(
     vaults: Option<Vec<String>>,
 ) -> Result<String, String> {
     info!("Creating backup for world id: {}", world_id);
-    match grab_world_by_id(world_id, Some(true), category) {
-        Ok(value) => {
-            let world_path = value.as_str().unwrap();
-            let world_backup_path = match create_world_backup(PathBuf::from(world_path)) {
+    match world_path_from_id(world_id, category) {
+        Ok(world_path) => {
+            let world_backup_path = match create_world_backup(world_path.clone()) {
                 Ok(backup_path) => backup_path,
                 Err(e) => {
                     error!(
                         "Failed to create backup for world folder {}: {:?}",
-                        world_path, e
+                        world_path.display(),
+                        e
                     );
                     return Err(format!(
                         "Failed to create backup for world folder {}: {:?}",
-                        world_path, e
+                        world_path.display(),
+                        e
                     ));
                 }
             };
@@ -282,4 +283,69 @@ pub fn grab_backup_metadata(backup_path: PathBuf) -> Result<BackupMetadata, Stri
     };
 
     Ok(metadata)
+}
+
+pub fn delete_backup(world_id: &str, vault: Option<&str>, snapshot_id: &str) -> Result<(), String> {
+    let backup_settings = get_backup_config()?;
+
+    let vault_path = match vault {
+        Some(vault_id) => {
+            if let Some(vault) = backup_settings.vaults.get(vault_id) {
+                vault.to_owned()
+            } else {
+                return Err(format!("Vault {} does not exist.", vault_id));
+            }
+        }
+        None => get_default_vault(),
+    };
+
+    let backup_path = vault_path
+        .join(world_id)
+        .join(format!("{}.chunkvault-snapshot", snapshot_id));
+
+    info!("Removing backup {} for {}", snapshot_id, world_id);
+
+    match std::fs::remove_file(backup_path.clone()) {
+        Ok(_) => {}
+        Err(e) => {
+            return Err(format!(
+                "Failed to remove backup file {}: {:?}",
+                backup_path.display(),
+                e
+            ));
+        }
+    };
+    Ok(())
+}
+
+pub fn delete_all_backups(world_id: &str, vault: Option<&str>) -> Result<(), String> {
+    let backup_settings = get_backup_config()?;
+
+    let vault_path = match vault {
+        Some(vault_id) => {
+            if let Some(vault) = backup_settings.vaults.get(vault_id) {
+                vault.to_owned()
+            } else {
+                return Err(format!("Vault {} does not exist.", vault_id));
+            }
+        }
+        None => get_default_vault(),
+    };
+
+    let backups_path = vault_path.join(world_id);
+
+    info!("Removing all backups for {}", world_id);
+
+    match std::fs::remove_dir_all(backups_path.clone()) {
+        Ok(_) => {}
+        Err(e) => {
+            return Err(format!(
+                "Failed to remove backup folder {}: {:?}",
+                backups_path.display(),
+                e
+            ));
+        }
+    };
+
+    Ok(())
 }

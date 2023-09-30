@@ -3,9 +3,13 @@
 	import { formatBytes } from './utils';
 	import type { CurrentDir } from './types/navigation';
 
-	import { openModal } from 'svelte-modals';
+	import { closeModal, openModal } from 'svelte-modals';
+	import { invoke } from '@tauri-apps/api';
+	import { toast } from '@zerodevx/svelte-toast';
+	import DeleteModal from './modals/delete_modal.svelte';
 	import BackupModal from './modals/backup_modal.svelte';
 	import type { WorldItem } from './types/worlds';
+	import { emit } from '@tauri-apps/api/event';
 
 	export let world: WorldItem;
 	export let currentDir: CurrentDir = { path: 'default', category: null };
@@ -15,6 +19,34 @@
 			worldName: world.name,
 			worldId: world.id,
 			category: currentDir.category
+		});
+	}
+
+	function openDeleteWindow() {
+		openModal(DeleteModal, {
+			deleteTitle: 'Delete World',
+			deleteMessage: 'Are you sure you want to delete this world?',
+			deleteFunction: () => {
+				invoke('plugin:world_handler|delete_world_by_id', {
+					worldId: world.id,
+					category: currentDir.category
+				})
+					.then((res) => {
+						toast.push(`Successfully deleted ${world.name}`);
+						emit('world_list_updated');
+						closeModal();
+					})
+					.catch((err) => {
+						toast.push(`Failed to delete ${world.name}. ${err}`, {
+							theme: {
+								'--toastBackground': '#EF4444',
+								'--toastProgressBackground': '#F87171',
+								'--toastProgressText': '#fff',
+								'--toastText': '#fff'
+							}
+						});
+					});
+			}
 		});
 	}
 </script>
@@ -46,36 +78,8 @@
 		<!-- <h2 class="card-title">world</h2>
       <p>no backups</p> -->
 		<div class="card-actions justify-around items-center">
-			<div class="dropdown dropdown-end">
-				<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
-				<!-- svelte-ignore a11y-label-has-associated-control -->
-				<label
-					tabindex="0"
-					class="drop-shadow-none btn btn-square btn-ghost btn-xs border-none m-1 text-lg"
-				>
-					<Icon icon="mdi:dots-vertical" />
-				</label>
-				<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
-				<ul tabindex="0" class="dropdown-content z-[1] menu p-2 bg-base-100 rounded-box w-52">
-					<li>
-						<a
-							href={`/local/worlds/${currentDir.category}/${world.id}`}
-							class="flex flex-row items-center"
-						>
-							<Icon icon="mdi:pencil-outline" class="mr-1" />
-							Quick Edit
-						</a>
-					</li>
-					<div class="divider my-1" />
-					<li>
-						<button class="text-red-500 flex flex-row items-center" disabled>
-							<Icon icon="mdi:trash-can-outline" class="mr-1" />
-							Delete
-						</button>
-					</li>
-				</ul>
-			</div>
 			<div class="join">
+				<button class="btn btn-error btn-sm join-item" on:click={openDeleteWindow}>Delete</button>
 				<button on:click={openBackupWindow} class="btn btn-sm join-item">Backup</button>
 				<a
 					href={`/local/worlds/${currentDir.category}/${currentDir.path}/${world.id}`}

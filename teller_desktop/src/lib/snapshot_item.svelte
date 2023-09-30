@@ -3,11 +3,45 @@
 	import type { SnapshotInfo } from './types/backups';
 	import { formatBytes } from './utils';
 	import dayjs from 'dayjs';
+	import { closeModal, openModal } from 'svelte-modals';
+	import DeleteModal from './modals/delete_modal.svelte';
+	import { invoke } from '@tauri-apps/api';
+	import { toast } from '@zerodevx/svelte-toast';
+	import { emit } from '@tauri-apps/api/event';
 
 	export let snapshot: SnapshotInfo;
 
 	export let vaultName: string;
 	export let worldId: string;
+
+	function openDeleteWindow() {
+		openModal(DeleteModal, {
+			deleteTitle: 'Delete Snapshot',
+			deleteMessage: 'Are you sure you want to delete this snapshot?',
+			deleteFunction: () => {
+				invoke('plugin:backup_handler|delete_backup_from_id', {
+					selectedVault: vaultName,
+					worldId: worldId,
+					backupId: snapshot.created.toString()
+				})
+					.then((res) => {
+						toast.push('Successfully deleted snapshot.');
+						emit('world_backup_list_updated', { worldId: worldId });
+						closeModal();
+					})
+					.catch((err) => {
+						toast.push(`Failed to delete snapshot. ${err}`, {
+							theme: {
+								'--toastBackground': '#EF4444',
+								'--toastProgressBackground': '#F87171',
+								'--toastProgressText': '#fff',
+								'--toastText': '#fff'
+							}
+						});
+					});
+			}
+		});
+	}
 </script>
 
 <li class="card flex flex-row w-full bg-base-100 shadow-xl max-h-fit">
@@ -25,7 +59,7 @@
 		</div>
 		<div class="card-actions">
 			<div class="join">
-				<button class="btn btn-warning btn-sm join-item" disabled>Delete</button>
+				<button class="btn btn-error btn-sm join-item" on:click={openDeleteWindow}>Delete</button>
 				<a
 					href={`/local/vaults/${vaultName}/${worldId}/${snapshot.created}`}
 					class="btn btn-sm join-item">View</a

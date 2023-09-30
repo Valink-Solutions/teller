@@ -4,7 +4,6 @@ use std::{
 };
 
 use log::{error, info};
-use serde_json::Value;
 
 use crate::{
     handlers::{
@@ -14,15 +13,52 @@ use crate::{
         },
         world::{get_vault_id, parse_world_entry_data, process_world_data, GameType},
     },
-    types::world::WorldData,
+    types::world::{WorldData, WorldLevelData},
 };
 
-pub fn fetch_worlds_from_path(local_saves_path: PathBuf) -> Result<Vec<WorldData>, String> {
+pub fn fetch_worlds_from_instance(
+    selected_category: &str,
+    instance: &str,
+) -> Result<Vec<WorldData>, String> {
     let mut worlds_list: Vec<WorldData> = Vec::new();
 
-    info!("Grabbing local worlds list from {:?}", local_saves_path);
+    let config_dir = get_config_folder();
 
-    let local_saves_path = PathBuf::from(local_saves_path);
+    let config = match get_local_directories_config(&config_dir) {
+        Ok(config) => config,
+        Err(e) => {
+            error!("Could not get local directories config: {:?}", e);
+            return Err("Could not get local directories config".to_string());
+        }
+    };
+    let local_saves_path = if selected_category == "default" {
+        match get_minecraft_save_location() {
+            Some(path) => path,
+            None => {
+                error!("Could not find Minecraft save location");
+                return Err("Could not find Minecraft save location".to_string());
+            }
+        }
+    } else {
+        match config.categories.get(selected_category) {
+            Some(category) => match category.paths.get(instance) {
+                Some(path) => path.to_owned(),
+                None => {
+                    error!(
+                        "Could not find instance {} in category {}",
+                        instance, selected_category
+                    );
+                    return Err("Could not find instance".to_string());
+                }
+            },
+            None => {
+                error!("Could not find category {}", selected_category);
+                return Err("Could not find category".to_string());
+            }
+        }
+    };
+
+    info!("Grabbing local worlds list from {:?}", local_saves_path);
 
     if !local_saves_path.exists() {
         error!(
@@ -62,11 +98,7 @@ pub fn fetch_worlds_from_path(local_saves_path: PathBuf) -> Result<Vec<WorldData
     Ok(worlds_list)
 }
 
-pub fn grab_world_by_id(
-    world_id: &str,
-    return_path: Option<bool>,
-    category: Option<&str>,
-) -> Result<Value, String> {
+pub fn world_path_from_id(world_id: &str, category: Option<&str>) -> Result<PathBuf, String> {
     let config_dir = get_config_folder();
 
     info!("Searching for world: {}", world_id);
@@ -111,30 +143,33 @@ pub fn grab_world_by_id(
                 };
 
                 if vault_id == world_id {
-                    let game_type = is_minecraft_world(&world_folder);
-
                     info!("Found world: {world_id}");
-
-                    if let Some(true) = return_path {
-                        return Ok(Value::String(world_folder.to_string_lossy().into_owned()));
-                    } else {
-                        match process_world_data(&world_folder, game_type) {
-                            Ok(data) => {
-                                let data_value = serde_json::to_value(data).unwrap();
-                                return Ok(data_value);
-                            }
-                            Err(e) => {
-                                error!("Could not process world data: {:?}", e);
-                                continue;
-                            }
-                        };
-                    }
+                    return Ok(world_folder);
                 }
             }
         }
     }
 
     Err("Could not find world".to_string())
+}
+
+pub fn grab_world_by_id(world_id: &str, category: Option<&str>) -> Result<WorldLevelData, String> {
+    match world_path_from_id(world_id, category) {
+        Ok(path) => {
+            let game_type = is_minecraft_world(&path.clone());
+            match process_world_data(&path, game_type) {
+                Ok(data) => Ok(data),
+                Err(e) => {
+                    error!("Could not process world data: {:?}", e);
+                    Err("Could not process world data".to_string())
+                }
+            }
+        }
+        Err(e) => {
+            error!("Could not find world: {:?}", e);
+            return Err("Could not find world".to_string());
+        }
+    }
 }
 
 pub fn is_minecraft_world(path: &Path) -> GameType {

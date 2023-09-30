@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import Icon from '@iconify/svelte';
 	import { invoke } from '@tauri-apps/api/tauri';
+	import { listen } from '@tauri-apps/api/event';
 	import { onMount } from 'svelte';
 	import dayjs from 'dayjs';
 	import type { BackupMetadata, SnapshotInfo } from '$lib/types/backups';
@@ -15,6 +16,25 @@
 	let loading = true;
 	let error = false;
 
+	function handleSnapshotsUpdate() {
+		invoke('plugin:backup_handler|grab_world_backups', {
+			worldId: $page.params.worldId,
+			selectedVault: $page.params.vaultName
+		})
+			.then((result) => {
+				snapshots = result as SnapshotInfo[];
+				loading = false;
+			})
+			.catch((err) => {
+				console.log(err);
+				error = true;
+			});
+	}
+
+	interface backupListUpdate {
+		worldId: string;
+	}
+
 	onMount(() => {
 		invoke('plugin:backup_handler|grab_world_metadata', {
 			worldId: $page.params.worldId,
@@ -22,23 +42,18 @@
 		})
 			.then((result) => {
 				world_data = result as BackupMetadata;
-				invoke('plugin:backup_handler|grab_world_backups', {
-					worldId: $page.params.worldId,
-					selectedVault: $page.params.vaultName
-				})
-					.then((result) => {
-						snapshots = result as SnapshotInfo[];
-						loading = false;
-					})
-					.catch((err) => {
-						console.log(err);
-						error = true;
-					});
+				handleSnapshotsUpdate();
 			})
 			.catch((err) => {
 				console.log(err);
 				error = true;
 			});
+
+		listen<backupListUpdate>('world_backup_list_updated', (event) => {
+			if (event.payload.worldId === $page.params.worldId) {
+				handleSnapshotsUpdate();
+			}
+		});
 	});
 </script>
 

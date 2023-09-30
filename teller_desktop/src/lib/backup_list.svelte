@@ -8,7 +8,9 @@
 </script>
 
 <div class="flex flex-col justify-start min-h-full h-full w-full">
-	<div class="flex flex-col justify-start items-center min-h-full w-full h-full gap-3 align-top">
+	<div
+		class="flex flex-col justify-start items-center min-h-full w-full h-full gap-3 align-top mb-10"
+	>
 		{#if worlds.length > 0}
 			{#each worlds as world}
 				<BackupListItem {world} {currentVault} />

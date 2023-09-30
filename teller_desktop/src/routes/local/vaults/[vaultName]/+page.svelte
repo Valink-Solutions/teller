@@ -5,11 +5,35 @@
 	import type { WorldItem } from '$lib/types/worlds';
 	import { toast } from '@zerodevx/svelte-toast';
 	import { currentVault } from '$lib/stores/navigation';
+	import { onMount } from 'svelte';
+	import { listen } from '@tauri-apps/api/event';
 
 	let worlds: WorldItem[] = [];
 
 	let loading = true;
 	let error = false;
+
+	function handleBackupListUpdate(value: string | null) {
+		invoke('plugin:backup_handler|grab_local_backup_list', {
+			vault: value
+		})
+			.then((worldResult) => {
+				worlds = worldResult as WorldItem[];
+				error = false;
+			})
+			.catch((err) => {
+				toast.push(`${err}`, {
+					theme: {
+						'--toastBackground': '#f44336',
+						'--toastProgressBackground': '#d32f2f'
+					}
+				});
+				error = true;
+			})
+			.finally(() => {
+				loading = false;
+			});
+	}
 
 	let timer: NodeJS.Timeout;
 
@@ -19,27 +43,7 @@
 			clearTimeout(timer);
 			timer = setTimeout(async () => {
 				loading = true;
-				invoke('plugin:backup_handler|grab_local_backup_list', {
-					vault: value
-				})
-					.then((worldResult) => {
-						worlds = worldResult as WorldItem[];
-						error = false;
-					})
-					.catch((err) => {
-						console.log(err);
-						console.log(value);
-						toast.push(`${err}`, {
-							theme: {
-								'--toastBackground': '#f44336',
-								'--toastProgressBackground': '#d32f2f'
-							}
-						});
-						error = true;
-					})
-					.finally(() => {
-						loading = false;
-					});
+				handleBackupListUpdate(value);
 			}, 750);
 		}
 	}
@@ -47,6 +51,12 @@
 	$: {
 		currentVault.subscribe(handleCurrentDirChange);
 	}
+
+	onMount(() => {
+		listen('backup_list_updated', () => {
+			handleBackupListUpdate($currentVault);
+		});
+	});
 
 	async function openInstanceFolder(path: string) {
 		await invoke('plugin:folder_handler|open_path_in_explorer', {

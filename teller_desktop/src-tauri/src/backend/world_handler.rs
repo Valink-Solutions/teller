@@ -1,12 +1,15 @@
-use std::{collections::HashMap, path::Path};
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
 
 use serde_json::Value;
 use teller::{
     handlers::{
         player::{fetch_player_data_from_uuid, fetch_players_meta_data, grab_player_from_uuid},
-        search::worlds::grab_world_by_id,
+        search::worlds::{grab_world_by_id, world_path_from_id},
     },
-    types::player::PlayerData,
+    types::{player::PlayerData, world::WorldLevelData},
 };
 
 use tauri::{
@@ -18,20 +21,23 @@ pub fn init() -> TauriPlugin<Wry> {
     Builder::new("world_handler")
         .invoke_handler(tauri::generate_handler![
             get_world_by_id,
+            get_world_path_by_id,
             get_player_meta_from_uuids,
             get_player_meta_from_uuid,
-            get_player_from_uuid
+            get_player_from_uuid,
+            delete_world_by_id,
         ])
         .build()
 }
 
 #[tauri::command]
-pub fn get_world_by_id(
-    world_id: &str,
-    return_path: Option<bool>,
-    category: Option<&str>,
-) -> Result<Value, String> {
-    grab_world_by_id(world_id, return_path, category)
+pub fn get_world_by_id(world_id: &str, category: Option<&str>) -> Result<WorldLevelData, String> {
+    grab_world_by_id(world_id, category)
+}
+
+#[tauri::command]
+fn get_world_path_by_id(world_id: &str, category: Option<&str>) -> Result<PathBuf, String> {
+    world_path_from_id(world_id, category)
 }
 
 #[tauri::command]
@@ -52,4 +58,9 @@ fn get_player_from_uuid(player_uuid: String, path: &Path) -> Result<PlayerData, 
         Ok(player) => Ok(player),
         Err(e) => Err(e.to_string()),
     }
+}
+
+#[tauri::command]
+fn delete_world_by_id(world_id: &str, category: Option<&str>) -> Result<(), String> {
+    teller::handlers::world::delete_world(world_id, category)
 }
