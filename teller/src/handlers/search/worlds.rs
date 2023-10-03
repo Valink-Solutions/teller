@@ -153,7 +153,10 @@ pub fn world_path_from_id(world_id: &str, category: Option<&str>) -> Result<Path
     Err("Could not find world".to_string())
 }
 
-pub fn grab_world_by_id(world_id: &str, category: Option<&str>) -> Result<WorldLevelData, String> {
+pub async fn grab_world_by_id(
+    world_id: &str,
+    category: Option<&str>,
+) -> Result<WorldLevelData, String> {
     match world_path_from_id(world_id, category) {
         Ok(path) => {
             let game_type = is_minecraft_world(&path.clone());

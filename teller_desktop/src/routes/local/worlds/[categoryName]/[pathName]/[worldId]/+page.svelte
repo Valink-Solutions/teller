@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { writable } from 'svelte/store';
 	import Icon from '@iconify/svelte';
 	import { invoke } from '@tauri-apps/api/tauri';
 	import { onMount } from 'svelte';
@@ -15,10 +16,49 @@
 	let loading = true;
 	let error = false;
 
-	$: paginatedPlayers =
-		world_data && world_data.players
-			? world_data.players.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-			: [];
+	let paginatedPlayersStore = writable<any[]>([]);
+
+	$: {
+		if (world_data && world_data.players) {
+			const start = (currentPage - 1) * itemsPerPage;
+			const end = currentPage * itemsPerPage;
+			const players = world_data.players.slice(start, end);
+			fetchUsernames(players);
+		} else {
+			paginatedPlayersStore.set([]);
+		}
+	}
+
+	async function fetchUsernames(players: any[]) {
+		const playersWithUsernames = await Promise.all(
+			players.map(async (player) => {
+				try {
+					if (player.id === '~local_player') {
+						player.username = 'Local Player';
+						return player;
+					}
+					const response = await fetch(`https://playerdb.co/api/player/minecraft/${player.id}`);
+					if (response.ok) {
+						const data = await response.json();
+						if (data.success) {
+							player.username = data.data.player.username;
+							player.avatar = data.data.player.avatar;
+						} else {
+							player.username = 'Player';
+						}
+					} else {
+						player.username = 'Player';
+						return player;
+					}
+				} catch (error) {
+					console.error('Error fetching player data:', error);
+					player.username = 'Player';
+				}
+				return player;
+			})
+		);
+		paginatedPlayersStore.set(playersWithUsernames);
+	}
 
 	onMount(async () => {
 		try {
@@ -140,7 +180,7 @@
 			</div>
 
 			<div class="grid grid-cols-2 xl:grid-cols-3 gap-4 2xl:align-start">
-				{#each paginatedPlayers as player}
+				{#each $paginatedPlayersStore as player}
 					<div class="card p-4 flex flex-row justify-between select-none">
 						<div class="flex flex-row items-center">
 							<img

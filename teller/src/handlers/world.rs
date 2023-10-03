@@ -11,7 +11,7 @@ use serde_json::{json, Value};
 use uuid::Uuid;
 
 use crate::{
-    handlers::{player::fetch_player_data_from_uuid, search::worlds::world_path_from_id},
+    handlers::{player::get_steve_image, search::worlds::world_path_from_id},
     types::world::{GameRules, WorldData, WorldLevelData},
     utils::{calculate_dir_size, encode_image_to_base64},
 };
@@ -446,7 +446,7 @@ pub fn get_player_data(
             info!("Fetching Bedrock player data");
 
             let player_uuid = "~local_player".to_string();
-            let player_avatar = "https://crafthead.net/avatar/8667ba71b85a4004af54457a9734eed7?scale=32&overlay=false";
+            let player_avatar = get_steve_image();
 
             let db_path = path.join("db").to_str().unwrap().to_string();
 
@@ -461,10 +461,8 @@ pub fn get_player_data(
                     info!("Fetching player data for: {:?}", uuid);
 
                     let player_meta = json!({
-                        "username": "Remote Player",
                         "id": uuid.strip_prefix("player_server_").unwrap_or(uuid),
                         "avatar": player_avatar,
-                        "meta": {}
                     });
 
                     players.push(player_meta);
@@ -472,10 +470,8 @@ pub fn get_player_data(
             }
 
             let local_player_data = json!({
-                "username": "Local Player",
                 "id": player_uuid,
                 "avatar": player_avatar,
-                "meta": {}
             });
 
             players.push(local_player_data);
@@ -519,13 +515,18 @@ pub fn get_player_data(
                     }
                     None => "~local_player".to_string(),
                 };
-                let player_avatar = "https://crafthead.net/avatar/8667ba71b85a4004af54457a9734eed7?scale=32&overlay=false";
+
+                let player_avatar = match player_uuid.contains("~local_player") {
+                    true => get_steve_image(),
+                    false => format!(
+                        "https://crafthead.net/avatar/{}?scale=32&overlay=false",
+                        player_uuid
+                    ),
+                };
 
                 let player_meta = json!({
-                    "username": "Local Player",
                     "id": player_uuid,
                     "avatar": player_avatar,
-                    "meta": {}
                 });
 
                 return Ok(vec![player_meta]);
@@ -558,12 +559,23 @@ pub fn get_player_data(
 
                 let player_uuid = player.file_stem().unwrap().to_str().unwrap().to_string();
 
-                let player_meta = match fetch_player_data_from_uuid(player_uuid) {
-                    Ok(data) => data,
-                    Err(e) => {
-                        return Err(format!("Failed to fetch player data: {:?}", e).into());
-                    }
-                };
+                let player_avatar = format!(
+                    "https://crafthead.net/avatar/{}?scale=32&overlay=false",
+                    player_uuid
+                );
+
+                let player_meta = json!({
+                    "id": player_uuid,
+                    "avatar": player_avatar,
+                    "meta": {}
+                });
+
+                // let player_meta = match fetch_player_data_from_uuid(player_uuid) {
+                //     Ok(data) => data,
+                //     Err(e) => {
+                //         return Err(format!("Failed to fetch player data: {:?}", e).into());
+                //     }
+                // };
 
                 all_players.push(player_meta);
             }

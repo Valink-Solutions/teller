@@ -73,7 +73,7 @@
 			} else {
 				handleWorldListUpdate();
 			}
-		}, 750);
+		}, 50);
 	}
 
 	$: {

@@ -4,6 +4,7 @@
 	import { toast } from '@zerodevx/svelte-toast';
 	import { onMount } from 'svelte';
 	import type { BackupSettings } from '$lib/types/backups';
+	import { emit } from '@tauri-apps/api/event';
 
 	export let isOpen: boolean;
 
@@ -42,20 +43,22 @@
 			worldId: worldId,
 			category: category,
 			vaults: selectedLocations
-		})
-			.then((res) => {
-				toast.push(res as string);
-			})
-			.catch((err) => {
-				toast.push(`Failed to create backup. ${err}`, {
-					theme: {
-						'--toastBackground': '#EF4444',
-						'--toastProgressBackground': '#F87171',
-						'--toastProgressText': '#fff',
-						'--toastText': '#fff'
-					}
-				});
-			});
+		});
+		// .then((res) => {
+		// 	toast.push(res as string);
+		// 	// emit('world_backup_list_updated', { worldId: worldId });
+		// 	// emit('backup_list_updated');
+		// })
+		// .catch((err) => {
+		// 	toast.push(`Failed to create backup. ${err}`, {
+		// 		theme: {
+		// 			'--toastBackground': '#EF4444',
+		// 			'--toastProgressBackground': '#F87171',
+		// 			'--toastProgressText': '#fff',
+		// 			'--toastText': '#fff'
+		// 		}
+		// 	});
+		// });
 	}
 </script>
 

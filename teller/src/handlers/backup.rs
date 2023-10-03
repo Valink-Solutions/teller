@@ -1,23 +1,148 @@
 use log::{error, info};
 use std::collections::HashMap;
-use std::io::{Read, Seek, Write};
 use std::path::Path;
-use std::{fs::File, path::PathBuf};
-use zip::write::FileOptions;
-use zip::ZipWriter;
+use std::path::PathBuf;
+
+use async_recursion::async_recursion;
+use async_zip::error::ZipError;
+use async_zip::tokio::read::seek::ZipFileReader;
+use async_zip::tokio::write::ZipFileWriter;
+use async_zip::{Compression, ZipEntryBuilder};
+use tokio::fs::File;
 
 use serde_json::json;
+use tokio::io::AsyncReadExt;
+use tokio::io::AsyncSeek;
+use tokio::io::AsyncWrite;
 
+use crate::handlers::config::backup::get_backup_config;
+use crate::handlers::search::worlds::world_path_from_id;
 use crate::types::backup::BackupMetadata;
 
-use super::config::backup::get_backup_config;
-use super::search::worlds::world_path_from_id;
-use super::world::parse_world_entry_data;
-use super::{
-    config::get_config_folder, search::worlds::is_minecraft_world, world::process_world_data,
-};
+use super::config::get_config_folder;
+use super::search::worlds::is_minecraft_world;
+use super::world::{parse_world_entry_data, process_world_data};
 
-pub fn create_backup_from_id(
+async fn get_default_vault() -> PathBuf {
+    let config_dir = get_config_folder();
+
+    let vault_dir = config_dir.join("vault");
+
+    match vault_dir.exists() {
+        true => vault_dir,
+        false => {
+            let _ = tokio::fs::create_dir_all(vault_dir.clone()).await;
+            vault_dir
+        }
+    }
+}
+
+pub async fn create_world_backup(world_path: PathBuf) -> Result<PathBuf, String> {
+    let default_vault = get_default_vault().await;
+
+    let temp_dir = match default_vault.join("temp").exists() {
+        true => default_vault.join("temp"),
+        false => {
+            let _ = tokio::fs::create_dir_all(default_vault.join("temp")).await;
+            default_vault.join("temp")
+        }
+    };
+
+    let mut world_entry_data = parse_world_entry_data(world_path.clone())?;
+
+    world_entry_data.path = "".to_string();
+
+    let game_type = is_minecraft_world(&world_path);
+
+    let world_data = match process_world_data(&world_path, game_type) {
+        Ok(data) => data,
+        Err(e) => {
+            return Err(format!("Could not process world data: {:?}", e));
+        }
+    };
+
+    let metadata = json!({
+        "entry": world_entry_data,
+        "data": world_data,
+    });
+
+    info!("Creating backup for world {}", world_entry_data.id);
+
+    let backup_id = format!("{}.chunkvault-snapshot", chrono::Utc::now().timestamp());
+    let backup_path = temp_dir.join(backup_id);
+
+    let mut zip = ZipFileWriter::with_tokio(File::create(backup_path.clone()).await.unwrap());
+
+    let meta_builder = ZipEntryBuilder::new("metadata.json".into(), Compression::Stored);
+
+    zip.write_entry_whole(meta_builder, metadata.to_string().as_bytes())
+        .await
+        .unwrap();
+
+    let world_zip_path = temp_dir.join(format!("{}_data.zip", world_entry_data.id));
+    let mut world_zip = ZipFileWriter::with_tokio(File::create(&world_zip_path).await.unwrap());
+    add_directory_to_zip(&mut world_zip, &world_path, &world_path)
+        .await
+        .unwrap();
+    world_zip.close().await.unwrap();
+
+    let mut world_zip_file = File::open(&world_zip_path).await.unwrap();
+    let mut buffer = Vec::new();
+    world_zip_file.read_to_end(&mut buffer).await.unwrap();
+
+    let world_zip_builder = ZipEntryBuilder::new(
+        format!("{}_data.zip", world_entry_data.id).into(),
+        Compression::Stored,
+    );
+
+    zip.write_entry_whole(world_zip_builder, &buffer)
+        .await
+        .unwrap();
+
+    zip.close().await.unwrap();
+
+    tokio::fs::remove_file(&world_zip_path).await.unwrap();
+
+    Ok(backup_path)
+}
+
+#[async_recursion]
+async fn add_directory_to_zip<W: AsyncWrite + AsyncSeek + Unpin + Send>(
+    zip_writer: &mut ZipFileWriter<W>,
+    directory: &Path,
+    prefix: &Path,
+) -> Result<(), ZipError> {
+    let mut entries = tokio::fs::read_dir(directory).await?;
+
+    while let Ok(entry) = entries.next_entry().await {
+        let entry = match entry {
+            Some(entry) => entry,
+            None => {
+                break;
+            }
+        };
+        let path = entry.path();
+        let name = path.strip_prefix(Path::new(prefix)).unwrap();
+        if path.is_file() {
+            let builder = ZipEntryBuilder::new(name.to_str().unwrap().into(), Compression::Deflate)
+                .unix_permissions(0o755);
+
+            let mut f = File::open(&path).await?;
+            let mut buffer = Vec::new();
+            f.read_to_end(&mut buffer).await?;
+
+            zip_writer
+                .write_entry_whole(builder, &buffer)
+                .await
+                .unwrap();
+        } else if path.is_dir() {
+            add_directory_to_zip(zip_writer, &path, prefix).await?;
+        }
+    }
+    Ok(())
+}
+
+pub async fn create_backup_from_id(
     world_id: &str,
     category: Option<&str>,
     vaults: Option<Vec<String>>,
@@ -25,7 +150,7 @@ pub fn create_backup_from_id(
     info!("Creating backup for world id: {}", world_id);
     match world_path_from_id(world_id, category) {
         Ok(world_path) => {
-            let world_backup_path = match create_world_backup(world_path.clone()) {
+            let world_backup_path = match create_world_backup(world_path.clone()).await {
                 Ok(backup_path) => backup_path,
                 Err(e) => {
                     error!(
@@ -71,7 +196,7 @@ pub fn create_backup_from_id(
                 for (vault_id, vault_path) in vault_locations {
                     let backup_location = vault_path.join(world_id);
                     if !backup_location.exists() {
-                        match std::fs::create_dir_all(&backup_location) {
+                        match tokio::fs::create_dir_all(&backup_location).await {
                             Ok(_) => {}
                             Err(e) => {
                                 error!("Failed to create vault folder {}: {:?}", vault_id, e);
@@ -79,10 +204,12 @@ pub fn create_backup_from_id(
                             }
                         };
                     }
-                    match std::fs::copy(
+                    match tokio::fs::copy(
                         &world_backup_path,
                         backup_location.join(backup_name.clone()),
-                    ) {
+                    )
+                    .await
+                    {
                         Ok(_) => {}
                         Err(e) => {
                             error!(
@@ -94,7 +221,7 @@ pub fn create_backup_from_id(
                     };
                 }
 
-                if let Err(e) = std::fs::remove_file(&world_backup_path) {
+                if let Err(e) = tokio::fs::remove_file(&world_backup_path).await {
                     error!(
                         "Failed to remove backup file {}: {:?}",
                         world_backup_path.display(),
@@ -107,8 +234,8 @@ pub fn create_backup_from_id(
                     ));
                 }
             } else {
-                let default_vault = get_default_vault();
-                match std::fs::rename(&world_backup_path, default_vault.join(backup_name)) {
+                let default_vault = get_default_vault().await;
+                match tokio::fs::rename(&world_backup_path, default_vault.join(backup_name)).await {
                     Ok(_) => {}
                     Err(e) => {
                         error!(
@@ -133,124 +260,23 @@ pub fn create_backup_from_id(
     }
 }
 
-pub fn create_world_backup(world_path: PathBuf) -> Result<PathBuf, String> {
-    let default_vault = get_default_vault();
-
-    let temp_dir = match default_vault.join("temp").exists() {
-        true => default_vault.join("temp"),
-        false => {
-            let _ = std::fs::create_dir_all(default_vault.join("temp"));
-            default_vault.join("temp")
-        }
-    };
-
-    let mut world_entry_data = parse_world_entry_data(world_path.clone())?;
-
-    world_entry_data.path = "".to_string();
-
-    let game_type = is_minecraft_world(&world_path);
-
-    let world_data = match process_world_data(&world_path, game_type) {
-        Ok(data) => data,
-        Err(e) => {
-            return Err(format!("Could not process world data: {:?}", e));
-        }
-    };
-
-    let metadata = json!({
-        "entry": world_entry_data,
-        "data": world_data,
-    });
-
-    let backup_id = format!("{}.chunkvault-snapshot", chrono::Utc::now().timestamp());
-    let backup_path = temp_dir.join(backup_id);
-
-    let world_zip_path = temp_dir.join(format!("{}_data.zip", world_entry_data.id));
-    let mut world_zip = zip::ZipWriter::new(std::fs::File::create(&world_zip_path).unwrap());
-    let options = FileOptions::default()
-        .compression_method(zip::CompressionMethod::Deflated)
-        .unix_permissions(0o755);
-    add_directory_to_zip(&mut world_zip, &world_path, &world_path, &options).unwrap();
-    world_zip.finish().unwrap();
-
-    let mut zip = zip::ZipWriter::new(std::fs::File::create(backup_path.clone()).unwrap());
-    zip.start_file(
-        "metadata.json",
-        FileOptions::default().compression_method(zip::CompressionMethod::Stored),
-    )
-    .unwrap();
-    zip.write_all(metadata.to_string().as_bytes()).unwrap();
-
-    let mut world_zip_file = File::open(&world_zip_path).unwrap();
-    let mut buffer = Vec::new();
-    world_zip_file.read_to_end(&mut buffer).unwrap();
-    zip.start_file(
-        format!("{}_data.zip", world_entry_data.id),
-        FileOptions::default().compression_method(zip::CompressionMethod::Stored),
-    )
-    .unwrap();
-    zip.write_all(&buffer).unwrap();
-
-    zip.finish().unwrap();
-
-    std::fs::remove_file(&world_zip_path).unwrap();
-
-    Ok(backup_path)
-}
-
-fn add_directory_to_zip<W: Write + Seek>(
-    zip_writer: &mut ZipWriter<W>,
-    directory: &Path,
-    prefix: &Path,
-    options: &FileOptions,
-) -> zip::result::ZipResult<()> {
-    for entry in std::fs::read_dir(directory)? {
-        let entry = entry?;
-        let path = entry.path();
-        let name = path.strip_prefix(Path::new(prefix)).unwrap();
-        if path.is_file() {
-            zip_writer.start_file(name.to_string_lossy().as_ref(), *options)?;
-            let mut f = File::open(&path)?;
-            let mut buffer = Vec::new();
-            f.read_to_end(&mut buffer)?;
-            zip_writer.write_all(&buffer)?;
-        } else if path.is_dir() {
-            add_directory_to_zip(zip_writer, &path, prefix, options)?;
-        }
-    }
-    Ok(())
-}
-
-fn get_default_vault() -> PathBuf {
-    let config_dir = get_config_folder();
-
-    let vault_dir = config_dir.join("vault");
-
-    match vault_dir.exists() {
-        true => vault_dir,
-        false => {
-            let _ = std::fs::create_dir_all(vault_dir.clone());
-            vault_dir
-        }
-    }
-}
-
-pub fn grab_backup_metadata(backup_path: PathBuf) -> Result<BackupMetadata, String> {
-    let mut zip = match zip::ZipArchive::new(File::open(backup_path.clone()).unwrap()) {
-        Ok(zip) => zip,
-        Err(e) => {
-            return Err(format!(
-                "Failed to open backup file {}: {:?}",
-                backup_path.display(),
-                e
-            ));
-        }
-    };
+pub async fn grab_backup_metadata(backup_path: PathBuf) -> Result<BackupMetadata, String> {
+    let mut zip =
+        match ZipFileReader::with_tokio(File::open(backup_path.clone()).await.unwrap()).await {
+            Ok(zip) => zip,
+            Err(e) => {
+                return Err(format!(
+                    "Failed to open backup file {}: {:?}",
+                    backup_path.display(),
+                    e
+                ));
+            }
+        };
 
     let mut metadata = String::new();
 
-    let mut metadata_file = match zip.by_name("metadata.json") {
-        Ok(file) => file,
+    let mut reader = match zip.reader_with_entry(0).await {
+        Ok(reader) => reader,
         Err(e) => {
             return Err(format!(
                 "Failed to open metadata file in backup {}: {:?}",
@@ -259,8 +285,7 @@ pub fn grab_backup_metadata(backup_path: PathBuf) -> Result<BackupMetadata, Stri
             ));
         }
     };
-
-    match metadata_file.read_to_string(&mut metadata) {
+    match reader.read_to_string_checked(&mut metadata).await {
         Ok(_) => {}
         Err(e) => {
             return Err(format!(
@@ -285,7 +310,11 @@ pub fn grab_backup_metadata(backup_path: PathBuf) -> Result<BackupMetadata, Stri
     Ok(metadata)
 }
 
-pub fn delete_backup(world_id: &str, vault: Option<&str>, snapshot_id: &str) -> Result<(), String> {
+pub async fn delete_backup(
+    world_id: &str,
+    vault: Option<&str>,
+    snapshot_id: &str,
+) -> Result<(), String> {
     let backup_settings = get_backup_config()?;
 
     let vault_path = match vault {
@@ -296,7 +325,7 @@ pub fn delete_backup(world_id: &str, vault: Option<&str>, snapshot_id: &str) -> 
                 return Err(format!("Vault {} does not exist.", vault_id));
             }
         }
-        None => get_default_vault(),
+        None => get_default_vault().await,
     };
 
     let backup_path = vault_path
@@ -305,7 +334,7 @@ pub fn delete_backup(world_id: &str, vault: Option<&str>, snapshot_id: &str) -> 
 
     info!("Removing backup {} for {}", snapshot_id, world_id);
 
-    match std::fs::remove_file(backup_path.clone()) {
+    match tokio::fs::remove_file(backup_path.clone()).await {
         Ok(_) => {}
         Err(e) => {
             return Err(format!(
@@ -318,7 +347,7 @@ pub fn delete_backup(world_id: &str, vault: Option<&str>, snapshot_id: &str) -> 
     Ok(())
 }
 
-pub fn delete_all_backups(world_id: &str, vault: Option<&str>) -> Result<(), String> {
+pub async fn delete_all_backups(world_id: &str, vault: Option<&str>) -> Result<(), String> {
     let backup_settings = get_backup_config()?;
 
     let vault_path = match vault {
@@ -329,14 +358,14 @@ pub fn delete_all_backups(world_id: &str, vault: Option<&str>) -> Result<(), Str
                 return Err(format!("Vault {} does not exist.", vault_id));
             }
         }
-        None => get_default_vault(),
+        None => get_default_vault().await,
     };
 
     let backups_path = vault_path.join(world_id);
 
     info!("Removing all backups for {}", world_id);
 
-    match std::fs::remove_dir_all(backups_path.clone()) {
+    match tokio::fs::remove_dir_all(backups_path.clone()).await {
         Ok(_) => {}
         Err(e) => {
             return Err(format!(

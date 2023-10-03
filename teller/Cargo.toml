@@ -28,4 +28,5 @@ tracing-error = "0.2.0"
 thiserror = "1.0.48"
 url = "2.4.1"
 regex = "1.9.5"
-async_zip = "0.0.15"
+async_zip = { version = "0.0.15", features = ["full", "tokio"] }
+async-recursion = "1.0.5"

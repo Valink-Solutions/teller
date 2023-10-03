@@ -8,12 +8,13 @@
 	import { listen } from '@tauri-apps/api/event';
 	import type { CurrentDir } from '$lib/types/navigation';
 	import { activeItem, currentDir, currentVault } from '$lib/stores/navigation';
-	import { SvelteToast } from '@zerodevx/svelte-toast';
+	import { SvelteToast, toast } from '@zerodevx/svelte-toast';
 	import { Modals, closeModal, openModal } from 'svelte-modals';
 	import DirectoriesModal from '$lib/modals/directories_modal.svelte';
 	import SettingsModal from '$lib/modals/settings_modal.svelte';
 	import type { DirectorySettings } from '$lib/types/config';
 	import type { BackupSettings } from '$lib/types/backups';
+	import type { ToastEvent } from '$lib/types/events';
 
 	let sideBar: HTMLElement | null = null;
 
@@ -62,6 +63,21 @@
 				}
 			});
 			console.log('Event received: saves_config_updated');
+		});
+
+		listen<ToastEvent>('error', (event) => {
+			toast.push(event.payload.message, {
+				theme: {
+					'--toastBackground': '#EF4444',
+					'--toastProgressBackground': '#F87171',
+					'--toastProgressText': '#fff',
+					'--toastColor': '#fff'
+				}
+			});
+		});
+
+		listen<ToastEvent>('toast', (event) => {
+			toast.push(event.payload.message);
 		});
 	});
 

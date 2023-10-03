@@ -78,8 +78,30 @@
 		<!-- <h2 class="card-title">world</h2>
       <p>no backups</p> -->
 		<div class="card-actions justify-around items-center">
+			<div class="dropdown dropdown-end">
+				<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
+				<!-- svelte-ignore a11y-label-has-associated-control -->
+				<label tabindex="0" class="btn btn-xs text-lg btn-ghost">
+					<Icon icon="bx:dots-vertical" />
+				</label>
+				<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
+				<ul
+					tabindex="0"
+					class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52 mt-2"
+				>
+					<li>
+						<button
+							class="flex flex-row gap-2 text-red-500 hover:text-red-700"
+							on:click={openDeleteWindow}
+						>
+							<Icon icon="mdi:trash-can-outline" />
+							<span>Delete</span>
+						</button>
+					</li>
+				</ul>
+			</div>
 			<div class="join">
-				<button class="btn btn-error btn-sm join-item" on:click={openDeleteWindow}>Delete</button>
+				<!-- <button class="btn btn-error btn-sm join-item" on:click={openDeleteWindow}>Delete</button> -->
 				<button on:click={openBackupWindow} class="btn btn-sm join-item">Backup</button>
 				<a
 					href={`/local/worlds/${currentDir.category}/${currentDir.path}/${world.id}`}

@@ -31,8 +31,11 @@ pub fn init() -> TauriPlugin<Wry> {
 }
 
 #[tauri::command]
-pub fn get_world_by_id(world_id: &str, category: Option<&str>) -> Result<WorldLevelData, String> {
-    grab_world_by_id(world_id, category)
+pub async fn get_world_by_id(
+    world_id: &str,
+    category: Option<&str>,
+) -> Result<WorldLevelData, String> {
+    grab_world_by_id(world_id, category).await
 }
 
 #[tauri::command]
@@ -41,15 +44,15 @@ fn get_world_path_by_id(world_id: &str, category: Option<&str>) -> Result<PathBu
 }
 
 #[tauri::command]
-fn get_player_meta_from_uuids(
+async fn get_player_meta_from_uuids(
     player_data_list: Vec<PlayerData>,
 ) -> Result<HashMap<String, Value>, String> {
-    fetch_players_meta_data(player_data_list)
+    fetch_players_meta_data(player_data_list).await
 }
 
 #[tauri::command]
-fn get_player_meta_from_uuid(player_uuid: String) -> Result<Value, String> {
-    fetch_player_data_from_uuid(player_uuid)
+async fn get_player_meta_from_uuid(player_uuid: String) -> Result<Value, String> {
+    fetch_player_data_from_uuid(reqwest::Client::new(), player_uuid).await
 }
 
 #[tauri::command]
