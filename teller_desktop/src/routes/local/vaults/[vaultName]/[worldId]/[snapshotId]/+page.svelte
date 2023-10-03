@@ -6,6 +6,9 @@
 	import { onMount } from 'svelte';
 	import dayjs from 'dayjs';
 	import type { BackupMetadata } from '$lib/types/backups';
+	import { openModal } from 'svelte-modals';
+	import RestoreModal from '$lib/modals/restore_modal.svelte';
+	import { writable } from 'svelte/store';
 
 	let world_metadata: BackupMetadata;
 
@@ -15,13 +18,57 @@
 	let loading = true;
 	let error = false;
 
-	$: paginatedPlayers =
-		world_metadata && world_metadata.data.players
-			? world_metadata.data.players.slice(
-					(currentPage - 1) * itemsPerPage,
-					currentPage * itemsPerPage
-			  )
-			: [];
+	// $: paginatedPlayers =
+	// 	world_metadata && world_metadata.data.players
+	// 		? world_metadata.data.players.slice(
+	// 				(currentPage - 1) * itemsPerPage,
+	// 				currentPage * itemsPerPage
+	// 		  )
+	// 		: [];
+
+	let paginatedPlayersStore = writable<any[]>([]);
+
+	$: {
+		if (world_metadata && world_metadata.data.players) {
+			const start = (currentPage - 1) * itemsPerPage;
+			const end = currentPage * itemsPerPage;
+			const players = world_metadata.data.players.slice(start, end);
+			fetchUsernames(players);
+		} else {
+			paginatedPlayersStore.set([]);
+		}
+	}
+
+	async function fetchUsernames(players: any[]) {
+		const playersWithUsernames = await Promise.all(
+			players.map(async (player) => {
+				try {
+					if (player.id === '~local_player') {
+						player.username = 'Local Player';
+						return player;
+					}
+					const response = await fetch(`https://playerdb.co/api/player/minecraft/${player.id}`);
+					if (response.ok) {
+						const data = await response.json();
+						if (data.success) {
+							player.username = data.data.player.username;
+							// player.avatar = data.data.player.avatar;
+						} else {
+							player.username = 'Player';
+						}
+					} else {
+						player.username = 'Player';
+						return player;
+					}
+				} catch (error) {
+					console.error('Error fetching player data:', error);
+					player.username = 'Player';
+				}
+				return player;
+			})
+		);
+		paginatedPlayersStore.set(playersWithUsernames);
+	}
 
 	onMount(async () => {
 		try {
@@ -39,6 +86,14 @@
 			error = true;
 		}
 	});
+
+	function openRestoreModal() {
+		openModal(RestoreModal, {
+			worldId: $page.params.worldId,
+			snapshotId: $page.params.snapshotId,
+			vault: $page.params.vaultName
+		});
+	}
 </script>
 
 <div class="flex flex-col justify-start w-full px-4 gap-4">
@@ -49,6 +104,8 @@
 		>
 			<Icon icon="mdi:arrow-left" class="w-6 h-6" />
 		</button>
+
+		<button class="btn btn-sm btn-secondary" on:click={openRestoreModal}> Restore Backup </button>
 	</div>
 
 	{#if loading}
@@ -122,7 +179,7 @@
 			</div>
 
 			<div class="grid grid-cols-2 xl:grid-cols-3 gap-4 2xl:align-start">
-				{#each paginatedPlayers as player}
+				{#each $paginatedPlayersStore as player}
 					<div class="card p-4 flex flex-row justify-between select-none">
 						<div class="flex flex-row items-center">
 							<img

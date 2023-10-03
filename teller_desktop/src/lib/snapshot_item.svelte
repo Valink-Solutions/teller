@@ -8,6 +8,7 @@
 	import { invoke } from '@tauri-apps/api';
 	import { toast } from '@zerodevx/svelte-toast';
 	import { emit } from '@tauri-apps/api/event';
+	import RestoreModal from './modals/restore_modal.svelte';
 
 	export let snapshot: SnapshotInfo;
 
@@ -42,6 +43,14 @@
 			}
 		});
 	}
+
+	function openRestoreModal() {
+		openModal(RestoreModal, {
+			worldId: worldId,
+			snapshotId: snapshot.created.toString(),
+			vault: vaultName
+		});
+	}
 </script>
 
 <li class="card flex flex-row w-full bg-base-100 shadow-xl max-h-fit">
@@ -57,7 +66,47 @@
 				{formatBytes(snapshot.size)}
 			</div>
 		</div>
-		<div class="card-actions">
+		<div class="card-actions justify-around items-center">
+			<div class="dropdown dropdown-end">
+				<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
+				<!-- svelte-ignore a11y-label-has-associated-control -->
+				<label tabindex="0" class="btn btn-xs text-lg btn-ghost">
+					<Icon icon="bx:dots-vertical" />
+				</label>
+				<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
+				<ul
+					tabindex="0"
+					class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52 mt-2 gap-2"
+				>
+					<li>
+						<button class="flex flex-row gap-2" on:click={openRestoreModal}>
+							<Icon icon="mdi:file-restore-outline" />
+							Restore
+						</button>
+					</li>
+					<div class="divider" style="margin: 2px 2px;" />
+					<li>
+						<button
+							class="flex flex-row gap-2 text-red-500 hover:text-red-700"
+							on:click={openDeleteWindow}
+						>
+							<Icon icon="mdi:trash-can-outline" />
+							<span>Delete</span>
+						</button>
+					</li>
+				</ul>
+			</div>
+			<div class="join">
+				<!-- <button class="btn btn-error btn-sm join-item" on:click={openDeleteWindow}>Delete</button> -->
+				<a
+					href={`/local/vaults/${vaultName}/${worldId}/${snapshot.created}`}
+					class="btn btn-sm join-item"
+				>
+					<span>View</span>
+				</a>
+			</div>
+		</div>
+		<!-- <div class="card-actions">
 			<div class="join">
 				<button class="btn btn-error btn-sm join-item" on:click={openDeleteWindow}>Delete</button>
 				<a
@@ -65,6 +114,6 @@
 					class="btn btn-sm join-item">View</a
 				>
 			</div>
-		</div>
+		</div> -->
 	</div>
 </li>

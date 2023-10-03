@@ -383,6 +383,7 @@ pub async fn get_player_data(
     }
 }
 
+// Literally the base64 encoded image of Steve's face
 pub fn get_steve_image() -> String {
     format!(
         "{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}",

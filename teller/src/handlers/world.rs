@@ -137,6 +137,16 @@ pub fn get_vault_id(path: &PathBuf) -> Result<String, String> {
     Ok(vault_id.to_string())
 }
 
+pub fn new_vault_id(world_path: &PathBuf) -> Result<(), String> {
+    let mut vault_info = get_vault_file(world_path)?;
+    if let Some(id_pointer) = vault_info.pointer_mut("/id") {
+        *id_pointer = serde_json::Value::String(uuid::Uuid::new_v4().to_string());
+    }
+    update_vault_file(vault_info, world_path)?;
+
+    Ok(())
+}
+
 // Minecraft save finder
 
 pub fn is_minecraft_world(path: &Path) -> GameType {
@@ -937,8 +947,12 @@ pub fn parse_world_entry_data(path: PathBuf) -> Result<WorldData, String> {
     Ok(world_data)
 }
 
-pub fn delete_world(world_id: &str, category: Option<&str>) -> Result<(), String> {
-    let world_path = world_path_from_id(world_id, category)?;
+pub fn delete_world(
+    world_id: &str,
+    category: Option<&str>,
+    instance: Option<&str>,
+) -> Result<(), String> {
+    let world_path = world_path_from_id(world_id, category, instance)?;
 
     if !world_path.exists() {
         error!("World does not exist: {:?}", world_path);

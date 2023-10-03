@@ -18,7 +18,8 @@
 		openModal(BackupModal, {
 			worldName: world.name,
 			worldId: world.id,
-			category: currentDir.category
+			category: currentDir.category,
+			instance: currentDir.path
 		});
 	}
 
@@ -29,7 +30,8 @@
 			deleteFunction: () => {
 				invoke('plugin:world_handler|delete_world_by_id', {
 					worldId: world.id,
-					category: currentDir.category
+					category: currentDir.category,
+					instance: currentDir.path
 				})
 					.then((res) => {
 						toast.push(`Successfully deleted ${world.name}`);

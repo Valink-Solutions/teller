@@ -48,8 +48,9 @@ fn open_world_in_explorer(
     handle: tauri::AppHandle,
     world_id: &str,
     category: Option<&str>,
+    instance: Option<&str>,
 ) -> Result<(), String> {
-    let path = world_path_from_id(world_id, category)?;
+    let path = world_path_from_id(world_id, category, instance)?;
 
     if path.is_dir() {
         match tauri::api::shell::open(&handle.shell_scope(), &path.to_string_lossy(), None)

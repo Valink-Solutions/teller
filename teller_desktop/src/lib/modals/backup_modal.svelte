@@ -12,6 +12,7 @@
 	export let worldId: string;
 
 	export let category: string | null;
+	export let instance: string | null;
 
 	let stackIndex: number = $modals.length;
 
@@ -42,23 +43,9 @@
 		invoke('plugin:backup_handler|create_backup_from_id', {
 			worldId: worldId,
 			category: category,
+			instance: instance,
 			vaults: selectedLocations
 		});
-		// .then((res) => {
-		// 	toast.push(res as string);
-		// 	// emit('world_backup_list_updated', { worldId: worldId });
-		// 	// emit('backup_list_updated');
-		// })
-		// .catch((err) => {
-		// 	toast.push(`Failed to create backup. ${err}`, {
-		// 		theme: {
-		// 			'--toastBackground': '#EF4444',
-		// 			'--toastProgressBackground': '#F87171',
-		// 			'--toastProgressText': '#fff',
-		// 			'--toastText': '#fff'
-		// 		}
-		// 	});
-		// });
 	}
 </script>
 
@@ -70,8 +57,8 @@
 				<p class="card-text">
 					You are about to create a backup of <strong>{worldName}</strong>.
 				</p>
-				<p>Select backup locations:</p>
-				<ul>
+				<p class="mt-2">Select backup locations:</p>
+				<ul class="bg-base-200 p-2">
 					{#each locations as location (location.id)}
 						<li>
 							<div class="form-control">

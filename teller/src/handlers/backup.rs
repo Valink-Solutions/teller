@@ -2,6 +2,7 @@ use log::{error, info};
 use std::collections::HashMap;
 use std::path::Path;
 use std::path::PathBuf;
+use tokio::io::AsyncWriteExt;
 
 use async_recursion::async_recursion;
 use async_zip::error::ZipError;
@@ -124,7 +125,7 @@ async fn add_directory_to_zip<W: AsyncWrite + AsyncSeek + Unpin + Send>(
         let path = entry.path();
         let name = path.strip_prefix(Path::new(prefix)).unwrap();
         if path.is_file() {
-            let builder = ZipEntryBuilder::new(name.to_str().unwrap().into(), Compression::Deflate)
+            let builder = ZipEntryBuilder::new(name.to_str().unwrap().into(), Compression::Zstd)
                 .unix_permissions(0o755);
 
             let mut f = File::open(&path).await?;
@@ -145,10 +146,11 @@ async fn add_directory_to_zip<W: AsyncWrite + AsyncSeek + Unpin + Send>(
 pub async fn create_backup_from_id(
     world_id: &str,
     category: Option<&str>,
+    instance: Option<&str>,
     vaults: Option<Vec<String>>,
 ) -> Result<String, String> {
     info!("Creating backup for world id: {}", world_id);
-    match world_path_from_id(world_id, category) {
+    match world_path_from_id(world_id, category, instance) {
         Ok(world_path) => {
             let world_backup_path = match create_world_backup(world_path.clone()).await {
                 Ok(backup_path) => backup_path,
@@ -285,6 +287,7 @@ pub async fn grab_backup_metadata(backup_path: PathBuf) -> Result<BackupMetadata
             ));
         }
     };
+
     match reader.read_to_string_checked(&mut metadata).await {
         Ok(_) => {}
         Err(e) => {
@@ -308,6 +311,96 @@ pub async fn grab_backup_metadata(backup_path: PathBuf) -> Result<BackupMetadata
     };
 
     Ok(metadata)
+}
+
+pub async fn extract_world_backup(
+    backup_path: PathBuf,
+    extract_path: PathBuf,
+) -> Result<(), String> {
+    let mut zip =
+        match ZipFileReader::with_tokio(File::open(backup_path.clone()).await.unwrap()).await {
+            Ok(zip) => zip,
+            Err(e) => {
+                return Err(format!(
+                    "Failed to open backup file {}: {:?}",
+                    backup_path.display(),
+                    e
+                ));
+            }
+        };
+
+    let mut reader = match zip.reader_with_entry(1).await {
+        Ok(reader) => reader,
+        Err(e) => {
+            return Err(format!(
+                "Failed to open metadata file in backup {}: {:?}",
+                backup_path.display(),
+                e
+            ));
+        }
+    };
+
+    let mut world_data = Vec::new();
+
+    match reader.read_to_end_checked(&mut world_data).await {
+        Ok(_) => {}
+        Err(e) => {
+            return Err(format!(
+                "Failed to read world data file in backup {}: {:?}",
+                backup_path.display(),
+                e
+            ));
+        }
+    };
+
+    let cursor = std::io::Cursor::new(world_data);
+
+    let mut world_data_zip = match ZipFileReader::with_tokio(cursor).await {
+        Ok(zip) => zip,
+        Err(e) => {
+            return Err(format!(
+                "Failed to open world data zip in backup {}: {:?}",
+                backup_path.display(),
+                e
+            ));
+        }
+    };
+
+    let mut index = 0;
+    while let Ok(mut zip_entry) = world_data_zip.reader_with_entry(index).await {
+        let entry = zip_entry.entry();
+
+        let path = extract_path.join(entry.filename().as_str().unwrap());
+
+        if entry.dir().unwrap() {
+            tokio::fs::create_dir_all(&path)
+                .await
+                .map_err(|e| e.to_string())?;
+        } else {
+            if let Some(parent) = path.parent() {
+                if !parent.exists() {
+                    tokio::fs::create_dir_all(&parent)
+                        .await
+                        .map_err(|e| e.to_string())?;
+                }
+            }
+
+            let mut file = tokio::fs::File::create(&path)
+                .await
+                .map_err(|e| e.to_string())?;
+
+            let mut buffer = Vec::new();
+            zip_entry
+                .read_to_end_checked(&mut buffer)
+                .await
+                .map_err(|e| e.to_string())?;
+            file.write_all(&buffer).await.map_err(|e| e.to_string())?;
+        }
+
+        index += 1;
+    }
+
+    Ok(())
 }
 
 pub async fn delete_backup(
