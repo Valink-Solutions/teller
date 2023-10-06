@@ -78,7 +78,7 @@
 			<p class="text-lg font-semibold">Error loading data</p>
 		</div>
 	{:else if world_data}
-		<div class="flex flex-row items-center space-x-4">
+		<div class="flex flex-row space-x-4">
 			<div class="relative w-28 h-24">
 				<img
 					src={world_data.data.icon
@@ -114,7 +114,12 @@
 		</div>
 
 		{#if snapshots}
-			<h1 class="border-l-4 pl-2 border-primary text-lg font-bold">All Backups</h1>
+			<div class="flex flex-row justify-between items-center">
+				<h1 class="border-l-4 pl-2 border-primary text-lg font-bold">All Backups</h1>
+				<button class="btn btn-sm">
+					<Icon icon="material-symbols:directory-sync" on:click={handleSnapshotsUpdate} />
+				</button>
+			</div>
 			<ul class="flex flex-col gap-4">
 				{#each snapshots as snapshot}
 					<SnapshotItem

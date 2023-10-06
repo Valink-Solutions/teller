@@ -11,3 +11,8 @@ export interface WorldListCacheItem {
 	path: string;
 	data: WorldItem[];
 }
+
+export interface LocalVaultCacheItem {
+	name: string;
+	data: WorldItem[];
+}

@@ -6,7 +6,11 @@
 	import { toast } from '@zerodevx/svelte-toast';
 	import { currentVault } from '$lib/stores/navigation';
 	import { onMount } from 'svelte';
+	import { writable } from 'svelte/store';
 	import { listen } from '@tauri-apps/api/event';
+	import { localVaultCache } from '$lib/stores/caches';
+
+	let worldSortOption = writable({ option: 'size', direction: 'desc' });
 
 	let worlds: WorldItem[] = [];
 
@@ -18,7 +22,11 @@
 			vault: value
 		})
 			.then((worldResult) => {
-				worlds = worldResult as WorldItem[];
+				worlds = sortWorlds(worldResult as WorldItem[], $worldSortOption);
+				localVaultCache.set({
+					name: value as string,
+					data: worlds
+				});
 				error = false;
 			})
 			.catch((err) => {
@@ -43,8 +51,14 @@
 			clearTimeout(timer);
 			timer = setTimeout(async () => {
 				loading = true;
-				handleBackupListUpdate(value);
-			}, 750);
+				if ($localVaultCache.name === value) {
+					worlds = $localVaultCache.data;
+					error = false;
+					loading = false;
+				} else {
+					handleBackupListUpdate(value);
+				}
+			}, 50);
 		}
 	}
 
@@ -52,11 +66,43 @@
 		currentVault.subscribe(handleCurrentDirChange);
 	}
 
+	$: {
+		worldSortOption.subscribe((value) => {
+			worlds = sortWorlds(worlds, value);
+		});
+	}
+
 	onMount(() => {
 		listen('backup_list_updated', () => {
 			handleBackupListUpdate($currentVault);
 		});
 	});
+
+	function sortWorlds(
+		worlds: WorldItem[],
+		sortOption: { option: string; direction: string }
+	): WorldItem[] {
+		let sortedWorlds: WorldItem[] = [];
+		if (sortOption.option === 'size') {
+			sortedWorlds = [...worlds].sort((a, b) => a.size - b.size);
+		} else if (sortOption.option === 'last_played') {
+			sortedWorlds = [...worlds].sort((a, b) => {
+				if (a.last_played && b.last_played) {
+					return new Date(a.last_played).getTime() - new Date(b.last_played).getTime();
+				} else {
+					return 0;
+				}
+			});
+		}
+		if (sortOption.direction === 'desc') {
+			sortedWorlds.reverse();
+		}
+		return sortedWorlds;
+	}
+
+	function toggleSortDirection() {
+		$worldSortOption.direction = $worldSortOption.direction === 'asc' ? 'desc' : 'asc';
+	}
 
 	async function openInstanceFolder(path: string) {
 		await invoke('plugin:folder_handler|open_path_in_explorer', {
@@ -77,7 +123,7 @@
 			<p class="text-lg font-semibold">Error loading data</p>
 		</div>
 	{:else}
-		<div class="flex flex-row w-full justify-between items-center pb-2 px-2">
+		<div class="flex flex-row w-full justify-between items-center pb-2 px-2 gap-2">
 			<div class="flex flex-row w-full h-full items-center gap-2">
 				<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 				<h1
@@ -95,19 +141,25 @@
 					<Icon icon="mdi:folder-open-outline" class="opacity-0 group-hover:opacity-70" />
 				</button> -->
 			</div>
-			<!-- <div class="join join-vertical lg:join-horizontal h-full items-center">
-				<button on:click={toggleSortDirection} class="btn btn-secondary btn-sm">
+			<div class="join join-horizontal h-full items-center">
+				<button on:click={toggleSortDirection} class="btn btn-secondary btn-sm join-item">
 					<Icon
 						icon={$worldSortOption.direction === 'asc'
 							? 'mdi:arrow-up-thick'
 							: 'mdi:arrow-down-thick'}
 					/>
 				</button>
-				<select class="select select-sm max-w-[85px] text-xs" bind:value={$worldSortOption.option}>
+				<select
+					class="select select-sm max-w-[85px] text-xs join-item"
+					bind:value={$worldSortOption.option}
+				>
 					<option value="size">Size</option>
 					<option value="last_played">Last Played</option>
 				</select>
-			</div> -->
+				<button class="btn btn-sm bg-slate-100 join-item">
+					<Icon icon="material-symbols:directory-sync" on:click={handleBackupListUpdate} />
+				</button>
+			</div>
 		</div>
 		<div class="flex px-2 h-full">
 			<BackupList {worlds} on:visible currentVault={$currentVault} />

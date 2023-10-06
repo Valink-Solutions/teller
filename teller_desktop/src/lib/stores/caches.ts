@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
-import { WorldCacheItem, WorldListCacheItem } from '../types/caches';
+import type { LocalVaultCacheItem, WorldCacheItem, WorldListCacheItem } from '../types/caches';
 
 export let worldCache = writable<WorldCacheItem[]>([]);
 
@@ -28,5 +28,10 @@ export let worldListCache = writable<WorldListCacheItem>({
 	category: '',
 	instance: '',
 	path: '',
+	data: []
+});
+
+export let localVaultCache = writable<LocalVaultCacheItem>({
+	name: '',
 	data: []
 });

@@ -119,7 +119,7 @@
 			<p class="text-lg font-semibold">Error loading data</p>
 		</div>
 	{:else if world_metadata}
-		<div class="flex flex-row items-center space-x-4">
+		<div class="flex flex-row space-x-4">
 			<div class="relative w-28 h-24">
 				<img
 					src={world_metadata.data.icon

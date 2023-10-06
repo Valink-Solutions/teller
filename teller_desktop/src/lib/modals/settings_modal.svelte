@@ -49,7 +49,6 @@
 				<div class="divider" />
 
 				<h3 class="card-title justify-center">Backup Settings</h3>
-				<p class="text-sm text-gray-500 mx-auto">Auto Backup isn't enabled yet.</p>
 				<div>
 					<div class="flex flex-col gap-2">
 						<span class="opacity-50">Backup Schedule</span>

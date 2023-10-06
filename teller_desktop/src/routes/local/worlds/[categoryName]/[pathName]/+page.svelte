@@ -138,7 +138,7 @@
 			<p class="text-lg font-semibold">Error loading data</p>
 		</div>
 	{:else if world_path}
-		<div class="flex flex-row w-full justify-between items-center pb-2 px-2">
+		<div class="flex flex-row w-full justify-between items-center pb-2 px-2 gap-2">
 			<div class="flex flex-row w-full h-full items-center gap-2">
 				<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 				<h1
@@ -154,18 +154,24 @@
 					<Icon icon="mdi:folder-open-outline" class="opacity-0 group-hover:opacity-70" />
 				</button>
 			</div>
-			<div class="join join-vertical lg:join-horizontal h-full items-center">
-				<button on:click={toggleSortDirection} class="btn btn-secondary btn-sm">
+			<div class="join join-horizontal h-full items-center">
+				<button on:click={toggleSortDirection} class="btn btn-secondary btn-sm join-item">
 					<Icon
 						icon={$worldSortOption.direction === 'asc'
 							? 'mdi:arrow-up-thick'
 							: 'mdi:arrow-down-thick'}
 					/>
 				</button>
-				<select class="select select-sm max-w-[85px] text-xs" bind:value={$worldSortOption.option}>
+				<select
+					class="select select-sm max-w-[85px] text-xs join-item"
+					bind:value={$worldSortOption.option}
+				>
 					<option value="size">Size</option>
 					<option value="last_played">Last Played</option>
 				</select>
+				<button class="btn btn-sm bg-slate-100 join-item">
+					<Icon icon="material-symbols:directory-sync" on:click={handleWorldListUpdate} />
+				</button>
 			</div>
 		</div>
 		<div class="flex px-2 h-full">

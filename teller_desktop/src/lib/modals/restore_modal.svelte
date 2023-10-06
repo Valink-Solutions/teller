@@ -30,8 +30,20 @@
 		if (typeof res !== 'string') {
 			if (res) {
 				const directorySettings = res as DirectorySettings;
-				locations = Object.entries(directorySettings.categories).map(
-					([categoryId, vaultEntries]) => {
+				locations.push({
+					id: 'default',
+					name: 'Default',
+					selected: false,
+					instances: [
+						{
+							id: 'default',
+							name: 'Default',
+							selected: false
+						}
+					]
+				});
+				locations = locations.concat(
+					Object.entries(directorySettings.categories).map(([categoryId, vaultEntries]) => {
 						const instances = Object.entries(vaultEntries.paths).map(([instanceId, _]) => ({
 							id: instanceId,
 							name: instanceId,
@@ -43,7 +55,7 @@
 							selected: false,
 							instances
 						};
-					}
+					})
 				);
 			}
 		}
@@ -63,7 +75,7 @@
 			}
 			return selected;
 		});
-		toast.push('Creating backup...');
+		toast.push('Restoring backup...');
 
 		closeModal();
 
@@ -88,28 +100,39 @@
 				<div class="flex flex-col max-h-[400px] overflow-y-auto overflow-x-hidden">
 					<ul class="menu bg-base-200 rounded-box flex flex-col w-full">
 						{#each locations as location (location.id)}
-							<li class="flex flex-row w-full">
-								<details class="w-full">
-									<summary>
+							{#if location.id !== 'default'}
+								<li class="flex flex-row w-full">
+									<details class="w-full">
+										<summary>
+											<div class="form-control">
+												<input type="checkbox" class="checkbox" bind:checked={location.selected} />
+											</div>
+											{location.name}
+										</summary>
+										<ul>
+											{#each location.instances as instance (instance.id)}
+												<li class="flex flex-row items-center gap-2">
+													<div class="w-full">
+														<input
+															type="checkbox"
+															class="checkbox"
+															bind:checked={instance.selected}
+														/>
+														{instance.name}
+													</div>
+												</li>
+											{/each}
+										</ul>
+									</details>
+								</li>
+							{:else}
+								<li class="flex flex-row items-center">
+									<div class="w-full">
 										<input type="checkbox" class="checkbox" bind:checked={location.selected} />
 										{location.name}
-									</summary>
-									<ul class="flex flex-col w-full">
-										{#each location.instances as instance (instance.id)}
-											<li class="flex flex-row items-center gap-2">
-												<div class="form-control">
-													<input
-														type="checkbox"
-														class="checkbox"
-														bind:checked={instance.selected}
-													/>
-												</div>
-												{instance.name}
-											</li>
-										{/each}
-									</ul>
-								</details>
-							</li>
+									</div>
+								</li>
+							{/if}
 						{/each}
 					</ul>
 				</div>
