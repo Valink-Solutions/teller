@@ -20,12 +20,8 @@ body {
 ::-webkit-scrollbar {
 	width: 8px;
 	height: 8px; /* Make horizontal scrollbar the same size as vertical */
+	margin: 10px 0;
 }
-
-/* This will apply to the horizontal scrollbar */
-/* ::-webkit-scrollbar-track {
-	padding: 0 1rem 0 0;
-}  */
 
 [data-theme='neubrutalism'] .btn {
 	border-width: 4px;
@@ -146,6 +142,13 @@ body {
 	border-color: black !important;
 	--tw-border-opacity: 1;
 	outline: none;
+}
+
+[data-theme='neubrutalism'] .select:disabled,
+[data-theme='neubrutalism-dark'] .select:disabled {
+	border-color: #a9a9a9 !important;
+	color: #a9a9a9 !important;
+	box-shadow: 0px 4px 0px 0px rgba(0, 0, 0, 0.33);
 }
 
 [data-theme='neubrutalism'] .checkbox {

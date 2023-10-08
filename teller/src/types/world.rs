@@ -3,13 +3,14 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use uuid::Uuid;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WorldData {
     pub id: String,
     pub name: String,
     pub image: String,
     pub path: String,
     pub size: u64,
+    pub last_played: Option<NaiveDateTime>,
 }
 
 #[allow(non_snake_case)]
@@ -53,7 +54,7 @@ pub struct WorldVersion {
     pub additional_data: Option<serde_json::Value>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WorldLevelData {
     pub name: String,
     pub folder: Option<String>,
@@ -67,7 +68,7 @@ pub struct WorldLevelData {
     pub game_rules: Option<GameRules>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GameRules {
     pub do_fire_tick: bool,
     pub mob_loot: bool,

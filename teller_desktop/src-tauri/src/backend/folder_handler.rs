@@ -6,9 +6,8 @@ use tauri::{
     Manager, Wry,
 };
 use teller::{
-    handlers::{
-        search::worlds::{fetch_worlds_from_path, grab_world_by_id},
-        world::recursive_world_search,
+    handlers::search::worlds::{
+        fetch_worlds_from_instance, recursive_world_search, world_path_from_id,
     },
     types::world::WorldData,
 };
@@ -40,8 +39,8 @@ fn check_path_for_save_folders(path: PathBuf) -> Result<Vec<PathBuf>, String> {
 }
 
 #[tauri::command]
-fn grab_local_worlds_list(local_saves_path: PathBuf) -> Result<Vec<WorldData>, String> {
-    fetch_worlds_from_path(local_saves_path)
+fn grab_local_worlds_list(category: &str, instance: &str) -> Result<Vec<WorldData>, String> {
+    fetch_worlds_from_instance(category, instance)
 }
 
 #[tauri::command]
@@ -49,11 +48,9 @@ fn open_world_in_explorer(
     handle: tauri::AppHandle,
     world_id: &str,
     category: Option<&str>,
+    instance: Option<&str>,
 ) -> Result<(), String> {
-    let path_str = grab_world_by_id(world_id, Some(true), category)?.to_string();
-    let path_str = path_str.replace(" ", r" ").replace("\"", "");
-
-    let path = PathBuf::from(path_str);
+    let path = world_path_from_id(world_id, category, instance)?;
 
     if path.is_dir() {
         match tauri::api::shell::open(&handle.shell_scope(), &path.to_string_lossy(), None)

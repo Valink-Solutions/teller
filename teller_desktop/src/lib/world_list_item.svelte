@@ -1,10 +1,56 @@
 <script lang="ts">
 	import Icon from '@iconify/svelte';
-	import { formatBytes, type WorldItem } from './utils';
-	import type { CurrentDir } from './stores';
+	import { formatBytes } from './utils';
+	import type { CurrentDir } from './types/navigation';
+
+	import { closeModal, openModal } from 'svelte-modals';
+	import { invoke } from '@tauri-apps/api';
+	import { toast } from '@zerodevx/svelte-toast';
+	import DeleteModal from './modals/delete_modal.svelte';
+	import BackupModal from './modals/backup_modal.svelte';
+	import type { WorldItem } from './types/worlds';
+	import { emit } from '@tauri-apps/api/event';
 
 	export let world: WorldItem;
 	export let currentDir: CurrentDir = { path: 'default', category: null };
+
+	function openBackupWindow() {
+		openModal(BackupModal, {
+			worldName: world.name,
+			worldId: world.id,
+			category: currentDir.category,
+			instance: currentDir.path
+		});
+	}
+
+	function openDeleteWindow() {
+		openModal(DeleteModal, {
+			deleteTitle: 'Delete World',
+			deleteMessage: 'Are you sure you want to delete this world?',
+			deleteFunction: () => {
+				invoke('plugin:world_handler|delete_world_by_id', {
+					worldId: world.id,
+					category: currentDir.category,
+					instance: currentDir.path
+				})
+					.then((res) => {
+						toast.push(`Successfully deleted ${world.name}`);
+						emit('world_list_updated');
+						closeModal();
+					})
+					.catch((err) => {
+						toast.push(`Failed to delete ${world.name}. ${err}`, {
+							theme: {
+								'--toastBackground': '#EF4444',
+								'--toastProgressBackground': '#F87171',
+								'--toastProgressText': '#fff',
+								'--toastText': '#fff'
+							}
+						});
+					});
+			}
+		});
+	}
 </script>
 
 <li class="card flex flex-row w-full bg-base-100 shadow-xl max-h-fit">
@@ -37,37 +83,31 @@
 			<div class="dropdown dropdown-end">
 				<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 				<!-- svelte-ignore a11y-label-has-associated-control -->
-				<label
-					tabindex="0"
-					class="drop-shadow-none btn btn-square btn-ghost btn-xs border-none m-1 text-lg"
-				>
-					<Icon icon="mdi:dots-vertical" />
+				<label tabindex="0" class="btn btn-xs text-lg btn-ghost">
+					<Icon icon="bx:dots-vertical" />
 				</label>
 				<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
-				<ul tabindex="0" class="dropdown-content z-[1] menu p-2 bg-base-100 rounded-box w-52">
+				<ul
+					tabindex="0"
+					class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52 mt-2"
+				>
 					<li>
-						<a
-							href={`/local/worlds/${currentDir.category}/${world.id}`}
-							class="flex flex-row items-center"
+						<button
+							class="flex flex-row gap-2 text-red-500 hover:text-red-700"
+							on:click={openDeleteWindow}
 						>
-							<Icon icon="mdi:pencil-outline" class="mr-1" />
-							Quick Edit
-						</a>
-					</li>
-					<div class="divider my-1" />
-					<li>
-						<button class="text-red-500 flex flex-row items-center" disabled>
-							<Icon icon="mdi:trash-can-outline" class="mr-1" />
-							Delete
+							<Icon icon="mdi:trash-can-outline" />
+							<span>Delete</span>
 						</button>
 					</li>
 				</ul>
 			</div>
 			<div class="join">
-				<button class="btn btn-sm join-item btn-disabled" disabled>Share</button>
-				<button class="btn btn-sm join-item btn-disabled" disabled>Backup</button>
-				<a href={`/local/worlds/${currentDir.category}/${world.id}`} class="btn btn-sm join-item"
-					>View</a
+				<!-- <button class="btn btn-error btn-sm join-item" on:click={openDeleteWindow}>Delete</button> -->
+				<button on:click={openBackupWindow} class="btn btn-sm join-item">Backup</button>
+				<a
+					href={`/local/worlds/${currentDir.category}/${currentDir.path}/${world.id}`}
+					class="btn btn-sm join-item">View</a
 				>
 			</div>
 		</div>

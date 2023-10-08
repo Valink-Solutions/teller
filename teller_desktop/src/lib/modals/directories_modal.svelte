@@ -1,23 +1,16 @@
 <script lang="ts">
-	import { appWindow } from '@tauri-apps/api/window';
+	import { closeModal, modals } from 'svelte-modals';
 	import DirectoriesList from '$lib/directories_list.svelte';
 	import { dialog, invoke } from '@tauri-apps/api';
 	import { onMount } from 'svelte';
 	import { emit } from '@tauri-apps/api/event';
-	import { directorySettings } from '$lib/stores';
-	import type { DirectorySettings } from '$lib/utils';
+	import { directorySettings } from '$lib/stores/settings';
+	import type { DirectorySettings } from '$lib/types/config';
+	import { toast } from '@zerodevx/svelte-toast';
 
 	let directoryCount = 0;
 
 	onMount(async () => {
-		appWindow.setResizable(false).catch((err) => {
-			console.error(err);
-		});
-
-		await appWindow.setTitle('Set World Save Directories').catch((err) => {
-			console.error(err);
-		});
-
 		try {
 			let savesFolders = await invoke('plugin:config|load_saves_folders');
 			if (typeof savesFolders === 'string') {
@@ -37,9 +30,15 @@
 
 			await emit('saves_config_updated');
 
-			await appWindow.close();
+			closeModal();
 		} catch (error) {
 			console.error(error);
+			toast.push(`Error saving directories: ${error}`, {
+				theme: {
+					'--toastBackground': '#f44336',
+					'--toastProgressBackground': '#d32f2f'
+				}
+			});
 		}
 	};
 
@@ -50,12 +49,11 @@
 				.then((res) => {
 					if (res instanceof Array) {
 						// for each save location, add it to the list
-						directoryCount++;
-						let directoryName: string = `Local Vault ${directoryCount}`;
-						let saveLocationCount = 0;
-						res.forEach((save_location) => {
-							saveLocationCount++;
-							let name: string = `Save ${saveLocationCount}`;
+						let directoryName: string = `Instance ${
+							Object.keys($directorySettings.categories).length + 1
+						}`;
+						res.forEach((save_location, index) => {
+							let name: string = `Save ${index + 1}`;
 							directorySettings.update((dirs) => {
 								let newCategory = { ...dirs.categories };
 								if (!newCategory[directoryName]) {
@@ -72,10 +70,34 @@
 				});
 		}
 	};
+
+	export let isOpen: boolean;
+
+	let stackIndex: number = $modals.length;
 </script>
 
-<div class="flex flex-col gap-4 p-4 min-h-screen h-full flex-wrap">
-	<button on:click={addDirectory} class="btn btn-secondary">Add Directory</button>
-	<DirectoriesList />
-	<button on:click={writeDirectories} class="btn btn-primary">Save</button>
-</div>
+{#if isOpen}
+	<div role="dialog" class="fixed inset-0 flex items-center justify-center z-50 py-2">
+		<div
+			class="card bg-slate-100 h-full min-w-[25rem] max-w-[66.666667%] max-h-[85%] overflow-auto"
+		>
+			<div class="card-body">
+				<h2 class="card-title">Manage Local Instances</h2>
+				<button on:click={addDirectory} class="btn btn-secondary">Add Instance</button>
+
+				<div class="flex w-full">
+					<DirectoriesList />
+				</div>
+
+				<div class="justify-end card-actions">
+					{#if stackIndex > 1}
+						<button on:click={closeModal} class="btn">Close</button>
+					{:else}
+						<button on:click={closeModal} class="btn">Close</button>
+					{/if}
+					<button on:click={writeDirectories} class="btn btn-primary">Save</button>
+				</div>
+			</div>
+		</div>
+	</div>
+{/if}

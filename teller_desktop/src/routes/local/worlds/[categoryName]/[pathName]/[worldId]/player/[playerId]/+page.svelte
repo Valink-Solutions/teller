@@ -6,7 +6,7 @@
 	import InventoryViewer from '$lib/inventory_viewer.svelte';
 	import { goto } from '$app/navigation';
 
-	let world_data: any;
+	let world_path: any;
 	let player: any;
 	let player_data: any;
 
@@ -15,18 +15,17 @@
 
 	onMount(async () => {
 		try {
-			const world_res = await invoke('plugin:world_handler|get_world_by_id', {
+			const world_res = await invoke('plugin:world_handler|get_world_path_by_id', {
 				worldId: $page.params.worldId,
-				returnPath: true,
 				category: $page.params.categoryName
 			});
-			world_data = world_res;
+			world_path = world_res;
 
-			if (world_data) {
-				console.log(world_data);
+			if (world_path) {
+				console.log(world_path);
 				const player_res = await invoke('plugin:world_handler|get_player_from_uuid', {
 					playerUuid: $page.params.playerId,
-					path: world_data
+					path: world_path
 				});
 				player = player_res;
 
@@ -49,7 +48,10 @@
 <div class="flex flex-col justify-start w-full px-4 gap-4">
 	<button
 		class="btn btn-ghost w-20"
-		on:click={() => goto(`/local/worlds/${$page.params.categoryName}/${$page.params.worldId}`)}
+		on:click={() =>
+			goto(
+				`/local/worlds/${$page.params.categoryName}/${$page.params.pathName}/${$page.params.worldId}`
+			)}
 	>
 		<Icon icon="mdi:arrow-left" class="w-6 h-6" />
 	</button>
@@ -64,7 +66,7 @@
 			<Icon icon="mdi:error" class="w-16 h-16" />
 			<p class="text-lg font-semibold">Error loading data</p>
 		</div>
-	{:else if world_data}
+	{:else if world_path}
 		<div class="flex flex-col gap-4">
 			<div class="flex flex-row justify-between items-center">
 				<div class="flex flex-row items-center gap-2">

@@ -4,14 +4,15 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use chrono::NaiveDateTime;
 use commandblock::nbt::{read_from_file, Compression, Endian, NbtValue};
 use log::{error, info};
 use serde_json::{json, Value};
 use uuid::Uuid;
 
 use crate::{
-    handlers::player::fetch_player_data_from_uuid,
-    types::world::{GameRules, WorldLevelData},
+    handlers::{player::get_steve_image, search::worlds::world_path_from_id},
+    types::world::{GameRules, WorldData, WorldLevelData},
     utils::{calculate_dir_size, encode_image_to_base64},
 };
 
@@ -134,6 +135,16 @@ pub fn get_vault_id(path: &PathBuf) -> Result<String, String> {
     };
 
     Ok(vault_id.to_string())
+}
+
+pub fn new_vault_id(world_path: &PathBuf) -> Result<(), String> {
+    let mut vault_info = get_vault_file(world_path)?;
+    if let Some(id_pointer) = vault_info.pointer_mut("/id") {
+        *id_pointer = serde_json::Value::String(uuid::Uuid::new_v4().to_string());
+    }
+    update_vault_file(vault_info, world_path)?;
+
+    Ok(())
 }
 
 // Minecraft save finder
@@ -445,7 +456,7 @@ pub fn get_player_data(
             info!("Fetching Bedrock player data");
 
             let player_uuid = "~local_player".to_string();
-            let player_avatar = "https://crafthead.net/avatar/8667ba71b85a4004af54457a9734eed7?scale=32&overlay=false";
+            let player_avatar = get_steve_image();
 
             let db_path = path.join("db").to_str().unwrap().to_string();
 
@@ -460,10 +471,8 @@ pub fn get_player_data(
                     info!("Fetching player data for: {:?}", uuid);
 
                     let player_meta = json!({
-                        "username": "Remote Player",
                         "id": uuid.strip_prefix("player_server_").unwrap_or(uuid),
                         "avatar": player_avatar,
-                        "meta": {}
                     });
 
                     players.push(player_meta);
@@ -471,10 +480,8 @@ pub fn get_player_data(
             }
 
             let local_player_data = json!({
-                "username": "Local Player",
                 "id": player_uuid,
                 "avatar": player_avatar,
-                "meta": {}
             });
 
             players.push(local_player_data);
@@ -518,13 +525,18 @@ pub fn get_player_data(
                     }
                     None => "~local_player".to_string(),
                 };
-                let player_avatar = "https://crafthead.net/avatar/8667ba71b85a4004af54457a9734eed7?scale=32&overlay=false";
+
+                let player_avatar = match player_uuid.contains("~local_player") {
+                    true => get_steve_image(),
+                    false => format!(
+                        "https://crafthead.net/avatar/{}?scale=32&overlay=false",
+                        player_uuid
+                    ),
+                };
 
                 let player_meta = json!({
-                    "username": "Local Player",
                     "id": player_uuid,
                     "avatar": player_avatar,
-                    "meta": {}
                 });
 
                 return Ok(vec![player_meta]);
@@ -557,12 +569,23 @@ pub fn get_player_data(
 
                 let player_uuid = player.file_stem().unwrap().to_str().unwrap().to_string();
 
-                let player_meta = match fetch_player_data_from_uuid(player_uuid) {
-                    Ok(data) => data,
-                    Err(e) => {
-                        return Err(format!("Failed to fetch player data: {:?}", e).into());
-                    }
-                };
+                let player_avatar = format!(
+                    "https://crafthead.net/avatar/{}?scale=32&overlay=false",
+                    player_uuid
+                );
+
+                let player_meta = json!({
+                    "id": player_uuid,
+                    "avatar": player_avatar,
+                    "meta": {}
+                });
+
+                // let player_meta = match fetch_player_data_from_uuid(player_uuid) {
+                //     Ok(data) => data,
+                //     Err(e) => {
+                //         return Err(format!("Failed to fetch player data: {:?}", e).into());
+                //     }
+                // };
 
                 all_players.push(player_meta);
             }
@@ -821,10 +844,10 @@ pub fn parse_game_rules(
     }
 }
 
-pub fn get_level_name(
+pub fn get_level_info(
     level_dat_blob: NbtValue,
     game_type: GameType,
-) -> Result<String, Box<dyn std::error::Error>> {
+) -> Result<(String, Option<NaiveDateTime>), Box<dyn std::error::Error>> {
     let level_value: serde_json::Value = serde_json::to_value(level_dat_blob)?;
 
     match game_type {
@@ -839,9 +862,16 @@ pub fn get_level_name(
                 None => return Err("Could not find LevelName in level.dat".into()),
             };
 
+            let last_played = match level_data.get("LastPlayed") {
+                Some(time) => time.as_i64().unwrap_or_default(),
+                None => return Err("Could not find LastPlayed in level.dat".into()),
+            };
+
             let parsed_level_name = level_name[1..level_name.len() - 1].to_string();
 
-            Ok(parsed_level_name)
+            let parsed_last_played = chrono::NaiveDateTime::from_timestamp_millis(last_played);
+
+            Ok((parsed_level_name, parsed_last_played))
         }
         GameType::Bedrock => {
             let level_name = match level_value.get("LevelName") {
@@ -849,10 +879,91 @@ pub fn get_level_name(
                 None => return Err("Could not find levelName in level.dat".into()),
             };
 
+            let last_played = match level_value.get("LastPlayed") {
+                Some(time) => time.as_i64().unwrap_or_default(),
+                None => return Err("Could not find LastPlayed in level.dat".into()),
+            };
+
             let parsed_level_name = level_name[1..level_name.len() - 1].to_string();
 
-            Ok(parsed_level_name)
+            let parsed_last_played = chrono::NaiveDateTime::from_timestamp_opt(last_played, 0);
+
+            Ok((parsed_level_name, parsed_last_played))
         }
         GameType::None => Err("Could not find game type".into()),
     }
+}
+
+pub fn parse_world_entry_data(path: PathBuf) -> Result<WorldData, String> {
+    let game_type = is_minecraft_world(&path);
+
+    let level_dat_path = path.join("level.dat");
+    let level_dat_blob = match read_dat_file(level_dat_path, game_type) {
+        Ok(blob) => blob,
+        Err(e) => {
+            error!("Could not parse level.dat at {:?}: {:?}", path, e);
+            return Err(format!("Could not parse level.dat at {:?}: {:?}", path, e));
+        }
+    };
+
+    let (level_name, last_played) = match get_level_info(level_dat_blob, game_type) {
+        Ok((name, time)) => (name, time),
+        Err(e) => {
+            error!("Could not get level name at {:?}: {:?}", path, e);
+            return Err(format!("Could not get level name at {:?}: {:?}", path, e));
+        }
+    };
+
+    let world_size = match calculate_dir_size(&path) {
+        Ok(size) => size,
+        Err(_) => 0,
+    };
+
+    let vault_id = match get_vault_id(&path) {
+        Ok(id) => id,
+        Err(e) => {
+            error!("Could not get vault id at {:?}: {:?}", path, e);
+            return Err(format!("Could not get vault id at {:?}: {:?}", path, e));
+        }
+    };
+
+    let world_data = WorldData {
+        id: vault_id,
+        name: level_name,
+        image: match game_type {
+            GameType::Java => {
+                encode_image_to_base64(path.join("icon.png")).unwrap_or("".to_string())
+            }
+            GameType::Bedrock => {
+                encode_image_to_base64(path.join("world_icon.jpeg")).unwrap_or("".to_string())
+            }
+            GameType::None => "".to_string(),
+        },
+        path: path.to_string_lossy().into_owned(),
+        size: world_size,
+        last_played: last_played,
+    };
+
+    Ok(world_data)
+}
+
+pub fn delete_world(
+    world_id: &str,
+    category: Option<&str>,
+    instance: Option<&str>,
+) -> Result<(), String> {
+    let world_path = world_path_from_id(world_id, category, instance)?;
+
+    if !world_path.exists() {
+        error!("World does not exist: {:?}", world_path);
+        return Err("World does not exist".into());
+    }
+
+    info!("Deleting world at {:?}", world_path);
+
+    if let Err(e) = fs::remove_dir_all(world_path) {
+        return Err(format!("Failed to delete world: {:?}", e));
+    }
+
+    Ok(())
 }

@@ -1,22 +1,35 @@
-use std::path::Path;
-use std::{env, fs};
+use std::{
+    env, fs,
+    path::{Path, PathBuf},
+};
 
 use log::{error, info};
 
-use std::collections::HashMap;
-use std::path::PathBuf;
+use crate::{handlers::config::get_config_folder, types::config::DirectorySettings};
 
-#[derive(serde::Deserialize, serde::Serialize, Clone)]
-pub struct DirectorySettings {
-    pub categories: HashMap<String, VaultEntries>,
+pub fn get_minecraft_save_location() -> Option<PathBuf> {
+    let os = env::consts::OS;
+
+    match os {
+        "windows" => Some(PathBuf::from(format!(
+            "{}\\.minecraft\\saves",
+            env::var("APPDATA").unwrap()
+        ))),
+        "macos" => Some(PathBuf::from(format!(
+            "{}/Library/Application Support/minecraft/saves",
+            env::var("HOME").unwrap()
+        ))),
+        "linux" => Some(PathBuf::from(format!(
+            "{}/.minecraft/saves",
+            env::var("HOME").unwrap()
+        ))),
+        _ => None,
+    }
 }
 
-#[derive(serde::Deserialize, serde::Serialize, Clone)]
-pub struct VaultEntries {
-    pub paths: HashMap<String, PathBuf>,
-}
-
-pub fn get_saves_config<P: AsRef<Path>>(config_dir: P) -> Result<DirectorySettings, String> {
+pub fn get_local_directories_config<P: AsRef<Path>>(
+    config_dir: P,
+) -> Result<DirectorySettings, String> {
     let config_path = config_dir.as_ref().join("local-directories.json");
 
     info!("Loading config file at {:?}", config_path);
@@ -171,48 +184,4 @@ pub fn update_local_directories_config(
     info!("Updated directories config file at {:?}", config_path);
 
     Ok(parsed_settings)
-}
-
-pub fn get_config_folder() -> PathBuf {
-    let config_dir = directories::ProjectDirs::from("io", "valink", "teller");
-
-    let config_dir = config_dir.unwrap().config_dir().to_path_buf();
-
-    // check if config directory exists
-    if !config_dir.exists() {
-        info!("Creating config folder at {:?}", config_dir);
-
-        match fs::create_dir_all(&config_dir) {
-            Ok(_) => (),
-            Err(e) => {
-                error!(
-                    "Could not create config directory at {:?}: {:?}",
-                    config_dir, e
-                );
-                return config_dir;
-            }
-        }
-    }
-
-    config_dir
-}
-
-pub fn get_minecraft_save_location() -> Option<PathBuf> {
-    let os = env::consts::OS;
-
-    match os {
-        "windows" => Some(PathBuf::from(format!(
-            "{}\\.minecraft\\saves",
-            env::var("APPDATA").unwrap()
-        ))),
-        "macos" => Some(PathBuf::from(format!(
-            "{}/Library/Application Support/minecraft/saves",
-            env::var("HOME").unwrap()
-        ))),
-        "linux" => Some(PathBuf::from(format!(
-            "{}/.minecraft/saves",
-            env::var("HOME").unwrap()
-        ))),
-        _ => None,
-    }
 }

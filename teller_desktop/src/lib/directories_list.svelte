@@ -2,8 +2,8 @@
 	import Sortable from 'sortablejs';
 	import { onMount, afterUpdate } from 'svelte';
 	import Icon from '@iconify/svelte';
-	import type { VaultEntries } from './utils';
-	import { directorySettings } from './stores';
+	import { directorySettings } from './stores/settings';
+	import type { VaultEntries } from './types/config';
 
 	// If you can find a better way to do this please implement it
 	// I'm begging you
@@ -127,12 +127,12 @@
 	};
 </script>
 
-<div class="flex flex-grow flex-col gap-4 min-h-full h-full overflow-auto" id="categories">
+<div class="flex flex-grow flex-col gap-2 min-h-full h-full" id="categories">
 	{#each Object.entries($directorySettings.categories) as [category, value], i (category)}
 		<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 		<div data-category={category} class="collapse collapse-arrow max-w-full">
 			<input id={`checkbox-${category}`} type="checkbox" />
-			<div class="collapse-title text-xl font-medium">
+			<div class="flex flex-row collapse-title items-center font-medium">
 				<button
 					style="position: absolute; z-index: 1;"
 					on:click={() => deleteDirectory(category)}
@@ -197,7 +197,7 @@
 						</span>
 						<!-- <span class="overflow-x-scroll">{pathValue}</span> -->
 						<div
-							class="overflow-x-auto overflow-y-hidden h-fit max-w-md md:max-w-lg lg:max-w-xl d-flex align-items-center justify-content-center"
+							class="overflow-x-auto overflow-y-hidden h-fit w-full max-w-[400px] d-flex align-items-center justify-content-center"
 						>
 							<span class="w-full whitespace-nowrap px-2">{pathValue}</span>
 						</div>
