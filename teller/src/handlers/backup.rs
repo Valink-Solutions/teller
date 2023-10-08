@@ -150,7 +150,7 @@ pub async fn create_backup_from_id(
     vaults: Option<Vec<String>>,
 ) -> Result<String, String> {
     info!("Creating backup for world id: {}", world_id);
-    match world_path_from_id(world_id, category, instance) {
+    match world_path_from_id(world_id, category, instance).await {
         Ok(world_path) => {
             let world_backup_path = match create_world_backup(world_path.clone()).await {
                 Ok(backup_path) => backup_path,
@@ -185,7 +185,7 @@ pub async fn create_backup_from_id(
             if vaults.is_some() {
                 let mut vault_locations = HashMap::new();
 
-                let backup_settings = get_backup_config()?;
+                let backup_settings = get_backup_config().await?;
 
                 for vault_id in vaults.unwrap() {
                     if let Some(vault) = backup_settings.vaults.get(&vault_id) {
@@ -405,7 +405,7 @@ pub async fn delete_backup(
     vault: Option<&str>,
     snapshot_id: &str,
 ) -> Result<(), String> {
-    let backup_settings = get_backup_config()?;
+    let backup_settings = get_backup_config().await?;
 
     let vault_path = match vault {
         Some(vault_id) => {
@@ -438,7 +438,7 @@ pub async fn delete_backup(
 }
 
 pub async fn delete_all_backups(world_id: &str, vault: Option<&str>) -> Result<(), String> {
-    let backup_settings = get_backup_config()?;
+    let backup_settings = get_backup_config().await?;
 
     let vault_path = match vault {
         Some(vault_id) => {

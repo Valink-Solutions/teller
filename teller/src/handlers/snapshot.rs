@@ -18,7 +18,7 @@ pub async fn snapshot_to_world(
     replace: bool,
     instances: Vec<String>,
 ) -> Result<(), String> {
-    let backup_settings = get_backup_config()?;
+    let backup_settings = get_backup_config().await?;
 
     let world_path = if let Some(selected_vault) = selected_vault {
         if let Some(vault_path) = backup_settings.vaults.get(selected_vault) {
@@ -36,7 +36,7 @@ pub async fn snapshot_to_world(
 
     if backup_path.exists() {
         for instance in instances {
-            let mut world_path = match world_path_from_id(world_id, None, Some(&instance)) {
+            let mut world_path = match world_path_from_id(world_id, None, Some(&instance)).await {
                 Ok(path) => path.to_owned(),
                 Err(_) => {
                     let instance_path = get_directory_by_name(&instance, None).unwrap();
@@ -78,7 +78,7 @@ pub async fn snapshot_to_world(
                     .map_err(|e| e.to_string())?;
                 extract_world_backup(backup_path.clone(), world_path.clone().to_owned()).await?;
 
-                new_vault_id(&world_path)?;
+                new_vault_id(&world_path).await?;
             }
         }
     } else {

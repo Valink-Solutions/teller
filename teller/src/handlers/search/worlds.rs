@@ -152,7 +152,7 @@ pub async fn fetch_worlds_from_instance(
 //     Err("Could not find world".to_string())
 // }
 
-pub fn world_path_from_id(
+pub async fn world_path_from_id(
     world_id: &str,
     category: Option<&str>,
     instance: Option<&str>,
@@ -201,7 +201,7 @@ pub fn world_path_from_id(
                     continue;
                 }
 
-                let vault_id = match get_vault_id(&world_folder) {
+                let vault_id = match get_vault_id(&world_folder).await {
                     Ok(id) => id,
                     Err(_) => continue,
                 };
@@ -222,7 +222,7 @@ pub async fn grab_world_by_id(
     category: Option<&str>,
     instance: Option<&str>,
 ) -> Result<WorldLevelData, String> {
-    match world_path_from_id(world_id, category, instance) {
+    match world_path_from_id(world_id, category, instance).await {
         Ok(path) => {
             let game_type = is_minecraft_world(&path.clone());
             match process_world_data(&path, game_type).await {

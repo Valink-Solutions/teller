@@ -1,10 +1,10 @@
-use std::{io::Write, path::PathBuf};
+use std::path::PathBuf;
 
 use chrono::NaiveDateTime;
 use commandblock::nbt::{read_from_file, Compression, Endian, NbtValue};
 use log::{error, info};
 use serde_json::{json, Value};
-use tokio::fs;
+use tokio::{fs, io::AsyncWriteExt};
 use uuid::Uuid;
 
 use crate::{
@@ -23,7 +23,7 @@ pub enum GameType {
     None,
 }
 
-pub fn create_vault_file(vault_data: Value, world_path: &PathBuf) -> Result<(), String> {
+pub async fn create_vault_file(vault_data: Value, world_path: &PathBuf) -> Result<(), String> {
     info!("Creating vault file for: {:?}", world_path);
 
     let vault_file_path = world_path.join(".chunkvault");
@@ -32,7 +32,7 @@ pub fn create_vault_file(vault_data: Value, world_path: &PathBuf) -> Result<(), 
         return Err("Vault file already exists".to_string());
     }
 
-    let mut vault_file = match std::fs::File::create(&vault_file_path) {
+    let mut vault_file = match fs::File::create(&vault_file_path).await {
         Ok(file) => file,
         Err(e) => {
             error!("Failed to create vault file: {e:?} {vault_file_path:?}");
@@ -40,7 +40,10 @@ pub fn create_vault_file(vault_data: Value, world_path: &PathBuf) -> Result<(), 
         }
     };
 
-    match vault_file.write_all(vault_data.to_string().as_bytes()) {
+    match vault_file
+        .write_all(vault_data.to_string().as_bytes())
+        .await
+    {
         Ok(_) => {}
         Err(e) => {
             return Err(format!("Failed to write vault file: {:?}", e));
@@ -50,21 +53,21 @@ pub fn create_vault_file(vault_data: Value, world_path: &PathBuf) -> Result<(), 
     Ok(())
 }
 
-pub fn get_vault_file(world_path: &PathBuf) -> Result<Value, String> {
+pub async fn get_vault_file(world_path: &PathBuf) -> Result<Value, String> {
     let vault_file_path = world_path.join(".chunkvault");
 
     if !vault_file_path.exists() {
         return Err("Vault file does not exist".to_string());
     }
 
-    let vault_file = match std::fs::File::open(&vault_file_path) {
+    let vault_file = match fs::File::open(&vault_file_path).await {
         Ok(file) => file,
         Err(e) => {
             return Err(format!("Failed to open vault file: {e:?}"));
         }
     };
 
-    let vault_data: Value = match serde_json::from_reader(vault_file) {
+    let vault_data: Value = match serde_json::from_reader(vault_file.into_std().await) {
         Ok(data) => data,
         Err(e) => {
             return Err(format!("Failed to read vault file: {:?}", e));
@@ -74,21 +77,24 @@ pub fn get_vault_file(world_path: &PathBuf) -> Result<Value, String> {
     Ok(vault_data)
 }
 
-pub fn update_vault_file(vault_data: Value, world_path: &PathBuf) -> Result<(), String> {
+pub async fn update_vault_file(vault_data: Value, world_path: &PathBuf) -> Result<(), String> {
     let vault_file_path = world_path.join(".chunkvault");
 
     if !vault_file_path.exists() {
         return Err("Vault file does not exist".to_string());
     }
 
-    let mut vault_file = match std::fs::File::create(&vault_file_path) {
+    let mut vault_file = match fs::File::create(&vault_file_path).await {
         Ok(file) => file,
         Err(e) => {
             return Err(format!("Failed to create vault file: {:?}", e));
         }
     };
 
-    match vault_file.write_all(vault_data.to_string().as_bytes()) {
+    match vault_file
+        .write_all(vault_data.to_string().as_bytes())
+        .await
+    {
         Ok(_) => {}
         Err(e) => {
             return Err(format!("Failed to write vault file: {:?}", e));
@@ -98,8 +104,8 @@ pub fn update_vault_file(vault_data: Value, world_path: &PathBuf) -> Result<(), 
     Ok(())
 }
 
-pub fn get_vault_id(path: &PathBuf) -> Result<String, String> {
-    let vault_data = match get_vault_file(path) {
+pub async fn get_vault_id(path: &PathBuf) -> Result<String, String> {
+    let vault_data = match get_vault_file(path).await {
         Ok(data) => data,
         Err(_) => {
             let new_vault_id = uuid::Uuid::new_v4().to_string();
@@ -108,12 +114,12 @@ pub fn get_vault_id(path: &PathBuf) -> Result<String, String> {
                 "id": new_vault_id
             });
 
-            match create_vault_file(new_vault_data, path) {
+            match create_vault_file(new_vault_data, path).await {
                 Ok(_) => {}
                 Err(e) => return Err(e),
             };
 
-            match get_vault_file(path) {
+            match get_vault_file(path).await {
                 Ok(data) => data,
                 Err(e) => return Err(e),
             }
@@ -126,7 +132,7 @@ pub fn get_vault_id(path: &PathBuf) -> Result<String, String> {
             let new_vault_id = uuid::Uuid::new_v4().to_string();
             let mut vault_data = vault_data;
             vault_data["id"] = serde_json::Value::String(new_vault_id.clone());
-            match update_vault_file(vault_data, &path) {
+            match update_vault_file(vault_data, &path).await {
                 Ok(_) => {}
                 Err(e) => return Err(e),
             }
@@ -137,12 +143,12 @@ pub fn get_vault_id(path: &PathBuf) -> Result<String, String> {
     Ok(vault_id.to_string())
 }
 
-pub fn new_vault_id(world_path: &PathBuf) -> Result<(), String> {
-    let mut vault_info = get_vault_file(world_path)?;
+pub async fn new_vault_id(world_path: &PathBuf) -> Result<(), String> {
+    let mut vault_info = get_vault_file(world_path).await?;
     if let Some(id_pointer) = vault_info.pointer_mut("/id") {
         *id_pointer = serde_json::Value::String(uuid::Uuid::new_v4().to_string());
     }
-    update_vault_file(vault_info, world_path)?;
+    update_vault_file(vault_info, world_path).await?;
 
     Ok(())
 }
@@ -267,7 +273,9 @@ pub async fn process_world_data(
                     let naive_datetime = chrono::NaiveDateTime::from_timestamp_opt(last_played, 0);
                     naive_datetime
                 },
-                players: get_player_data(path, game_type).map_err(|e| e.to_string())?,
+                players: get_player_data(path, game_type)
+                    .await
+                    .map_err(|e| e.to_string())?,
                 size_on_disk: {
                     info!("Calculating directory size for: {:?}", path);
                     calculate_dir_size(path.clone().to_owned())
@@ -330,7 +338,9 @@ pub async fn process_world_data(
                     let naive_datetime = chrono::NaiveDateTime::from_timestamp_millis(last_played);
                     naive_datetime
                 },
-                players: get_player_data(path, game_type).map_err(|e| e.to_string())?,
+                players: get_player_data(path, game_type)
+                    .await
+                    .map_err(|e| e.to_string())?,
                 size_on_disk: {
                     info!("Calculating directory size for: {:?}", path);
                     calculate_dir_size(path.clone().to_owned())
@@ -349,7 +359,7 @@ pub async fn process_world_data(
     }
 }
 
-pub fn get_player_data(path: &PathBuf, game_type: GameType) -> Result<Vec<Value>, String> {
+pub async fn get_player_data(path: &PathBuf, game_type: GameType) -> Result<Vec<Value>, String> {
     match game_type {
         GameType::Bedrock => {
             info!("Fetching Bedrock player data");
@@ -441,7 +451,7 @@ pub fn get_player_data(path: &PathBuf, game_type: GameType) -> Result<Vec<Value>
                 return Ok(vec![player_meta]);
             }
 
-            let player_data = match std::fs::read_dir(&player_data_path) {
+            let mut player_data = match fs::read_dir(&player_data_path).await {
                 Ok(data) => data,
                 Err(e) => {
                     return Err(format!("Failed to read player data: {:?}", e).into());
@@ -450,14 +460,11 @@ pub fn get_player_data(path: &PathBuf, game_type: GameType) -> Result<Vec<Value>
 
             let mut all_players: Vec<Value> = Vec::new();
 
-            for player in player_data {
-                let player = match player {
-                    Ok(player) => player,
-                    Err(e) => {
-                        return Err(format!("Failed to read player data: {:?}", e).into());
-                    }
-                };
-
+            while let Some(player) = player_data
+                .next_entry()
+                .await
+                .map_err(|e| format!("Failed to read player data: {:?}", e))?
+            {
                 let player = player.path();
 
                 if !player.is_file()
@@ -818,7 +825,7 @@ pub async fn parse_world_entry_data(path: PathBuf) -> Result<WorldData, String> 
         Err(_) => 0,
     };
 
-    let vault_id = match get_vault_id(&path) {
+    let vault_id = match get_vault_id(&path).await {
         Ok(id) => id,
         Err(e) => {
             error!("Could not get vault id at {:?}: {:?}", path, e);
@@ -851,7 +858,7 @@ pub async fn delete_world(
     category: Option<&str>,
     instance: Option<&str>,
 ) -> Result<(), String> {
-    let world_path = world_path_from_id(world_id, category, instance)?;
+    let world_path = world_path_from_id(world_id, category, instance).await?;
 
     if !world_path.exists() {
         error!("World does not exist: {:?}", world_path);

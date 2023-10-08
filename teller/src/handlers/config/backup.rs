@@ -1,10 +1,10 @@
-use std::fs;
+use tokio::fs;
 
 use log::{error, info};
 
 use crate::{handlers::config::get_config_folder, types::backup::BackupSettings};
 
-pub fn update_backup_config(settings_data: BackupSettings) -> Result<BackupSettings, String> {
+pub async fn update_backup_config(settings_data: BackupSettings) -> Result<BackupSettings, String> {
     let config_dir = get_config_folder();
 
     let config_path = config_dir.join("backup_settings.json");
@@ -45,7 +45,7 @@ pub fn update_backup_config(settings_data: BackupSettings) -> Result<BackupSetti
         }
     };
 
-    match fs::write(&config_path, serde_json::to_string(&settings_data).unwrap()) {
+    match fs::write(&config_path, serde_json::to_string(&settings_data).unwrap()).await {
         Ok(_) => (),
         Err(e) => {
             error!(
@@ -64,14 +64,14 @@ pub fn update_backup_config(settings_data: BackupSettings) -> Result<BackupSetti
     Ok(parsed_settings)
 }
 
-pub fn get_backup_config() -> Result<BackupSettings, String> {
+pub async fn get_backup_config() -> Result<BackupSettings, String> {
     let config_dir = get_config_folder();
 
     let config_path = config_dir.join("backup_settings.json");
 
     if !config_path.exists() {
         let default_settings = BackupSettings::default();
-        match update_backup_config(default_settings) {
+        match update_backup_config(default_settings).await {
             Ok(settings) => return Ok(settings),
             Err(e) => {
                 error!(

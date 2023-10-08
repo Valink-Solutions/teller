@@ -42,7 +42,7 @@ fn find_newest_backup(files: &[fs::DirEntry]) -> Option<PathBuf> {
 }
 
 pub async fn fetch_backups_list(vault: &str) -> Result<Vec<WorldData>, String> {
-    let backup_settings = get_backup_config()?;
+    let backup_settings = get_backup_config().await?;
 
     let local_backups_path = if let Some(vault_path) = backup_settings.vaults.get(vault) {
         vault_path
@@ -89,7 +89,7 @@ pub async fn fetch_backups_for_world(
     world_id: &str,
     selected_vault: Option<&str>,
 ) -> Result<Vec<SnapshotInfo>, String> {
-    let backup_settings = get_backup_config()?;
+    let backup_settings = get_backup_config().await?;
 
     let world_path = if let Some(selected_vault) = selected_vault {
         if let Some(vault_path) = backup_settings.vaults.get(selected_vault) {
@@ -144,7 +144,7 @@ pub async fn fetch_metadata_for_world(
     world_id: &str,
     selected_vault: Option<&str>,
 ) -> Result<BackupMetadata, String> {
-    let backup_settings = get_backup_config()?;
+    let backup_settings = get_backup_config().await?;
 
     let world_path = if let Some(selected_vault) = selected_vault {
         if let Some(vault_path) = backup_settings.vaults.get(selected_vault) {
@@ -171,7 +171,7 @@ pub async fn fetch_metadata_for_backup(
     selected_vault: Option<&str>,
     backup_id: &str,
 ) -> Result<BackupMetadata, String> {
-    let backup_settings = get_backup_config()?;
+    let backup_settings = get_backup_config().await?;
 
     let world_path = if let Some(selected_vault) = selected_vault {
         if let Some(vault_path) = backup_settings.vaults.get(selected_vault) {

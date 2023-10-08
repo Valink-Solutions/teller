@@ -36,7 +36,7 @@ pub fn init() -> TauriPlugin<Wry> {
 }
 
 #[tauri::command]
-async fn get_save_folders(handle: tauri::AppHandle) -> Result<DirectorySettings, String> {
+fn get_save_folders(handle: tauri::AppHandle) -> Result<DirectorySettings, String> {
     let config_dir = get_config_folder();
 
     // This simply opens the window and errors out allowing the user to configure the directories
@@ -60,7 +60,7 @@ async fn get_save_folders(handle: tauri::AppHandle) -> Result<DirectorySettings,
 }
 
 #[tauri::command]
-async fn load_saves_folders() -> Result<DirectorySettings, String> {
+fn load_saves_folders() -> Result<DirectorySettings, String> {
     let config_dir = get_config_folder();
 
     let saves_config = match get_local_directories_config(&config_dir) {
@@ -79,13 +79,17 @@ fn get_folder_path(dir_name: &str, category: Option<&str>) -> Option<PathBuf> {
 }
 
 #[tauri::command]
-fn create_saves_config(settings_data: DirectorySettings) -> Result<DirectorySettings, String> {
-    create_local_directories_config(settings_data)
+async fn create_saves_config(
+    settings_data: DirectorySettings,
+) -> Result<DirectorySettings, String> {
+    create_local_directories_config(settings_data).await
 }
 
 #[tauri::command]
-fn update_saves_config(settings_data: DirectorySettings) -> Result<DirectorySettings, String> {
-    update_local_directories_config(settings_data)
+async fn update_saves_config(
+    settings_data: DirectorySettings,
+) -> Result<DirectorySettings, String> {
+    update_local_directories_config(settings_data).await
 }
 
 #[tauri::command]
@@ -94,11 +98,11 @@ pub fn get_minecraft_save_location() -> Option<PathBuf> {
 }
 
 #[tauri::command]
-fn get_backup_settings() -> Result<BackupSettings, String> {
-    teller::handlers::config::backup::get_backup_config()
+async fn get_backup_settings() -> Result<BackupSettings, String> {
+    teller::handlers::config::backup::get_backup_config().await
 }
 
 #[tauri::command]
-fn update_backup_settings(settings_data: BackupSettings) -> Result<BackupSettings, String> {
-    teller::handlers::config::backup::update_backup_config(settings_data)
+async fn update_backup_settings(settings_data: BackupSettings) -> Result<BackupSettings, String> {
+    teller::handlers::config::backup::update_backup_config(settings_data).await
 }
