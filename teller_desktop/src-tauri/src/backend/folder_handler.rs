@@ -24,13 +24,13 @@ pub fn init() -> TauriPlugin<Wry> {
 }
 
 #[tauri::command]
-fn check_path_for_save_folders(path: PathBuf) -> Result<Vec<PathBuf>, String> {
+async fn check_path_for_save_folders(path: PathBuf) -> Result<Vec<PathBuf>, String> {
     info!("Checking path for saves folder: {}", path.to_string_lossy());
 
     let mut save_folders = Vec::new();
     let max_depth = 6;
 
-    recursive_world_search(&path, 0, max_depth, &mut save_folders)?;
+    recursive_world_search(&path, 0, max_depth, &mut save_folders).await?;
 
     save_folders.sort();
     save_folders.dedup();
@@ -39,8 +39,8 @@ fn check_path_for_save_folders(path: PathBuf) -> Result<Vec<PathBuf>, String> {
 }
 
 #[tauri::command]
-fn grab_local_worlds_list(category: &str, instance: &str) -> Result<Vec<WorldData>, String> {
-    fetch_worlds_from_instance(category, instance)
+async fn grab_local_worlds_list(category: &str, instance: &str) -> Result<Vec<WorldData>, String> {
+    fetch_worlds_from_instance(category, instance).await
 }
 
 #[tauri::command]

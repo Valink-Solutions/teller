@@ -69,10 +69,10 @@ fn get_player_from_uuid(player_uuid: String, path: &Path) -> Result<PlayerData, 
 }
 
 #[tauri::command]
-fn delete_world_by_id(
+async fn delete_world_by_id(
     world_id: &str,
     category: Option<&str>,
     instance: Option<&str>,
 ) -> Result<(), String> {
-    teller::handlers::world::delete_world(world_id, category, instance)
+    teller::handlers::world::delete_world(world_id, category, instance).await
 }

@@ -49,13 +49,13 @@ pub async fn create_world_backup(world_path: PathBuf) -> Result<PathBuf, String>
         }
     };
 
-    let mut world_entry_data = parse_world_entry_data(world_path.clone())?;
+    let mut world_entry_data = parse_world_entry_data(world_path.clone()).await?;
 
     world_entry_data.path = "".to_string();
 
     let game_type = is_minecraft_world(&world_path);
 
-    let world_data = match process_world_data(&world_path, game_type) {
+    let world_data = match process_world_data(&world_path, game_type).await {
         Ok(data) => data,
         Err(e) => {
             return Err(format!("Could not process world data: {:?}", e));
@@ -206,11 +206,8 @@ pub async fn create_backup_from_id(
                             }
                         };
                     }
-                    match tokio::fs::copy(
-                        &world_backup_path,
-                        backup_location.join(backup_name),
-                    )
-                    .await
+                    match tokio::fs::copy(&world_backup_path, backup_location.join(backup_name))
+                        .await
                     {
                         Ok(_) => {}
                         Err(e) => {

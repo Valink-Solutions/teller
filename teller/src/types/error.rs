@@ -1,5 +1,5 @@
 #[derive(Debug, thiserror::Error)]
-enum Error {
+pub enum Error {
     #[error(transparent)]
     Io(#[from] std::io::Error),
 }
