@@ -82,11 +82,11 @@ async fn grab_world_metadata(
 }
 
 #[tauri::command]
-fn grab_world_backups(
+async fn grab_world_backups(
     world_id: &str,
     selected_vault: Option<&str>,
 ) -> Result<Vec<SnapshotInfo>, String> {
-    teller::handlers::search::backups::fetch_backups_for_world(world_id, selected_vault)
+    teller::handlers::search::backups::fetch_backups_for_world(world_id, selected_vault).await
 }
 
 #[tauri::command]

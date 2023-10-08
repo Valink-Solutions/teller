@@ -1,9 +1,8 @@
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
 
+use async_recursion::async_recursion;
 use log::{error, info};
+use tokio::fs;
 
 use crate::{
     handlers::{
@@ -16,7 +15,7 @@ use crate::{
     types::world::{WorldData, WorldLevelData},
 };
 
-pub fn fetch_worlds_from_instance(
+pub async fn fetch_worlds_from_instance(
     selected_category: &str,
     instance: &str,
 ) -> Result<Vec<WorldData>, String> {
@@ -88,7 +87,7 @@ pub fn fetch_worlds_from_instance(
         };
         let path = entry.path();
         if path.is_dir() && path.extension().map_or(true, |ext| ext != "zip") {
-            match parse_world_entry_data(path.clone()) {
+            match parse_world_entry_data(path.clone()).await {
                 Ok(world_data) => worlds_list.push(world_data),
                 Err(_) => continue,
             }
@@ -153,7 +152,7 @@ pub fn fetch_worlds_from_instance(
 //     Err("Could not find world".to_string())
 // }
 
-pub fn world_path_from_id(
+pub async fn world_path_from_id(
     world_id: &str,
     category: Option<&str>,
     instance: Option<&str>,
@@ -202,7 +201,7 @@ pub fn world_path_from_id(
                     continue;
                 }
 
-                let vault_id = match get_vault_id(&world_folder) {
+                let vault_id = match get_vault_id(&world_folder).await {
                     Ok(id) => id,
                     Err(_) => continue,
                 };
@@ -223,10 +222,10 @@ pub async fn grab_world_by_id(
     category: Option<&str>,
     instance: Option<&str>,
 ) -> Result<WorldLevelData, String> {
-    match world_path_from_id(world_id, category, instance) {
+    match world_path_from_id(world_id, category, instance).await {
         Ok(path) => {
             let game_type = is_minecraft_world(&path.clone());
-            match process_world_data(&path, game_type) {
+            match process_world_data(&path, game_type).await {
                 Ok(data) => Ok(data),
                 Err(e) => {
                     error!("Could not process world data: {:?}", e);
@@ -241,7 +240,9 @@ pub async fn grab_world_by_id(
     }
 }
 
-pub fn is_minecraft_world(path: &Path) -> GameType {
+pub fn is_minecraft_world(path: &PathBuf) -> GameType {
+    let path = path.as_path();
+
     if !path.is_dir() {
         return GameType::None;
     }
@@ -268,11 +269,13 @@ pub fn is_minecraft_world(path: &Path) -> GameType {
     }
 }
 
-pub fn is_minecraft_folder(path: &Path) -> GameType {
+pub async fn is_minecraft_folder(path: &Path) -> GameType {
     if path.is_dir() {
         if path.file_name().unwrap() == ".minecraft" {
             if !path.join("saves").exists() {
-                fs::create_dir_all(path.join("saves")).expect("Failed to create saves directory");
+                fs::create_dir_all(path.join("saves"))
+                    .await
+                    .expect("Failed to create saves directory");
             }
             return GameType::Java;
         } else if path.join("minecraftWorlds").exists() {
@@ -288,7 +291,8 @@ pub fn is_minecraft_folder(path: &Path) -> GameType {
     GameType::None
 }
 
-pub fn recursive_world_search(
+#[async_recursion]
+pub async fn recursive_world_search(
     path: &Path,
     depth: usize,
     max_depth: usize,
@@ -306,14 +310,14 @@ pub fn recursive_world_search(
         return Ok(());
     }
 
-    match is_minecraft_world(path) {
+    match is_minecraft_world(&path.to_path_buf()) {
         GameType::Java => {
             save_folders.push(path.parent().unwrap().to_path_buf());
         }
         GameType::Bedrock => {
             save_folders.push(path.parent().unwrap().to_path_buf());
         }
-        GameType::None => match is_minecraft_folder(path) {
+        GameType::None => match is_minecraft_folder(path).await {
             GameType::Java => {
                 save_folders.push(path.join("saves"));
             }
@@ -331,7 +335,8 @@ pub fn recursive_world_search(
                                     depth + 1,
                                     max_depth,
                                     save_folders,
-                                )?;
+                                )
+                                .await?;
                             }
                         }
                     }

@@ -40,12 +40,12 @@ pub async fn get_world_by_id(
 }
 
 #[tauri::command]
-fn get_world_path_by_id(
+async fn get_world_path_by_id(
     world_id: &str,
     category: Option<&str>,
     instance: Option<&str>,
 ) -> Result<PathBuf, String> {
-    world_path_from_id(world_id, category, instance)
+    world_path_from_id(world_id, category, instance).await
 }
 
 #[tauri::command]
@@ -69,10 +69,10 @@ fn get_player_from_uuid(player_uuid: String, path: &Path) -> Result<PlayerData, 
 }
 
 #[tauri::command]
-fn delete_world_by_id(
+async fn delete_world_by_id(
     world_id: &str,
     category: Option<&str>,
     instance: Option<&str>,
 ) -> Result<(), String> {
-    teller::handlers::world::delete_world(world_id, category, instance)
+    teller::handlers::world::delete_world(world_id, category, instance).await
 }

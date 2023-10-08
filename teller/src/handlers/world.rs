@@ -1,17 +1,17 @@
-use std::{
-    fs,
-    io::Write,
-    path::{Path, PathBuf},
-};
+use std::path::PathBuf;
 
 use chrono::NaiveDateTime;
 use commandblock::nbt::{read_from_file, Compression, Endian, NbtValue};
 use log::{error, info};
 use serde_json::{json, Value};
+use tokio::{fs, io::AsyncWriteExt};
 use uuid::Uuid;
 
 use crate::{
-    handlers::{player::get_steve_image, search::worlds::world_path_from_id},
+    handlers::{
+        player::get_steve_image,
+        search::worlds::{is_minecraft_world, world_path_from_id},
+    },
     types::world::{GameRules, WorldData, WorldLevelData},
     utils::{calculate_dir_size, encode_image_to_base64},
 };
@@ -23,7 +23,7 @@ pub enum GameType {
     None,
 }
 
-pub fn create_vault_file(vault_data: Value, world_path: &PathBuf) -> Result<(), String> {
+pub async fn create_vault_file(vault_data: Value, world_path: &PathBuf) -> Result<(), String> {
     info!("Creating vault file for: {:?}", world_path);
 
     let vault_file_path = world_path.join(".chunkvault");
@@ -32,7 +32,7 @@ pub fn create_vault_file(vault_data: Value, world_path: &PathBuf) -> Result<(), 
         return Err("Vault file already exists".to_string());
     }
 
-    let mut vault_file = match std::fs::File::create(&vault_file_path) {
+    let mut vault_file = match fs::File::create(&vault_file_path).await {
         Ok(file) => file,
         Err(e) => {
             error!("Failed to create vault file: {e:?} {vault_file_path:?}");
@@ -40,7 +40,10 @@ pub fn create_vault_file(vault_data: Value, world_path: &PathBuf) -> Result<(), 
         }
     };
 
-    match vault_file.write_all(vault_data.to_string().as_bytes()) {
+    match vault_file
+        .write_all(vault_data.to_string().as_bytes())
+        .await
+    {
         Ok(_) => {}
         Err(e) => {
             return Err(format!("Failed to write vault file: {:?}", e));
@@ -50,21 +53,21 @@ pub fn create_vault_file(vault_data: Value, world_path: &PathBuf) -> Result<(), 
     Ok(())
 }
 
-pub fn get_vault_file(world_path: &PathBuf) -> Result<Value, String> {
+pub async fn get_vault_file(world_path: &PathBuf) -> Result<Value, String> {
     let vault_file_path = world_path.join(".chunkvault");
 
     if !vault_file_path.exists() {
         return Err("Vault file does not exist".to_string());
     }
 
-    let vault_file = match std::fs::File::open(&vault_file_path) {
+    let vault_file = match fs::File::open(&vault_file_path).await {
         Ok(file) => file,
         Err(e) => {
             return Err(format!("Failed to open vault file: {e:?}"));
         }
     };
 
-    let vault_data: Value = match serde_json::from_reader(vault_file) {
+    let vault_data: Value = match serde_json::from_reader(vault_file.into_std().await) {
         Ok(data) => data,
         Err(e) => {
             return Err(format!("Failed to read vault file: {:?}", e));
@@ -74,21 +77,24 @@ pub fn get_vault_file(world_path: &PathBuf) -> Result<Value, String> {
     Ok(vault_data)
 }
 
-pub fn update_vault_file(vault_data: Value, world_path: &PathBuf) -> Result<(), String> {
+pub async fn update_vault_file(vault_data: Value, world_path: &PathBuf) -> Result<(), String> {
     let vault_file_path = world_path.join(".chunkvault");
 
     if !vault_file_path.exists() {
         return Err("Vault file does not exist".to_string());
     }
 
-    let mut vault_file = match std::fs::File::create(&vault_file_path) {
+    let mut vault_file = match fs::File::create(&vault_file_path).await {
         Ok(file) => file,
         Err(e) => {
             return Err(format!("Failed to create vault file: {:?}", e));
         }
     };
 
-    match vault_file.write_all(vault_data.to_string().as_bytes()) {
+    match vault_file
+        .write_all(vault_data.to_string().as_bytes())
+        .await
+    {
         Ok(_) => {}
         Err(e) => {
             return Err(format!("Failed to write vault file: {:?}", e));
@@ -98,8 +104,8 @@ pub fn update_vault_file(vault_data: Value, world_path: &PathBuf) -> Result<(), 
     Ok(())
 }
 
-pub fn get_vault_id(path: &PathBuf) -> Result<String, String> {
-    let vault_data = match get_vault_file(path) {
+pub async fn get_vault_id(path: &PathBuf) -> Result<String, String> {
+    let vault_data = match get_vault_file(path).await {
         Ok(data) => data,
         Err(_) => {
             let new_vault_id = uuid::Uuid::new_v4().to_string();
@@ -108,12 +114,12 @@ pub fn get_vault_id(path: &PathBuf) -> Result<String, String> {
                 "id": new_vault_id
             });
 
-            match create_vault_file(new_vault_data, path) {
+            match create_vault_file(new_vault_data, path).await {
                 Ok(_) => {}
                 Err(e) => return Err(e),
             };
 
-            match get_vault_file(path) {
+            match get_vault_file(path).await {
                 Ok(data) => data,
                 Err(e) => return Err(e),
             }
@@ -126,7 +132,7 @@ pub fn get_vault_id(path: &PathBuf) -> Result<String, String> {
             let new_vault_id = uuid::Uuid::new_v4().to_string();
             let mut vault_data = vault_data;
             vault_data["id"] = serde_json::Value::String(new_vault_id.clone());
-            match update_vault_file(vault_data, &path) {
+            match update_vault_file(vault_data, &path).await {
                 Ok(_) => {}
                 Err(e) => return Err(e),
             }
@@ -137,122 +143,19 @@ pub fn get_vault_id(path: &PathBuf) -> Result<String, String> {
     Ok(vault_id.to_string())
 }
 
-pub fn new_vault_id(world_path: &PathBuf) -> Result<(), String> {
-    let mut vault_info = get_vault_file(world_path)?;
+pub async fn new_vault_id(world_path: &PathBuf) -> Result<(), String> {
+    let mut vault_info = get_vault_file(world_path).await?;
     if let Some(id_pointer) = vault_info.pointer_mut("/id") {
         *id_pointer = serde_json::Value::String(uuid::Uuid::new_v4().to_string());
     }
-    update_vault_file(vault_info, world_path)?;
-
-    Ok(())
-}
-
-// Minecraft save finder
-
-pub fn is_minecraft_world(path: &Path) -> GameType {
-    if !path.is_dir() {
-        return GameType::None;
-    }
-
-    let java_files = ["level.dat", "region", "data"];
-    let bedrock_files = ["level.dat", "db"];
-
-    let is_java = java_files.iter().all(|file| path.join(file).exists());
-    let is_bedrock = bedrock_files.iter().all(|file| path.join(file).exists());
-
-    if is_java {
-        info!("Found java world at {:?}", path);
-        return GameType::Java;
-    } else if is_bedrock {
-        info!("Found bedrock world at {:?}", path);
-        return GameType::Bedrock;
-    } else {
-        error!(
-            "Could not determine if path is a minecraft world: {:?}",
-            path
-        );
-
-        return GameType::None;
-    }
-}
-
-pub fn is_minecraft_folder(path: &Path) -> GameType {
-    if path.is_dir() {
-        if path.file_name().unwrap() == ".minecraft" {
-            if !path.join("saves").exists() {
-                fs::create_dir_all(path.join("saves")).expect("Failed to create saves directory");
-            }
-            return GameType::Java;
-        } else if path.join("minecraftWorlds").exists() {
-            return GameType::Bedrock;
-        }
-    }
-
-    error!(
-        "Could not determine if path is a minecraft folder: {:?}",
-        path
-    );
-
-    GameType::None
-}
-
-pub fn recursive_world_search(
-    path: &Path,
-    depth: usize,
-    max_depth: usize,
-    save_folders: &mut Vec<PathBuf>,
-) -> Result<(), String> {
-    if depth > max_depth {
-        return Ok(());
-    }
-
-    if !path.exists() {
-        return Err(format!("Path {:?} does not exist", path));
-    }
-
-    match is_minecraft_world(path) {
-        GameType::Java => {
-            save_folders.push(path.parent().unwrap().to_path_buf());
-        }
-        GameType::Bedrock => {
-            save_folders.push(path.parent().unwrap().to_path_buf());
-        }
-        GameType::None => match is_minecraft_folder(path) {
-            GameType::Java => {
-                save_folders.push(path.join("saves"));
-            }
-            GameType::Bedrock => {
-                save_folders.push(path.join("minecraftWorlds"));
-            }
-            GameType::None => {
-                if let Ok(entries) = path.read_dir() {
-                    for entry in entries {
-                        if let Ok(entry) = entry {
-                            let entry_path = entry.path();
-                            if entry_path.is_dir() {
-                                recursive_world_search(
-                                    &entry_path,
-                                    depth + 1,
-                                    max_depth,
-                                    save_folders,
-                                )?;
-                            }
-                        }
-                    }
-                }
-            }
-        },
-    }
+    update_vault_file(vault_info, world_path).await?;
 
     Ok(())
 }
 
 // Data parsing & processing
 
-pub fn read_dat_file(
-    file_path: PathBuf,
-    game_type: GameType,
-) -> Result<NbtValue, Box<dyn std::error::Error>> {
+pub fn read_dat_file(file_path: PathBuf, game_type: GameType) -> Result<NbtValue, String> {
     info!("Parsing {:?} dat file: {:?}", game_type, file_path);
 
     match game_type {
@@ -321,15 +224,16 @@ pub fn parse_world_data(world_data: NbtValue, game_type: GameType) -> Result<Val
     }
 }
 
-pub fn process_world_data(
+pub async fn process_world_data(
     path: &PathBuf,
     game_type: GameType,
-) -> Result<WorldLevelData, Box<dyn std::error::Error>> {
+) -> Result<WorldLevelData, String> {
     info!("Processing world data for: {:?}", path);
 
-    let level_dat = read_dat_file(path.join("level.dat"), game_type)?;
+    let level_dat = read_dat_file(path.join("level.dat"), game_type).map_err(|e| e.to_string())?;
 
-    let level_value: serde_json::Value = serde_json::to_value(level_dat)?;
+    let level_value: serde_json::Value =
+        serde_json::to_value(level_dat).map_err(|e| e.to_string())?;
 
     match game_type {
         GameType::Bedrock => {
@@ -340,7 +244,7 @@ pub fn process_world_data(
                     .unwrap_or_default()
                     .to_string(),
                 folder: Some(path.to_str().unwrap().to_string()),
-                icon: match encode_image_to_base64(path.join("world_icon.jpeg")) {
+                icon: match encode_image_to_base64(path.clone().join("world_icon.jpeg")).await {
                     Ok(data) => Some(data),
                     Err(_) => None,
                 },
@@ -369,10 +273,14 @@ pub fn process_world_data(
                     let naive_datetime = chrono::NaiveDateTime::from_timestamp_opt(last_played, 0);
                     naive_datetime
                 },
-                players: get_player_data(path, game_type)?,
+                players: get_player_data(path, game_type)
+                    .await
+                    .map_err(|e| e.to_string())?,
                 size_on_disk: {
                     info!("Calculating directory size for: {:?}", path);
-                    calculate_dir_size(path)? as i64
+                    calculate_dir_size(path.clone().to_owned())
+                        .await
+                        .map_err(|e| e.to_string())? as i64
                 },
                 game_rules: match parse_game_rules(&level_value, game_type) {
                     Ok(rules) => Some(rules),
@@ -395,7 +303,7 @@ pub fn process_world_data(
                     .unwrap_or_default()
                     .to_string(),
                 folder: Some(path.to_str().unwrap().to_string()),
-                icon: match encode_image_to_base64(path.join("icon.png")) {
+                icon: match encode_image_to_base64(path.clone().join("icon.png")).await {
                     Ok(data) => Some(data),
                     Err(_) => None,
                 },
@@ -430,10 +338,14 @@ pub fn process_world_data(
                     let naive_datetime = chrono::NaiveDateTime::from_timestamp_millis(last_played);
                     naive_datetime
                 },
-                players: get_player_data(path, game_type)?,
+                players: get_player_data(path, game_type)
+                    .await
+                    .map_err(|e| e.to_string())?,
                 size_on_disk: {
                     info!("Calculating directory size for: {:?}", path);
-                    calculate_dir_size(path)? as i64
+                    calculate_dir_size(path.clone().to_owned())
+                        .await
+                        .map_err(|e| e.to_string())? as i64
                 },
                 game_rules: match parse_game_rules(&level_data, game_type) {
                     Ok(rules) => Some(rules),
@@ -447,10 +359,7 @@ pub fn process_world_data(
     }
 }
 
-pub fn get_player_data(
-    path: &PathBuf,
-    game_type: GameType,
-) -> Result<Vec<Value>, Box<dyn std::error::Error>> {
+pub async fn get_player_data(path: &PathBuf, game_type: GameType) -> Result<Vec<Value>, String> {
     match game_type {
         GameType::Bedrock => {
             info!("Fetching Bedrock player data");
@@ -542,7 +451,7 @@ pub fn get_player_data(
                 return Ok(vec![player_meta]);
             }
 
-            let player_data = match std::fs::read_dir(&player_data_path) {
+            let mut player_data = match fs::read_dir(&player_data_path).await {
                 Ok(data) => data,
                 Err(e) => {
                     return Err(format!("Failed to read player data: {:?}", e).into());
@@ -551,14 +460,11 @@ pub fn get_player_data(
 
             let mut all_players: Vec<Value> = Vec::new();
 
-            for player in player_data {
-                let player = match player {
-                    Ok(player) => player,
-                    Err(e) => {
-                        return Err(format!("Failed to read player data: {:?}", e).into());
-                    }
-                };
-
+            while let Some(player) = player_data
+                .next_entry()
+                .await
+                .map_err(|e| format!("Failed to read player data: {:?}", e))?
+            {
                 let player = player.path();
 
                 if !player.is_file()
@@ -894,7 +800,7 @@ pub fn get_level_info(
     }
 }
 
-pub fn parse_world_entry_data(path: PathBuf) -> Result<WorldData, String> {
+pub async fn parse_world_entry_data(path: PathBuf) -> Result<WorldData, String> {
     let game_type = is_minecraft_world(&path);
 
     let level_dat_path = path.join("level.dat");
@@ -914,12 +820,12 @@ pub fn parse_world_entry_data(path: PathBuf) -> Result<WorldData, String> {
         }
     };
 
-    let world_size = match calculate_dir_size(&path) {
+    let world_size = match calculate_dir_size(path.clone()).await {
         Ok(size) => size,
         Err(_) => 0,
     };
 
-    let vault_id = match get_vault_id(&path) {
+    let vault_id = match get_vault_id(&path).await {
         Ok(id) => id,
         Err(e) => {
             error!("Could not get vault id at {:?}: {:?}", path, e);
@@ -931,12 +837,12 @@ pub fn parse_world_entry_data(path: PathBuf) -> Result<WorldData, String> {
         id: vault_id,
         name: level_name,
         image: match game_type {
-            GameType::Java => {
-                encode_image_to_base64(path.join("icon.png")).unwrap_or("".to_string())
-            }
-            GameType::Bedrock => {
-                encode_image_to_base64(path.join("world_icon.jpeg")).unwrap_or("".to_string())
-            }
+            GameType::Java => encode_image_to_base64(path.join("icon.png"))
+                .await
+                .unwrap_or("".to_string()),
+            GameType::Bedrock => encode_image_to_base64(path.join("world_icon.jpeg"))
+                .await
+                .unwrap_or("".to_string()),
             GameType::None => "".to_string(),
         },
         path: path.to_string_lossy().into_owned(),
@@ -947,12 +853,12 @@ pub fn parse_world_entry_data(path: PathBuf) -> Result<WorldData, String> {
     Ok(world_data)
 }
 
-pub fn delete_world(
+pub async fn delete_world(
     world_id: &str,
     category: Option<&str>,
     instance: Option<&str>,
 ) -> Result<(), String> {
-    let world_path = world_path_from_id(world_id, category, instance)?;
+    let world_path = world_path_from_id(world_id, category, instance).await?;
 
     if !world_path.exists() {
         error!("World does not exist: {:?}", world_path);
@@ -961,7 +867,7 @@ pub fn delete_world(
 
     info!("Deleting world at {:?}", world_path);
 
-    if let Err(e) = fs::remove_dir_all(world_path) {
+    if let Err(e) = fs::remove_dir_all(world_path).await {
         return Err(format!("Failed to delete world: {:?}", e));
     }
 

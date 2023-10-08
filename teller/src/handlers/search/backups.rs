@@ -1,4 +1,6 @@
-use std::{fs, path::PathBuf};
+use std::path::PathBuf;
+
+use tokio::fs;
 
 use crate::{
     handlers::{backup::grab_backup_metadata, config::backup::get_backup_config},
@@ -8,13 +10,18 @@ use crate::{
     },
 };
 
-fn get_backups_from_path(directory_path: &str) -> Result<Vec<std::fs::DirEntry>, std::io::Error> {
-    let entries = fs::read_dir(directory_path)?;
-    let files: Vec<std::fs::DirEntry> = entries.filter_map(|entry| entry.ok()).collect();
+async fn get_backups_from_path(directory_path: &str) -> Result<Vec<fs::DirEntry>, std::io::Error> {
+    let mut entries = fs::read_dir(directory_path).await?;
+    let mut files: Vec<fs::DirEntry> = Vec::new();
+
+    while let Some(entry) = entries.next_entry().await? {
+        files.push(entry);
+    }
+
     Ok(files)
 }
 
-fn find_newest_backup(files: &[std::fs::DirEntry]) -> Option<PathBuf> {
+fn find_newest_backup(files: &[fs::DirEntry]) -> Option<PathBuf> {
     let mut newest_file: Option<PathBuf> = None;
     let mut newest_time = i64::MIN;
 
@@ -35,7 +42,7 @@ fn find_newest_backup(files: &[std::fs::DirEntry]) -> Option<PathBuf> {
 }
 
 pub async fn fetch_backups_list(vault: &str) -> Result<Vec<WorldData>, String> {
-    let backup_settings = get_backup_config()?;
+    let backup_settings = get_backup_config().await?;
 
     let local_backups_path = if let Some(vault_path) = backup_settings.vaults.get(vault) {
         vault_path
@@ -43,45 +50,46 @@ pub async fn fetch_backups_list(vault: &str) -> Result<Vec<WorldData>, String> {
         return Err(format!("Vault {} does not exist", vault));
     };
 
-    let backup_entries = fs::read_dir(local_backups_path)
+    let mut backup_entries = fs::read_dir(local_backups_path)
+        .await
         .map_err(|e| format!("Failed to read backups directory: {}", e))?;
 
     let mut backups: Vec<WorldData> = Vec::new();
 
-    for entry in backup_entries {
-        if entry.is_ok() {
-            let entry = entry.unwrap();
-            let path = entry.path();
+    while let Some(entry) = backup_entries
+        .next_entry()
+        .await
+        .map_err(|e| format!("Failed to read backups directory: {}", e))?
+    {
+        let path = entry.path();
 
-            if path.is_dir() {
-                let all_backups = get_backups_from_path(path.to_str().unwrap())
-                    .map_err(|e| format!("Failed to read backups directory: {}", e))?;
+        if path.is_dir() {
+            let all_backups = get_backups_from_path(path.to_str().unwrap())
+                .await
+                .map_err(|e| format!("Failed to read backups directory: {}", e))?;
 
-                let newest_backup = find_newest_backup(&all_backups);
+            let newest_backup = find_newest_backup(&all_backups);
 
-                if let Some(newest_backup) = newest_backup {
-                    let metadata = grab_backup_metadata(newest_backup).await;
-                    if metadata.is_ok() {
-                        let world_data = metadata.unwrap();
-                        backups.push(world_data.entry);
-                    } else {
-                        continue;
-                    }
+            if let Some(newest_backup) = newest_backup {
+                let metadata = grab_backup_metadata(newest_backup).await;
+                if metadata.is_ok() {
+                    let world_data = metadata.unwrap();
+                    backups.push(world_data.entry);
+                } else {
+                    continue;
                 }
             }
-        } else {
-            continue;
         }
     }
 
     Ok(backups)
 }
 
-pub fn fetch_backups_for_world(
+pub async fn fetch_backups_for_world(
     world_id: &str,
     selected_vault: Option<&str>,
 ) -> Result<Vec<SnapshotInfo>, String> {
-    let backup_settings = get_backup_config()?;
+    let backup_settings = get_backup_config().await?;
 
     let world_path = if let Some(selected_vault) = selected_vault {
         if let Some(vault_path) = backup_settings.vaults.get(selected_vault) {
@@ -94,6 +102,7 @@ pub fn fetch_backups_for_world(
     };
 
     let files = get_backups_from_path(world_path.to_str().unwrap())
+        .await
         .map_err(|e| format!("Failed to read backups directory: {}", e))?;
 
     let mut backups = Vec::new();
@@ -115,7 +124,7 @@ pub fn fetch_backups_for_world(
                 .replace(".chunkvault-snapshot", "");
             let created = created.parse::<i64>().unwrap();
 
-            let metadata = fs::metadata(&path).unwrap();
+            let metadata = fs::metadata(&path).await.unwrap();
             let size = metadata.len();
 
             let data = SnapshotInfo {
@@ -135,7 +144,7 @@ pub async fn fetch_metadata_for_world(
     world_id: &str,
     selected_vault: Option<&str>,
 ) -> Result<BackupMetadata, String> {
-    let backup_settings = get_backup_config()?;
+    let backup_settings = get_backup_config().await?;
 
     let world_path = if let Some(selected_vault) = selected_vault {
         if let Some(vault_path) = backup_settings.vaults.get(selected_vault) {
@@ -148,6 +157,7 @@ pub async fn fetch_metadata_for_world(
     };
 
     let files = get_backups_from_path(world_path.to_str().unwrap())
+        .await
         .map_err(|e| format!("Failed to read backups directory: {}", e))?;
 
     match find_newest_backup(&files) {
@@ -161,7 +171,7 @@ pub async fn fetch_metadata_for_backup(
     selected_vault: Option<&str>,
     backup_id: &str,
 ) -> Result<BackupMetadata, String> {
-    let backup_settings = get_backup_config()?;
+    let backup_settings = get_backup_config().await?;
 
     let world_path = if let Some(selected_vault) = selected_vault {
         if let Some(vault_path) = backup_settings.vaults.get(selected_vault) {

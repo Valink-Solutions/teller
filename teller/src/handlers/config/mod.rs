@@ -1,9 +1,10 @@
 pub mod backup;
 pub mod instance;
 
-use std::{fs, path::PathBuf};
+use std::path::PathBuf;
 
 use log::{error, info};
+use std::fs;
 
 pub fn get_config_folder() -> PathBuf {
     let config_dir = directories::ProjectDirs::from("io", "valink", "teller");

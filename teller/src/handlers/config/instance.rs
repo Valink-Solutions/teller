@@ -1,9 +1,10 @@
 use std::{
-    env, fs,
+    env,
     path::{Path, PathBuf},
 };
 
 use log::{error, info};
+use tokio::fs;
 
 use crate::{handlers::config::get_config_folder, types::config::DirectorySettings};
 
@@ -62,7 +63,7 @@ pub fn get_local_directories_config<P: AsRef<Path>>(
     Ok(parsed_settings)
 }
 
-pub fn create_local_directories_config(
+pub async fn create_local_directories_config(
     settings_data: DirectorySettings,
 ) -> Result<DirectorySettings, String> {
     let config_dir = get_config_folder();
@@ -105,7 +106,7 @@ pub fn create_local_directories_config(
         }
     };
 
-    match fs::write(&config_path, serde_json::to_string(&settings_data).unwrap()) {
+    match fs::write(&config_path, serde_json::to_string(&settings_data).unwrap()).await {
         Ok(_) => (),
         Err(e) => {
             error!(
@@ -124,7 +125,7 @@ pub fn create_local_directories_config(
     Ok(parsed_settings)
 }
 
-pub fn update_local_directories_config(
+pub async fn update_local_directories_config(
     settings_data: DirectorySettings,
 ) -> Result<DirectorySettings, String> {
     let config_dir = get_config_folder();
@@ -167,7 +168,7 @@ pub fn update_local_directories_config(
         }
     };
 
-    match fs::write(&config_path, serde_json::to_string(&settings_data).unwrap()) {
+    match fs::write(&config_path, serde_json::to_string(&settings_data).unwrap()).await {
         Ok(_) => (),
         Err(e) => {
             error!(
