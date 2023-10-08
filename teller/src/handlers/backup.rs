@@ -208,7 +208,7 @@ pub async fn create_backup_from_id(
                     }
                     match tokio::fs::copy(
                         &world_backup_path,
-                        backup_location.join(backup_name.clone()),
+                        backup_location.join(backup_name),
                     )
                     .await
                     {

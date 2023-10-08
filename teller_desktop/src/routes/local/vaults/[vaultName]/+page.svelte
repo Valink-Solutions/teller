@@ -19,7 +19,7 @@
 
 	function handleBackupListUpdate(value: string | null) {
 		invoke('plugin:backup_handler|grab_local_backup_list', {
-			vault: value
+			vault: value as string
 		})
 			.then((worldResult) => {
 				worlds = sortWorlds(worldResult as WorldItem[], $worldSortOption);
