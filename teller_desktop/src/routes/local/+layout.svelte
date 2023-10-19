@@ -116,7 +116,7 @@
 		<div class="card flex flex-col h-fit min-h-full p-2 bg-base-100 gap-4 overflow-hidden">
 			<div class="flex flex-row justify-center gap-2 items-center">
 				<h1 class="font-bold">ChunkVault</h1>
-				<span class="badge badge-xs"> v0.1 </span>
+				<!-- <span class="badge badge-xs"> v0.1 </span> -->
 			</div>
 
 			<button on:click={handleSettingsClick} class="absolute top-3 right-3 opacity-50">
