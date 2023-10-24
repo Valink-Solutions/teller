@@ -57,7 +57,7 @@
 				<p class="card-text">
 					You are about to create a backup of <strong>{worldName}</strong>.
 				</p>
-				<p class="mt-2">Select backup locations:</p>
+				<p class="mt-4">Select backup locations:</p>
 				<ul class="bg-base-200 p-2">
 					{#each locations as location (location.id)}
 						<li>

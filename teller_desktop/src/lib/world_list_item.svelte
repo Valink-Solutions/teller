@@ -67,7 +67,7 @@
 	</figure>
 	<div class="flex flex-row gap-3 p-3 w-full justify-between items-center">
 		<div class="flex flex-row items-center justify-between gap-2">
-			<div class="w-56 xl:w-80 2xl:w-96">
+			<div class=" w-72 xl:w-96 2xl:w-120">
 				<h2 class="font-bold w-full overflow-hidden overflow-ellipsis whitespace-nowrap">
 					{world.name}
 				</h2>

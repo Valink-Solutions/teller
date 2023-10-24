@@ -19,9 +19,12 @@
 	let loading = true;
 	let error = false;
 
+	let refresh = false;
+
 	let timer: NodeJS.Timeout;
 
-	function handleWorldListUpdate() {
+	function handleWorldListUpdate(isRefresh?: boolean) {
+		refresh = isRefresh || false;
 		invoke('plugin:config|get_folder_path', {
 			dirName: $page.params.pathName,
 			category: $page.params.categoryName
@@ -53,6 +56,7 @@
 				})
 				.finally(() => {
 					loading = false;
+					refresh = false;
 				});
 		});
 	}
@@ -169,13 +173,23 @@
 					<option value="size">Size</option>
 					<option value="last_played">Last Played</option>
 				</select>
-				<button class="btn btn-sm bg-slate-100 join-item">
-					<Icon icon="material-symbols:directory-sync" on:click={handleWorldListUpdate} />
+				<button
+					on:click={() => handleWorldListUpdate(true)}
+					class="btn btn-sm bg-slate-100 join-item"
+				>
+					<Icon icon="material-symbols:directory-sync" />
 				</button>
 			</div>
 		</div>
 		<div class="flex px-2 h-full">
-			<WorldList {worlds} on:visible currentDir={$currentDir} />
+			{#if refresh}
+				<div class="flex flex-col items-center justify-center m-auto w-full h-full">
+					<Icon icon="mdi:loading" class="w-16 h-16 animate-spin" />
+					<p class="text-lg font-semibold">Refreshing...</p>
+				</div>
+			{:else}
+				<WorldList {worlds} on:visible currentDir={$currentDir} />
+			{/if}
 		</div>
 	{:else}
 		<div class="flex flex-col items-center justify-center w-full h-full">

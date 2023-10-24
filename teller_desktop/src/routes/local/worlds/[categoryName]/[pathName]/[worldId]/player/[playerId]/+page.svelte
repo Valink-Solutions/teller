@@ -22,7 +22,6 @@
 			world_path = world_res;
 
 			if (world_path) {
-				console.log(world_path);
 				const player_res = await invoke('plugin:world_handler|get_player_from_uuid', {
 					playerUuid: $page.params.playerId,
 					path: world_path
@@ -38,7 +37,9 @@
 		} catch (err) {
 			console.log(err);
 			error = true;
-			// goto('/local');
+			goto(
+				`/local/worlds/${$page.params.categoryName}/${$page.params.pathName}/${$page.params.worldId}`
+			);
 		} finally {
 			loading = false;
 		}

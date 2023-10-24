@@ -14,10 +14,12 @@
 
 	let worlds: WorldItem[] = [];
 
+	let refresh = false;
 	let loading = true;
 	let error = false;
 
-	function handleBackupListUpdate(value: string | null) {
+	function handleBackupListUpdate(value: string | null, isRefresh?: boolean) {
+		refresh = isRefresh || false;
 		invoke('plugin:backup_handler|grab_local_backup_list', {
 			vault: value as string
 		})
@@ -40,6 +42,7 @@
 			})
 			.finally(() => {
 				loading = false;
+				refresh = false;
 			});
 	}
 
@@ -156,13 +159,23 @@
 					<option value="size">Size</option>
 					<option value="last_played">Last Played</option>
 				</select>
-				<button class="btn btn-sm bg-slate-100 join-item">
-					<Icon icon="material-symbols:directory-sync" on:click={handleBackupListUpdate} />
+				<button
+					on:click={() => handleBackupListUpdate($currentVault, true)}
+					class="btn btn-sm bg-slate-100 join-item"
+				>
+					<Icon icon="material-symbols:directory-sync" />
 				</button>
 			</div>
 		</div>
 		<div class="flex px-2 h-full">
-			<BackupList {worlds} on:visible currentVault={$currentVault} />
+			{#if refresh}
+				<div class="flex flex-col items-center justify-center m-auto w-full h-full">
+					<Icon icon="mdi:loading" class="w-16 h-16 animate-spin" />
+					<p class="text-lg font-semibold">Refreshing...</p>
+				</div>
+			{:else}
+				<BackupList {worlds} on:visible currentVault={$currentVault} />
+			{/if}
 		</div>
 	{/if}
 </div>
