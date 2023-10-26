@@ -97,62 +97,7 @@ pub async fn fetch_worlds_from_instance(
     Ok(worlds_list)
 }
 
-// pub fn world_path_from_id(world_id: &str, category: Option<&str>) -> Result<PathBuf, String> {
-//     let config_dir = get_config_folder();
-
-//     info!("Searching for world: {}", world_id);
-
-//     let mut paths: Vec<PathBuf> = Vec::new();
-
-//     match get_local_directories_config(&config_dir) {
-//         Ok(config) => {
-//             if let Some(category) = category {
-//                 if category == "default" {
-//                     match get_minecraft_save_location() {
-//                         Some(path) => paths.push(path),
-//                         None => {}
-//                     };
-//                 } else if let Some(vault_entries) = config.categories.get(category) {
-//                     for (_, path) in vault_entries.paths.iter() {
-//                         paths.push(path.clone());
-//                     }
-//                 }
-//             }
-//         }
-//         Err(_e) => {}
-//     };
-
-//     for save_location in paths {
-//         let world_folders = match std::fs::read_dir(&save_location) {
-//             Ok(folders) => folders,
-//             Err(_) => continue,
-//         };
-
-//         for entry in world_folders {
-//             if let Ok(world_folder) = entry {
-//                 let world_folder = world_folder.path();
-
-//                 if !world_folder.is_dir() {
-//                     continue;
-//                 }
-
-//                 let vault_id = match get_vault_id(&world_folder) {
-//                     Ok(id) => id,
-//                     Err(_) => continue,
-//                 };
-
-//                 if vault_id == world_id {
-//                     info!("Found world: {world_id}");
-//                     return Ok(world_folder);
-//                 }
-//             }
-//         }
-//     }
-
-//     Err("Could not find world".to_string())
-// }
-
-pub async fn world_path_from_id(
+pub async fn get_world_path_by_id(
     world_id: &str,
     category: Option<&str>,
     instance: Option<&str>,
@@ -217,12 +162,12 @@ pub async fn world_path_from_id(
     Err("Could not find world".to_string())
 }
 
-pub async fn grab_world_by_id(
+pub async fn get_world_by_id(
     world_id: &str,
     category: Option<&str>,
     instance: Option<&str>,
 ) -> Result<WorldLevelData, String> {
-    match world_path_from_id(world_id, category, instance).await {
+    match get_world_path_by_id(world_id, category, instance).await {
         Ok(path) => {
             let game_type = is_minecraft_world(&path.clone());
             match process_world_data(&path, game_type).await {

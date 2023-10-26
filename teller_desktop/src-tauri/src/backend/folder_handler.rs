@@ -7,7 +7,7 @@ use tauri::{
 };
 use teller::{
     handlers::search::worlds::{
-        fetch_worlds_from_instance, recursive_world_search, world_path_from_id,
+        fetch_worlds_from_instance, get_world_path_by_id, recursive_world_search,
     },
     types::world::WorldData,
 };
@@ -50,7 +50,7 @@ async fn open_world_in_explorer(
     category: Option<&str>,
     instance: Option<&str>,
 ) -> Result<(), String> {
-    let path = world_path_from_id(world_id, category, instance).await?;
+    let path = get_world_path_by_id(world_id, category, instance).await?;
 
     if path.is_dir() {
         match tauri::api::shell::open(&handle.shell_scope(), &path.to_string_lossy(), None)

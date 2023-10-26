@@ -4,14 +4,12 @@
 	import { goto } from '$app/navigation';
 	import Icon from '@iconify/svelte';
 	import { invoke } from '@tauri-apps/api/tauri';
-	import { WebviewWindow } from '@tauri-apps/api/window';
 	import { listen } from '@tauri-apps/api/event';
-	import type { CurrentDir } from '$lib/types/navigation';
 	import { activeItem, currentDir, currentVault } from '$lib/stores/navigation';
 	import { SvelteToast, toast } from '@zerodevx/svelte-toast';
 	import { Modals, closeModal, openModal } from 'svelte-modals';
-	import DirectoriesModal from '$lib/modals/directories_modal.svelte';
 	import SettingsModal from '$lib/modals/settings_modal.svelte';
+	import type { CurrentDir } from '$lib/types/navigation';
 	import type { DirectorySettings } from '$lib/types/config';
 	import type { BackupSettings } from '$lib/types/backups';
 	import type { ToastEvent } from '$lib/types/events';
@@ -24,28 +22,11 @@
 
 	let localVaults: Record<string, string>;
 
-	invoke('plugin:config|get_save_folders').then((result) => {
-		if (result) {
-			save_paths = result as DirectorySettings;
+	let activeTab = 'local';
 
-			let tempPaths: string[] = [];
-			for (let category in save_paths.categories) {
-				tempPaths = Object.keys(save_paths.categories[category].paths);
-			}
-			paths = tempPaths;
-		} else {
-			console.log(result);
-		}
-	});
-
-	invoke('plugin:config|get_backup_settings').then((result) => {
-		if (result) {
-			let backupSettings = result as BackupSettings;
-			localVaults = backupSettings.vaults as Record<string, string>;
-		} else {
-			console.log(result);
-		}
-	});
+	const switchTab = (tab: string) => {
+		activeTab = tab;
+	};
 
 	onMount(() => {
 		sideBar = document.querySelector('.side-bar');
@@ -62,7 +43,6 @@
 					console.log(result);
 				}
 			});
-			console.log('Event received: saves_config_updated');
 		});
 
 		listen<ToastEvent>('error', (event) => {
@@ -81,13 +61,50 @@
 		});
 	});
 
+	invoke('plugin:config|get_save_folders').then((result) => {
+		if (result) {
+			save_paths = result as DirectorySettings;
+
+			let tempPaths: string[] = [];
+			for (let category in save_paths.categories) {
+				tempPaths = Object.keys(save_paths.categories[category].paths);
+			}
+			paths = tempPaths;
+		} else {
+			toast.push('Failed to get save folders', {
+				theme: {
+					'--toastBackground': '#EF4444',
+					'--toastProgressBackground': '#F87171',
+					'--toastProgressText': '#fff',
+					'--toastColor': '#fff'
+				}
+			});
+		}
+	});
+
+	invoke('plugin:config|get_backup_settings').then((result) => {
+		if (result) {
+			let backupSettings = result as BackupSettings;
+			localVaults = backupSettings.vaults as Record<string, string>;
+		} else {
+			toast.push('Failed to fetch settings', {
+				theme: {
+					'--toastBackground': '#EF4444',
+					'--toastProgressBackground': '#F87171',
+					'--toastProgressText': '#fff',
+					'--toastColor': '#fff'
+				}
+			});
+		}
+	});
+
 	const toggleSideBar = () => {
 		if (sideBar) {
 			sideBar.classList.toggle('collapse');
 		}
 	};
 
-	async function handleItemClick(item: CurrentDir) {
+	async function handleLocationChange(item: CurrentDir) {
 		if (item?.type === 'world') {
 			currentDir.set(item);
 			await goto(`/local/worlds/${item.category}/${item.path}`);
@@ -98,17 +115,7 @@
 		activeItem.set(item);
 	}
 
-	function handleSettingsClick() {
-		openModal(SettingsModal);
-	}
-
 	const options = {};
-
-	let activeTab = 'local';
-
-	const switchTab = (tab: string) => {
-		activeTab = tab;
-	};
 </script>
 
 <div class="flex flex-row max-h-screen max-w-screen" data-name="sidebar">
@@ -116,10 +123,10 @@
 		<div class="card flex flex-col h-fit min-h-full p-2 bg-base-100 gap-4 overflow-hidden">
 			<div class="flex flex-row justify-center gap-2 items-center">
 				<h1 class="font-bold">ChunkVault</h1>
-				<span class="badge badge-xs"> v0.1 </span>
+				<!-- <span class="badge badge-xs"> v0.1 </span> -->
 			</div>
 
-			<button on:click={handleSettingsClick} class="absolute top-3 right-3 opacity-50">
+			<button on:click={() => openModal(SettingsModal)} class="absolute top-3 right-3 opacity-50">
 				<Icon icon="mdi:settings" />
 			</button>
 
@@ -135,7 +142,7 @@
 						<li>
 							<button
 								on:click={() =>
-									handleItemClick({ type: 'world', category: 'default', path: 'default' })}
+									handleLocationChange({ type: 'world', category: 'default', path: 'default' })}
 								class:active={$activeItem?.type === 'world' &&
 									$activeItem?.category === 'default' &&
 									$activeItem?.path === 'default'}
@@ -158,7 +165,11 @@
 												<li>
 													<button
 														on:click={() =>
-															handleItemClick({ type: 'world', category: category, path: path })}
+															handleLocationChange({
+																type: 'world',
+																category: category,
+																path: path
+															})}
 														class:active={$activeItem?.type === 'world' &&
 															$activeItem?.category === category &&
 															$activeItem?.path === path}
@@ -207,7 +218,7 @@
 									<li>
 										<button
 											on:click={() =>
-												handleItemClick({ type: 'localBackup', category: vault, path: path })}
+												handleLocationChange({ type: 'localBackup', category: vault, path: path })}
 											class:active={$activeItem?.type === 'localBackup' &&
 												$activeItem?.category === vault}
 											class="text-xs"

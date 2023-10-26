@@ -1,5 +1,6 @@
 use log::info;
 use serde_json::{json, Value};
+use tokio::fs;
 use uuid::Uuid;
 
 use std::{collections::HashMap, path::PathBuf};
@@ -12,7 +13,7 @@ use crate::{
     types::player::{Item, PlayerData},
 };
 
-pub async fn fetch_player_data_from_uuid(
+pub async fn get_player_meta_from_uuid(
     client: reqwest::Client,
     player_uuid_str: String,
 ) -> Result<Value, String> {
@@ -74,7 +75,7 @@ pub async fn fetch_player_data_from_uuid(
     }
 }
 
-pub async fn fetch_players_meta_data(
+pub async fn get_players_meta_from_uuids(
     player_data_list: Vec<PlayerData>,
 ) -> Result<HashMap<String, Value>, String> {
     let mut player_data_map: HashMap<String, Value> = HashMap::new();
@@ -83,7 +84,7 @@ pub async fn fetch_players_meta_data(
     for player_data in player_data_list {
         let player_uuid = player_data.id;
         let client = client.clone();
-        match fetch_player_data_from_uuid(client, player_uuid.clone()).await {
+        match get_player_meta_from_uuid(client, player_uuid.clone()).await {
             Ok(player) => {
                 player_data_map.insert(player_uuid, player);
             }
@@ -228,10 +229,7 @@ pub fn grab_player_from_uuid(player_uuid: String, path: &PathBuf) -> Result<Play
     }
 }
 
-pub async fn get_player_data(
-    path: &PathBuf,
-    game_type: GameType,
-) -> Result<Vec<Value>, Box<dyn std::error::Error>> {
+pub async fn get_player_data(path: &PathBuf, game_type: GameType) -> Result<Vec<Value>, String> {
     match game_type {
         GameType::Bedrock => {
             info!("Fetching Bedrock player data");
@@ -252,10 +250,8 @@ pub async fn get_player_data(
                     info!("Fetching player data for: {:?}", uuid);
 
                     let player_meta = json!({
-                        "username": "Remote Player",
                         "id": uuid.strip_prefix("player_server_").unwrap_or(uuid),
                         "avatar": player_avatar,
-                        "meta": {}
                     });
 
                     players.push(player_meta);
@@ -263,10 +259,8 @@ pub async fn get_player_data(
             }
 
             let local_player_data = json!({
-                "username": "Local Player",
                 "id": player_uuid,
                 "avatar": player_avatar,
-                "meta": {}
             });
 
             players.push(local_player_data);
@@ -320,16 +314,14 @@ pub async fn get_player_data(
                 };
 
                 let player_meta = json!({
-                    "username": "Local Player",
                     "id": player_uuid,
                     "avatar": player_avatar,
-                    "meta": {}
                 });
 
                 return Ok(vec![player_meta]);
             }
 
-            let player_data = match std::fs::read_dir(&player_data_path) {
+            let mut player_data = match fs::read_dir(&player_data_path).await {
                 Ok(data) => data,
                 Err(e) => {
                     return Err(format!("Failed to read player data: {:?}", e).into());
@@ -338,14 +330,11 @@ pub async fn get_player_data(
 
             let mut all_players: Vec<Value> = Vec::new();
 
-            for player in player_data {
-                let player = match player {
-                    Ok(player) => player,
-                    Err(e) => {
-                        return Err(format!("Failed to read player data: {:?}", e).into());
-                    }
-                };
-
+            while let Some(player) = player_data
+                .next_entry()
+                .await
+                .map_err(|e| format!("Failed to read player data: {:?}", e))?
+            {
                 let player = player.path();
 
                 if !player.is_file()
@@ -355,12 +344,6 @@ pub async fn get_player_data(
                 }
 
                 let player_uuid = player.file_stem().unwrap().to_str().unwrap().to_string();
-                // let player_meta = match fetch_player_data_from_uuid(client, player_uuid).await {
-                //     Ok(data) => data,
-                //     Err(e) => {
-                //         return Err(format!("Failed to fetch player data: {:?}", e).into());
-                //     }
-                // };
 
                 let player_avatar = format!(
                     "https://crafthead.net/avatar/{}?scale=32&overlay=false",
@@ -368,7 +351,6 @@ pub async fn get_player_data(
                 );
 
                 let player_meta = json!({
-                    "username": "Remote Player",
                     "id": player_uuid,
                     "avatar": player_avatar,
                     "meta": {}

@@ -17,7 +17,7 @@ use tokio::io::AsyncSeek;
 use tokio::io::AsyncWrite;
 
 use crate::handlers::config::backup::get_backup_config;
-use crate::handlers::search::worlds::world_path_from_id;
+use crate::handlers::search::worlds::get_world_path_by_id;
 use crate::types::backup::BackupMetadata;
 
 use super::config::get_config_folder;
@@ -150,7 +150,7 @@ pub async fn create_backup_from_id(
     vaults: Option<Vec<String>>,
 ) -> Result<String, String> {
     info!("Creating backup for world id: {}", world_id);
-    match world_path_from_id(world_id, category, instance).await {
+    match get_world_path_by_id(world_id, category, instance).await {
         Ok(world_path) => {
             let world_backup_path = match create_world_backup(world_path.clone()).await {
                 Ok(backup_path) => backup_path,
@@ -259,7 +259,7 @@ pub async fn create_backup_from_id(
     }
 }
 
-pub async fn grab_backup_metadata(backup_path: PathBuf) -> Result<BackupMetadata, String> {
+pub async fn get_backup_meta_from_path(backup_path: PathBuf) -> Result<BackupMetadata, String> {
     let mut zip =
         match ZipFileReader::with_tokio(File::open(backup_path.clone()).await.unwrap()).await {
             Ok(zip) => zip,
@@ -437,7 +437,7 @@ pub async fn delete_backup(
     Ok(())
 }
 
-pub async fn delete_all_backups(world_id: &str, vault: Option<&str>) -> Result<(), String> {
+pub async fn delete_world_backups(world_id: &str, vault: Option<&str>) -> Result<(), String> {
     let backup_settings = get_backup_config().await?;
 
     let vault_path = match vault {
