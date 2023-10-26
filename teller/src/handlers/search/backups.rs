@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use tokio::fs;
 
 use crate::{
-    handlers::{backup::grab_backup_metadata, config::backup::get_backup_config},
+    handlers::{backup::get_backup_meta_from_path, config::backup::get_backup_config},
     types::{
         backup::{BackupMetadata, SnapshotInfo},
         world::WorldData,
@@ -41,7 +41,7 @@ fn find_newest_backup(files: &[fs::DirEntry]) -> Option<PathBuf> {
     newest_file
 }
 
-pub async fn fetch_backups_list(vault: &str) -> Result<Vec<WorldData>, String> {
+pub async fn grab_local_backup_list(vault: &str) -> Result<Vec<WorldData>, String> {
     let backup_settings = get_backup_config().await?;
 
     let local_backups_path = if let Some(vault_path) = backup_settings.vaults.get(vault) {
@@ -71,7 +71,7 @@ pub async fn fetch_backups_list(vault: &str) -> Result<Vec<WorldData>, String> {
             let newest_backup = find_newest_backup(&all_backups);
 
             if let Some(newest_backup) = newest_backup {
-                let metadata = grab_backup_metadata(newest_backup).await;
+                let metadata = get_backup_meta_from_path(newest_backup).await;
                 if metadata.is_ok() {
                     let world_data = metadata.unwrap();
                     backups.push(world_data.entry);
@@ -85,7 +85,7 @@ pub async fn fetch_backups_list(vault: &str) -> Result<Vec<WorldData>, String> {
     Ok(backups)
 }
 
-pub async fn fetch_backups_for_world(
+pub async fn grab_world_backups(
     world_id: &str,
     selected_vault: Option<&str>,
 ) -> Result<Vec<SnapshotInfo>, String> {
@@ -140,7 +140,7 @@ pub async fn fetch_backups_for_world(
     Ok(backups)
 }
 
-pub async fn fetch_metadata_for_world(
+pub async fn get_world_metadata_from_id(
     world_id: &str,
     selected_vault: Option<&str>,
 ) -> Result<BackupMetadata, String> {
@@ -161,12 +161,12 @@ pub async fn fetch_metadata_for_world(
         .map_err(|e| format!("Failed to read backups directory: {}", e))?;
 
     match find_newest_backup(&files) {
-        Some(newest_backup) => return grab_backup_metadata(newest_backup).await,
+        Some(newest_backup) => return get_backup_meta_from_path(newest_backup).await,
         None => Err("No backups found".to_string()),
     }
 }
 
-pub async fn fetch_metadata_for_backup(
+pub async fn grab_backup_metadata(
     world_id: &str,
     selected_vault: Option<&str>,
     backup_id: &str,
@@ -186,7 +186,7 @@ pub async fn fetch_metadata_for_backup(
     let backup_path = world_path.join(format!("{}.chunkvault-snapshot", backup_id));
 
     if backup_path.exists() {
-        return grab_backup_metadata(backup_path).await;
+        return get_backup_meta_from_path(backup_path).await;
     } else {
         return Err("Backup does not exist".to_string());
     }

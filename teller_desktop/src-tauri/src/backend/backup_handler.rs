@@ -70,7 +70,7 @@ async fn create_backup_from_id(
 
 #[tauri::command]
 async fn grab_local_backup_list(vault: &str) -> Result<Vec<WorldData>, String> {
-    teller::handlers::search::backups::fetch_backups_list(vault).await
+    teller::handlers::search::backups::grab_local_backup_list(vault).await
 }
 
 #[tauri::command]
@@ -78,7 +78,7 @@ async fn grab_world_metadata(
     world_id: &str,
     selected_vault: Option<&str>,
 ) -> Result<BackupMetadata, String> {
-    teller::handlers::search::backups::fetch_metadata_for_world(world_id, selected_vault).await
+    teller::handlers::search::backups::get_world_metadata_from_id(world_id, selected_vault).await
 }
 
 #[tauri::command]
@@ -86,7 +86,7 @@ async fn grab_world_backups(
     world_id: &str,
     selected_vault: Option<&str>,
 ) -> Result<Vec<SnapshotInfo>, String> {
-    teller::handlers::search::backups::fetch_backups_for_world(world_id, selected_vault).await
+    teller::handlers::search::backups::grab_world_backups(world_id, selected_vault).await
 }
 
 #[tauri::command]
@@ -95,12 +95,8 @@ async fn grab_backup_metadata(
     selected_vault: Option<&str>,
     backup_id: &str,
 ) -> Result<BackupMetadata, String> {
-    teller::handlers::search::backups::fetch_metadata_for_backup(
-        world_id,
-        selected_vault,
-        backup_id,
-    )
-    .await
+    teller::handlers::search::backups::grab_backup_metadata(world_id, selected_vault, backup_id)
+        .await
 }
 
 #[tauri::command]
@@ -114,7 +110,7 @@ async fn delete_backup_from_id(
 
 #[tauri::command]
 async fn delete_world_backups(world_id: &str, selected_vault: Option<&str>) -> Result<(), String> {
-    teller::handlers::backup::delete_all_backups(world_id, selected_vault).await
+    teller::handlers::backup::delete_world_backups(world_id, selected_vault).await
 }
 
 #[tauri::command]

@@ -13,7 +13,7 @@ use crate::{
     types::player::{Item, PlayerData},
 };
 
-pub async fn fetch_player_data_from_uuid(
+pub async fn get_player_meta_from_uuid(
     client: reqwest::Client,
     player_uuid_str: String,
 ) -> Result<Value, String> {
@@ -75,7 +75,7 @@ pub async fn fetch_player_data_from_uuid(
     }
 }
 
-pub async fn fetch_players_meta_data(
+pub async fn get_players_meta_from_uuids(
     player_data_list: Vec<PlayerData>,
 ) -> Result<HashMap<String, Value>, String> {
     let mut player_data_map: HashMap<String, Value> = HashMap::new();
@@ -84,7 +84,7 @@ pub async fn fetch_players_meta_data(
     for player_data in player_data_list {
         let player_uuid = player_data.id;
         let client = client.clone();
-        match fetch_player_data_from_uuid(client, player_uuid.clone()).await {
+        match get_player_meta_from_uuid(client, player_uuid.clone()).await {
             Ok(player) => {
                 player_data_map.insert(player_uuid, player);
             }

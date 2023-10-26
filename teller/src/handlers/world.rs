@@ -9,7 +9,7 @@ use tokio::{fs, io::AsyncWriteExt};
 use crate::{
     handlers::{
         player::get_player_data,
-        search::worlds::{is_minecraft_world, world_path_from_id},
+        search::worlds::{get_world_path_by_id, is_minecraft_world},
     },
     types::world::{GameRules, WorldData, WorldLevelData},
     utils::{calculate_dir_size, encode_image_to_base64},
@@ -709,12 +709,12 @@ pub async fn parse_world_entry_data(path: PathBuf) -> Result<WorldData, String> 
     Ok(world_data)
 }
 
-pub async fn delete_world(
+pub async fn delete_world_by_id(
     world_id: &str,
     category: Option<&str>,
     instance: Option<&str>,
 ) -> Result<(), String> {
-    let world_path = world_path_from_id(world_id, category, instance).await?;
+    let world_path = get_world_path_by_id(world_id, category, instance).await?;
 
     if !world_path.exists() {
         error!("World does not exist: {:?}", world_path);

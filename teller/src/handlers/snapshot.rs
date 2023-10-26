@@ -3,12 +3,13 @@ use std::{path::PathBuf, str::FromStr};
 use log::info;
 
 use crate::handlers::{
-    backup::grab_backup_metadata, search::directories::get_directory_by_name, world::new_vault_id,
+    backup::get_backup_meta_from_path, search::directories::get_directory_by_name,
+    world::new_vault_id,
 };
 
 use super::{
     backup::extract_world_backup, config::backup::get_backup_config,
-    search::worlds::world_path_from_id,
+    search::worlds::get_world_path_by_id,
 };
 
 pub async fn snapshot_to_world(
@@ -36,12 +37,12 @@ pub async fn snapshot_to_world(
 
     if backup_path.exists() {
         for instance in instances {
-            let mut world_path = match world_path_from_id(world_id, None, Some(&instance)).await {
+            let mut world_path = match get_world_path_by_id(world_id, None, Some(&instance)).await {
                 Ok(path) => path.to_owned(),
                 Err(_) => {
                     let instance_path = get_directory_by_name(&instance, None).unwrap();
 
-                    let metadata = grab_backup_metadata(backup_path.clone()).await?;
+                    let metadata = get_backup_meta_from_path(backup_path.clone()).await?;
 
                     instance_path.join(&metadata.entry.name)
                 }

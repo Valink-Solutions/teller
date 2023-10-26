@@ -1,5 +1,6 @@
 use std::{
     env,
+    ops::Add,
     path::{Path, PathBuf},
 };
 
@@ -12,20 +13,48 @@ pub fn get_minecraft_save_location() -> Option<PathBuf> {
     let os = env::consts::OS;
 
     match os {
-        "windows" => Some(PathBuf::from(format!(
-            "{}\\.minecraft\\saves",
-            env::var("APPDATA").unwrap()
-        ))),
-        "macos" => Some(PathBuf::from(format!(
-            "{}/Library/Application Support/minecraft/saves",
-            env::var("HOME").unwrap()
-        ))),
-        "linux" => Some(PathBuf::from(format!(
-            "{}/.minecraft/saves",
-            env::var("HOME").unwrap()
-        ))),
-        _ => None,
+        "windows" => {
+            let java_path = PathBuf::from(format!(
+                "{}\\.minecraft\\saves",
+                env::var("APPDATA").unwrap()
+            ));
+
+            if java_path.exists() {
+                return Some(java_path);
+            } else {
+                let bedrock_path = PathBuf::from(format!(
+                    "{}\\LocalState\\games\\com.mojang\\minecraftWorlds",
+                    env::var("LOCALAPPDATA")
+                        .unwrap()
+                        .add("\\Packages\\Microsoft.MinecraftUWP_8wekyb3d8bbwe")
+                ));
+
+                if bedrock_path.exists() {
+                    return Some(bedrock_path);
+                }
+            }
+        }
+        "macos" => {
+            let path = PathBuf::from(format!(
+                "{}/Library/Application Support/minecraft/saves",
+                env::var("HOME").unwrap()
+            ));
+
+            if path.exists() {
+                return Some(path);
+            }
+        }
+        "linux" => {
+            let path = PathBuf::from(format!("{}/.minecraft/saves", env::var("HOME").unwrap()));
+
+            if path.exists() {
+                return Some(path);
+            }
+        }
+        _ => (),
     }
+
+    None
 }
 
 pub fn get_local_directories_config<P: AsRef<Path>>(
