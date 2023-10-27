@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     env,
     ops::Add,
     path::{Path, PathBuf},
@@ -71,10 +72,11 @@ pub fn get_local_directories_config<P: AsRef<Path>>(
         Ok(s) => s,
         Err(e) => {
             error!("Could not load config file at {:?}: {:?}", config_path, e);
-            return Err(format!(
-                "Could not load config file at {:?}: {:?}",
-                config_path, e
-            ));
+            let blank_data = DirectorySettings {
+                categories: HashMap::new(),
+            };
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            return rt.block_on(create_local_directories_config(blank_data));
         }
     };
 
@@ -82,10 +84,11 @@ pub fn get_local_directories_config<P: AsRef<Path>>(
         Ok(s) => s,
         Err(e) => {
             error!("Could not parse config file at {:?}: {:?}", config_path, e);
-            return Err(format!(
-                "Could not parse config file at {:?}: {:?}",
-                config_path, e
-            ));
+            let blank_data = DirectorySettings {
+                categories: HashMap::new(),
+            };
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            return rt.block_on(create_local_directories_config(blank_data));
         }
     };
 
