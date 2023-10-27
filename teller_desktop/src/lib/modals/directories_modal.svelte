@@ -79,10 +79,16 @@
 {#if isOpen}
 	<div role="dialog" class="fixed inset-0 flex items-center justify-center z-50 py-2">
 		<div
-			class="card bg-slate-100 h-full min-w-[25rem] max-w-[66.666667%] max-h-[85%] overflow-auto"
+			class="card bg-slate-100 h-full w-full min-w-[25rem] max-w-[66.666667%] max-h-[85%] overflow-auto"
 		>
 			<div class="card-body">
-				<h2 class="card-title">Manage Local Instances</h2>
+				<div class="flex flex-col gap-2">
+					<h2 class="card-title">Manage Local Instances</h2>
+					<p class="text-sm">
+						Our system will attempt to find as many Minecraft instances within the directory
+						provided.
+					</p>
+				</div>
 				<button on:click={addDirectory} class="btn btn-secondary">Add Instance</button>
 
 				<div class="flex w-full">
