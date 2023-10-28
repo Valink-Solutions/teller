@@ -18,8 +18,11 @@ While Teller and Teller_Desktop handle the backup process, [The Vault Backend](h
 
 This project is licensed under the [GNU General Public License v3.0](LICENSE.txt).
 
+# Contributing
+
+Follow the [contributing guidelines](https://docs.chunkvault.com/teller/contributing/) to contribute to this project.
+
 # Shoutout
 
 A special shoutout to the development team behind [Modrinth's Theseus Minecraft Launcher](https://github.com/modrinth/theseus). We've modeled our application setup/structure after theirs, as it is both easy to follow and use. Their work has greatly influenced the development of Teller and we appreciate their contribution to the Minecraft community, as well as their support of open-source software.
-
 

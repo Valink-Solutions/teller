@@ -1,6 +1,6 @@
 [package]
 name = "teller_desktop"
-version = "0.1.0-alpha.5"
+version = "0.1.0"
 description = "Teller is a Minecraft world backup tool, for use with the ChunkVault ecosystem."
 authors = ["Valink Solutions"]
 license = ""
