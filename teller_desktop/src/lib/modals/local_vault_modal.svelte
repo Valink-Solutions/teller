@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { openModal, closeModal, modals } from 'svelte-modals';
+	import { emit } from '@tauri-apps/api/event';
 	import { invoke } from '@tauri-apps/api';
 	import { toast } from '@zerodevx/svelte-toast';
 	import LocalVaultList from '../local_vault_list.svelte';
@@ -79,6 +80,7 @@
 								])
 							)
 						);
+						await emit('vaults_updated', backupSettings);
 						closeModal();
 					}
 				}

@@ -45,6 +45,17 @@
 			});
 		});
 
+		listen('vaults_updated', () => {
+			invoke('plugin:config|get_backup_settings').then((result) => {
+				if (result) {
+					let backupSettings = result as BackupSettings;
+					localVaults = backupSettings.vaults as Record<string, string>;
+				} else {
+					console.log(result);
+				}
+			});
+		});
+
 		listen<ToastEvent>('error', (event) => {
 			toast.push(event.payload.message, {
 				theme: {
