@@ -7,7 +7,7 @@
 		"distDir": "../build"
 	},
 	"package": {
-		"productName": "ChunkVault App"
+		"productName": "ChunkVault"
 	},
 	"tauri": {
 		"allowlist": {
@@ -71,7 +71,7 @@
 			{
 				"fullscreen": false,
 				"resizable": true,
-				"title": "ChunkVault App",
+				"title": "ChunkVault",
 				"minHeight": 720,
 				"minWidth": 1080
 			}
