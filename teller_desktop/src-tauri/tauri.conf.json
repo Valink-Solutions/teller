@@ -8,7 +8,7 @@
 	},
 	"package": {
 		"productName": "ChunkVault",
-		"version": "0.1.0"
+		"version": "0.2.0"
 	},
 	"tauri": {
 		"allowlist": {
@@ -66,7 +66,12 @@
 			"csp": null
 		},
 		"updater": {
-			"active": false
+			"active": true,
+			"endpoints": [
+				"https://releases.chunkvault.com/{{target}}/{{arch}}/{{current_version}}"
+			],
+			"dialog": true,
+			"pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEVDRUEzMDZBRjhEMjdGNTgKUldSWWY5TDRhakRxN0xMS1FmZ3Y2MFpuRXo0Q0RuaHRlbDYvKzR2dkdmcVhpZWF1ZTV0VU44c2cK"
 		},
 		"windows": [
 			{
