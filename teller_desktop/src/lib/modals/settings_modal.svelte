@@ -97,10 +97,23 @@
 				</div>
 
 				<div class="justify-between items-center card-actions">
-					<a href="https://ko-fi.com/jakepixl" target="_blank" class="btn btn-ghost">
-						<Icon icon="simple-icons:kofi" class="h-6 w-6" />
-						Give the dev a coffee
-					</a>
+					<div class="flex flex-row">
+						<a href="https://ko-fi.com/jakepixl" target="_blank" class="btn btn-ghost btn-square">
+							<Icon icon="simple-icons:kofi" class="h-6 w-6" />
+						</a>
+
+						<a href="https://github.com/Valink-Solutions/teller" target="_blank" class="btn btn-ghost btn-square">
+							<Icon icon="mdi:github" class="h-6 w-6" />
+						</a>
+
+						<a href="https://discord.gg/k3yjVarAtA" target="_blank" class="btn btn-ghost btn-square">
+							<Icon icon="mdi:discord" class="h-6 w-6" />
+						</a>
+
+						<a href="https://docs.chunkvault.com" target="_blank" class="btn btn-ghost btn-square">
+							<Icon icon="material-symbols:docs" class="h-6 w-6" />
+						</a>
+					</div>
 					{#if stackIndex > 1}
 						<button on:click={closeModal} class="btn">Close</button>
 					{:else}
