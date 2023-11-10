@@ -135,19 +135,18 @@
 		<div class="card flex flex-col h-fit min-h-full p-2 bg-base-100 gap-4 overflow-hidden">
 			<div class="flex flex-row justify-center gap-2 items-center">
 				<h1 class="font-bold">ChunkVault</h1>
-				<!-- <span class="badge badge-xs"> v0.1 </span> -->
 			</div>
 
-			<button on:click={() => openModal(SettingsModal)} class="absolute top-3 right-3 opacity-50">
-				<Icon icon="mdi:settings" />
+			<button
+				on:click={() => openModal(SettingsModal)}
+				class="absolute btn btn-ghost btn-square btn-xs top-2 right-2"
+			>
+				<Icon icon="mdi:settings" class="h-4 w-4" />
 			</button>
 
 			<div class="flex flex-col h-full gap-2">
 				<div class="flex flex-row gap-2 items-center w-full justify-center">
 					<h2 class="text-center text-xs">Instances</h2>
-					<!-- <button on:click={handleEditDirClick}>
-						<Icon icon="mdi:pencil" />
-					</button> -->
 				</div>
 				<div class="max-h-[350px] overflow-hidden overflow-y-auto">
 					<ul class="menu menu-vertical min-w-[190px] w-full gap-2">
@@ -215,11 +214,11 @@
 				<!-- svelte-ignore a11y-no-static-element-interactions -->
 				<!-- svelte-ignore a11y-missing-attribute -->
 				<div class="tabs w-full justify-center">
-					<a
+					<button
 						class="tab {activeTab === 'local' ? 'tab-active' : ''}"
-						on:click={() => switchTab('local')}>Local</a
+						on:click={() => switchTab('local')}>Local</button
 					>
-					<a class="tab tab-disabled {activeTab === 'remote' ? 'tab-active' : ''}">Remote</a>
+					<button class="tab {activeTab === 'remote' ? 'tab-active' : ''}" disabled>Remote</button>
 				</div>
 				<div class="tab-content">
 					{#if activeTab === 'local'}

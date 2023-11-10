@@ -704,6 +704,11 @@ pub async fn parse_world_entry_data(path: PathBuf) -> Result<WorldData, String> 
         path: path.to_string_lossy().into_owned(),
         size: world_size,
         last_played: last_played,
+        game_type: match game_type {
+            GameType::Java => Some("Java".to_string()),
+            GameType::Bedrock => Some("Bedrock".to_string()),
+            GameType::None => Some("Unknown".to_string()),
+        },
     };
 
     Ok(world_data)

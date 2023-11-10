@@ -136,9 +136,9 @@
 				<button
 					style="position: absolute; z-index: 1;"
 					on:click={() => deleteDirectory(category)}
-					class="btn btn-sm btn-error hover:bg-red-700 z-auto"
+					class="btn btn-sm btn-square btn-error hover:bg-red-700 z-auto"
 				>
-					<Icon icon="mdi:trash-can-outline" />
+					<Icon icon="mdi:trash-can-outline" class="h-5 w-5" />
 				</button>
 				<!-- svelte-ignore a11y-no-static-element-interactions -->
 				<span

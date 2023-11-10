@@ -39,7 +39,10 @@
 			class="card bg-slate-100 h-full w-full min-w-[25rem] max-w-[66.666667%] max-h-[85%] overflow-auto"
 		>
 			<div class="card-body gap-4">
-				<h2 class="card-title justify-center">Main Settings</h2>
+				<div class="grid grid-cols-3 items-center">
+					<h2 class="col-start-2 card-title justify-center">Main Settings</h2>
+					<span class="text-xs justify-self-end opacity-50">v0.2.2</span>
+				</div>
 				<div class="flex flex-col gap-2">
 					<h3 class="text-lg font-semibold">Instances</h3>
 					<p class="text-sm text-gray-500">Edit where the Minecraft saves are located.</p>
@@ -102,11 +105,19 @@
 							<Icon icon="simple-icons:kofi" class="h-6 w-6" />
 						</a>
 
-						<a href="https://github.com/Valink-Solutions/teller" target="_blank" class="btn btn-ghost btn-square">
+						<a
+							href="https://github.com/Valink-Solutions/teller"
+							target="_blank"
+							class="btn btn-ghost btn-square"
+						>
 							<Icon icon="mdi:github" class="h-6 w-6" />
 						</a>
 
-						<a href="https://discord.gg/k3yjVarAtA" target="_blank" class="btn btn-ghost btn-square">
+						<a
+							href="https://discord.gg/k3yjVarAtA"
+							target="_blank"
+							class="btn btn-ghost btn-square"
+						>
 							<Icon icon="mdi:discord" class="h-6 w-6" />
 						</a>
 
