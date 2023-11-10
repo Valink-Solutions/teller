@@ -13,6 +13,7 @@
 	import type { DirectorySettings } from '$lib/types/config';
 	import type { BackupSettings } from '$lib/types/backups';
 	import type { ToastEvent } from '$lib/types/events';
+	import FeedbackModal from '$lib/modals/feedback_modal.svelte';
 
 	let sideBar: HTMLElement | null = null;
 
@@ -249,6 +250,14 @@
 					{/if}
 				</div>
 			</div>
+
+			<button
+				on:click={() => openModal(FeedbackModal)}
+				class="absolute bottom-2 left-2 btn btn-sm btn-ghost gap-1"
+			>
+				<Icon icon="mdi:feedback" />
+				Feedback
+			</button>
 		</div>
 	</div>
 
