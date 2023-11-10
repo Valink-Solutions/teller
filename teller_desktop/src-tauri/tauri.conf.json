@@ -67,9 +67,7 @@
 		},
 		"updater": {
 			"active": true,
-			"endpoints": [
-				"https://releases.chunkvault.com/{{target}}/{{arch}}/{{current_version}}"
-			],
+			"endpoints": ["https://releases.chunkvault.com/{{target}}/{{arch}}/{{current_version}}"],
 			"dialog": true,
 			"pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEVDRUEzMDZBRjhEMjdGNTgKUldSWWY5TDRhakRxN0xMS1FmZ3Y2MFpuRXo0Q0RuaHRlbDYvKzR2dkdmcVhpZWF1ZTV0VU44c2cK"
 		},

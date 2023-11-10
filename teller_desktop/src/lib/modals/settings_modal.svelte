@@ -96,7 +96,11 @@
 					</div>
 				</div>
 
-				<div class="justify-end card-actions">
+				<div class="justify-between items-center card-actions">
+					<a href="https://ko-fi.com/jakepixl" target="_blank" class="btn btn-ghost">
+						<Icon icon="simple-icons:kofi" class="h-6 w-6" />
+						Give the dev a coffee
+					</a>
 					{#if stackIndex > 1}
 						<button on:click={closeModal} class="btn">Close</button>
 					{:else}
