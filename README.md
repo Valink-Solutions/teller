@@ -14,6 +14,10 @@ Teller_Desktop is a Tauri application that serves as the ChunkVault App a user-f
 
 While Teller and Teller_Desktop handle the backup process, [The Vault Backend](https://github.com/Valink-Solutions/vault) ensures secure storage of these world backups in the cloud.
 
+# CommandBlock Library
+
+The [CommandBlock](https://github.com/Valink-Solutions/commandblock) library is a rust library that provides functionality for parsing and executing Minecraft data such as NBT, LevelDB and more. It is used by Teller to parse Minecraft world data and extract the necessary information for backups. It is in development but its functionality is already being used by Teller.
+
 # License
 
 This project is licensed under the [GNU General Public License v3.0](LICENSE.txt).

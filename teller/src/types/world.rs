@@ -11,6 +11,7 @@ pub struct WorldData {
     pub path: String,
     pub size: u64,
     pub last_played: Option<NaiveDateTime>,
+    pub game_type: Option<String>,
 }
 
 #[allow(non_snake_case)]

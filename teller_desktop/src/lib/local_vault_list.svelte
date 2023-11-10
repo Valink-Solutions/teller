@@ -50,8 +50,8 @@
 		<div
 			class="flex flex-row gap-2 card items-center max-w-full h-fit odd:bg-slate-200 p-2 text-sm"
 		>
-			<button on:click={() => deleteDirectory(vault)} class="btn btn-sm btn-ghost">
-				<Icon icon="mdi:close-thick" />
+			<button on:click={() => deleteDirectory(vault)} class="btn btn-sm btn-ghost btn-square">
+				<Icon icon="mdi:close-thick" class="w-4 h-4" />
 			</button>
 			<!-- svelte-ignore a11y-no-static-element-interactions -->
 			<span

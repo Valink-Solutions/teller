@@ -5,6 +5,7 @@ export interface WorldItem {
 	image: string;
 	size: number;
 	last_played: string | null;
+	game_type: string | null;
 }
 
 export interface WorldLevelData {

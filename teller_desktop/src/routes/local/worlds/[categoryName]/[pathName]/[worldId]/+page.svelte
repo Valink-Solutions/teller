@@ -129,7 +129,7 @@
 					alt={world_data.name}
 					class="object-cover w-full h-full self-start border-4 border-black shadow-neu"
 				/>
-				<div class="badge badge-xs absolute -bottom-2 left-0 right-0 mx-auto">
+				<div class="badge badge-xs badge-ghost absolute -bottom-2 left-0 right-0 mx-auto">
 					{world_data.game_engine}
 				</div>
 			</div>
@@ -195,10 +195,10 @@
 						</div>
 
 						<a
-							class="btn btn-ghost"
+							class="btn btn-ghost btn-square"
 							href={`/local/worlds/${$page.params.categoryName}/${$page.params.pathName}/${$page.params.worldId}/player/${player.id}`}
 						>
-							<Icon icon="mdi:arrow-right" />
+							<Icon icon="mdi:arrow-right" class="w-4 h-4" />
 						</a>
 
 						<!-- <button class="btn btn-ghost" on:click={() => handleClick(player)}>

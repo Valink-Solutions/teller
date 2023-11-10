@@ -66,25 +66,29 @@
 		/>
 	</figure>
 	<div class="flex flex-row gap-3 p-3 w-full justify-between items-center">
-		<div class="flex flex-row items-center justify-between gap-2">
-			<div class=" w-72 xl:w-96 2xl:w-120">
-				<h2 class="font-bold w-full overflow-hidden overflow-ellipsis whitespace-nowrap">
-					{world.name}
-				</h2>
-			</div>
+		<div class="grid grid-cols-3 items-center justify-between gap-2 w-full">
+			<h2 class="font-bold w-full col-span-2 overflow-hidden overflow-ellipsis whitespace-nowrap">
+				{world.name}
+			</h2>
 
-			<span class="badge badge-primary badge-xs font-semibold whitespace-nowrap w-24"
-				>{formatBytes(world.size)}</span
-			>
+			<div class="flex flex-row gap-2">
+				{#if world.game_type}
+					<span class="badge badge-xs badge-ghost">{world.game_type}</span>
+				{/if}
+				<span
+					class="badge badge-primary justify-self-end badge-xs font-semibold whitespace-nowrap w-24"
+					>{formatBytes(world.size)}</span
+				>
+			</div>
 		</div>
 		<!-- <h2 class="card-title">world</h2>
       <p>no backups</p> -->
-		<div class="card-actions justify-around items-center">
-			<div class="dropdown dropdown-end">
+		<div class="flex flex-row justify-around items-center gap-2">
+			<div class="dropdown dropdown-end top-0.5">
 				<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 				<!-- svelte-ignore a11y-label-has-associated-control -->
-				<label tabindex="0" class="btn btn-xs text-lg btn-ghost">
-					<Icon icon="bx:dots-vertical" />
+				<label tabindex="0" class="btn btn-xs btn-square text-lg btn-ghost">
+					<Icon icon="mi:options-vertical" />
 				</label>
 				<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 				<ul
