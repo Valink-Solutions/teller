@@ -14,7 +14,37 @@
 
 	let stackIndex: number = $modals.length;
 
+	let selectedTheme = 'system'; // default value
+
+	// Function to update the theme
+	function updateTheme(theme: string) {
+		switch (theme) {
+			case 'light':
+				document.documentElement.setAttribute('data-theme', 'neubrutalism');
+				break;
+			case 'dark':
+				document.documentElement.setAttribute('data-theme', 'neubrutalism-dark');
+				break;
+			default:
+				// System preference
+				const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+				document.documentElement.setAttribute(
+					'data-theme',
+					prefersDarkMode.matches ? 'neubrutalism-dark' : 'neubrutalism'
+				);
+				break;
+		}
+		// Save to local storage
+		localStorage.setItem('userThemePreference', theme);
+	}
+
 	onMount(async () => {
+		const savedTheme = localStorage.getItem('userThemePreference');
+		if (savedTheme) {
+			selectedTheme = savedTheme;
+			updateTheme(savedTheme);
+		}
+
 		let res = await invoke('plugin:config|get_backup_settings');
 		if (typeof res !== 'string') {
 			if (res) {
@@ -36,17 +66,34 @@
 {#if isOpen}
 	<div role="dialog" class="fixed inset-0 flex items-center justify-center z-50">
 		<div
-			class="card bg-slate-100 h-full w-full min-w-[25rem] max-w-[66.666667%] max-h-[85%] overflow-auto"
+			class="card bg-base-100 h-full w-full min-w-[25rem] max-w-[66.666667%] max-h-[85%] overflow-auto"
 		>
 			<div class="card-body gap-4">
 				<div class="grid grid-cols-3 items-center">
 					<h2 class="col-start-2 card-title justify-center">Main Settings</h2>
-					<span class="text-xs justify-self-end opacity-50">v0.2.2</span>
+					<span class="text-xs justify-self-end opacity-50">v0.2.3</span>
 				</div>
 				<div class="flex flex-col gap-2">
 					<h3 class="text-lg font-semibold">Instances</h3>
 					<p class="text-sm text-gray-500">Edit where the Minecraft saves are located.</p>
 					<button on:click={() => openModal(DirectoriesModal)} class="btn">Edit Directories</button>
+				</div>
+
+				<div class="flex flex-col gap-2">
+					<h3 class="text-lg font-semibold">Application Theme</h3>
+					<p class="text-sm text-gray-500">Edit the theme of the application.</p>
+
+					<select
+						bind:value={selectedTheme}
+						on:change={() => updateTheme(selectedTheme)}
+						name="theme-select"
+						id="theme-select"
+						class="select"
+					>
+						<option value="system"> System Preference </option>
+						<option value="light"> Light </option>
+						<option value="dark"> Dark </option>
+					</select>
 				</div>
 
 				<div class="divider" />

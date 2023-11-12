@@ -15,7 +15,7 @@
 {#if isOpen}
 	<div role="dialog" class="fixed inset-0 flex items-center justify-center z-50">
 		<div
-			class="card bg-slate-100 h-fit w-full min-w-[25rem] max-w-[66.666667%] max-h-[85%] overflow-auto"
+			class="card bg-base-100 h-fit w-full min-w-[25rem] max-w-[66.666667%] max-h-[85%] overflow-auto"
 		>
 			<div class="card-body gap-4">
 				<h2 class="card-title">{deleteTitle}</h2>

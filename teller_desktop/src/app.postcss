@@ -8,233 +8,177 @@ html,
 body {
 	font-family: 'Martian Mono', monospace;
 }
-/* This will apply to the scrollbar thumb (the part you drag) */
+
+/* Scrollbar styles */
 ::-webkit-scrollbar-thumb {
-	background: rgba(0, 0, 0, 1); /* Change this to whatever color you want */
+	background: var(--primary-color);
 	border-radius: 0;
-	box-shadow: 0px 2px 0px 0px rgba(0, 0, 0, 0.7);
 	margin: 0 1rem 0 0;
 }
 
-/* This will apply to the scrollbar itself */
 ::-webkit-scrollbar {
 	width: 8px;
-	height: 8px; /* Make horizontal scrollbar the same size as vertical */
+	height: 8px;
 	margin: 10px 0;
 }
 
-[data-theme='neubrutalism'] .btn {
-	border-width: 4px;
-	border-color: black;
-	box-shadow: 0px 4px 0px 0px rgba(0, 0, 0, 1);
-	font-weight: 800;
-	fill: black;
+/* Neubrutalism Theme Styles */
+[data-theme='neubrutalism'] {
+	--primary-color: rgba(0, 0, 0, 1);
+	--shadow-color: rgba(0, 0, 0, 1);
+	--text-color: rgba(0, 0, 0, 1);
+	--disabled-color: #a9a9a9;
+	--border-width: 4px;
 }
 
-[data-theme='neubrutalism'] .btn:disabled {
-	border-color: #a9a9a9;
-	/* box-shadow: 0px 4px 0px 0px #a9a9a9; */
-	box-shadow: 0px 4px 0px 0px rgba(0, 0, 0, 0.33);
+[data-theme='neubrutalism-dark'] {
+	--primary-color: #3d3a44;
+	--shadow-color: #3d3a44;
+	--text-color: white;
+	--disabled-color: rgba(61, 66, 77, 0.33);
+	--border-width: 4px;
 }
 
+/* Button Styles */
+[data-theme='neubrutalism'] .btn,
 [data-theme='neubrutalism-dark'] .btn {
-	border-width: 4px;
-	border-color: rgba(61, 66, 77, 1);
-	box-shadow: 0px 4px 0px 0px rgba(61, 66, 77, 1);
+	border-width: var(--border-width);
+	border-color: var(--primary-color);
+	color: var(--text-color);
+	box-shadow: 0px 4px 0px 0px var(--shadow-color);
 	font-weight: 800;
-	fill: rgba(61, 66, 77, 1);
+	fill: var(--primary-color);
 }
 
+[data-theme='neubrutalism'] .btn:disabled,
+[data-theme='neubrutalism-dark'] .btn:disabled {
+	border-color: var(--disabled-color);
+	box-shadow: 0px 4px 0px 0px var(--disabled-color);
+}
+
+/* Ghost Button Styles */
 [data-theme='neubrutalism'] .btn-ghost,
 [data-theme='neubrutalism-dark'] .btn-ghost {
 	border: none !important;
 	box-shadow: none !important;
 }
 
-/* [data-theme='neubrutalism'] .badge,
-[data-theme='neubrutalism-dark'] .badge {
-	border-radius: 0.2rem;
-} */
-
-[data-theme='neubrutalism'] .btn-circle {
-	box-shadow: 0px 4px 0px 0px rgba(0, 0, 0, 1);
-}
-[data-theme='neubrutalism-dark'] .btn-circle {
-	box-shadow: 0px 4px 0px 0px rgba(61, 66, 77, 1);
-}
-
+/* Button Hover Styles */
 [data-theme='neubrutalism'] .btn:hover,
 [data-theme='neubrutalism-dark'] .btn:hover {
-	border-color: black !important;
-	/* box-shadow: 0px 2px 0px 0px rgba(61, 66, 77, 1) !important; */
+	border-color: var(--shadow-color) !important;
 }
 
+/* Button Active Styles */
 [data-theme='neubrutalism'] .btn:active:not(.btn-ghost),
 [data-theme='neubrutalism-dark'] .btn:active:not(.btn-ghost) {
-	box-shadow: 0px 2px 0px 0px rgba(61, 66, 77, 1) !important;
+	box-shadow: 0px 2px 0px 0px var(--shadow-color) !important;
 }
+
 [data-theme='neubrutalism'] .btn-ghost:active,
 [data-theme='neubrutalism-dark'] .btn-ghost:active {
 	box-shadow: none !important;
 }
 
+/* Card, Modal, Panel, Collapse Styles */
 [data-theme='neubrutalism'] .card,
 [data-theme='neubrutalism'] .modal,
 [data-theme='neubrutalism'] .panel,
-[data-theme='neubrutalism'] .collapse {
-	border-width: 4px;
-	border-color: black !important;
-	box-shadow: 0px 4px 0px 0px rgba(0, 0, 0, 1);
-}
-
 [data-theme='neubrutalism-dark'] .card,
 [data-theme='neubrutalism-dark'] .modal,
 [data-theme='neubrutalism-dark'] .panel {
-	border-width: 4px;
-	border-color: rgba(61, 66, 77, 1) !important;
-	box-shadow: 0px 4px 0px 0px rgba(61, 66, 77, 1);
+	border-width: var(--border-width) !important;
+	border-color: var(--primary-color) !important;
+	box-shadow: 0px 4px 0px 0px var(--shadow-color);
 }
 
+[data-theme='neubrutalism'] .collapse,
+[data-theme='neubrutalism-dark'] .collapse {
+	border: var(--border-width) solid var(--primary-color) !important;
+	box-shadow: 0px 4px 0px 0px var(--shadow-color) !important;
+}
+
+/* Input, Textarea Styles */
 [data-theme='neubrutalism'] .input,
-[data-theme='neubrutalism'] .input:focus,
 [data-theme='neubrutalism'] .textarea,
-[data-theme='neubrutalism'] .textarea:focus {
-	border-width: 4px;
-	border-color: black !important;
-	box-shadow: 0px 4px 0px 0px rgba(0, 0, 0, 1);
-	outline: none;
-}
-
 [data-theme='neubrutalism-dark'] .input,
-[data-theme='neubrutalism-dark'] .input:focus,
-[data-theme='neubrutalism-dark'] .textarea,
-[data-theme='neubrutalism-dark'] .textarea:focus {
-	border-width: 4px;
-	border-color: rgba(61, 66, 77, 1) !important;
-	box-shadow: 0px 4px 0px 0px rgba(61, 66, 77, 1);
+[data-theme='neubrutalism-dark'] .textarea {
+	border-width: var(--border-width);
+	border-color: var(--primary-color) !important;
+	box-shadow: 0px 4px 0px 0px var(--shadow-color);
 	outline: none;
 }
 
-[data-theme='neubrutalism-dark'] .form-input,
-[data-theme='neubrutalism-dark'] .form-input:focus {
-	border-width: 4px;
-	border-color: rgba(61, 66, 77, 1) !important;
-	box-shadow: 0px 4px 0px 0px rgba(61, 66, 77, 1);
-}
-
+/* Form Input Styles */
 [data-theme='neubrutalism'] .form-input,
-[data-theme='neubrutalism'] .form-input:focus {
-	border-width: 4px;
-	border-color: black !important;
-	box-shadow: 0px 4px 0px 0px rgba(0, 0, 0, 1);
+[data-theme='neubrutalism-dark'] .form-input {
+	border-width: var(--border-width);
+	border-color: var(--primary-color) !important;
+	box-shadow: 0px 4px 0px 0px var(--shadow-color);
 }
 
-[data-theme='neubrutalism'] .input-bordered {
-	border-color: black !important;
-	--tw-border-opacity: 1;
-}
-
+/* Select Styles */
 [data-theme='neubrutalism'] .select,
-[data-theme='neubrutalism'] .select:focus {
-	border-width: 4px;
-	border-color: black !important;
-	box-shadow: 0px 4px 0px 0px rgba(0, 0, 0, 1);
+[data-theme='neubrutalism-dark'] .select {
+	border-width: var(--border-width);
+	border-color: var(--primary-color) !important;
+	box-shadow: 0px 4px 0px 0px var(--shadow-color);
 	outline: none;
 }
 
-[data-theme='neubrutalism'] .select-bordered {
-	border-color: black !important;
-	--tw-border-opacity: 1;
-	outline: none;
-}
-
-[data-theme='neubrutalism'] .select:disabled,
-[data-theme='neubrutalism-dark'] .select:disabled {
-	border-color: #a9a9a9 !important;
-	color: #a9a9a9 !important;
-	box-shadow: 0px 4px 0px 0px rgba(0, 0, 0, 0.33);
-}
-
-[data-theme='neubrutalism'] .checkbox {
+/* Checkbox Styles */
+[data-theme='neubrutalism'] .checkbox,
+[data-theme='neubrutalism-dark'] .checkbox {
 	width: 30px;
 	height: 30px;
-	border-width: 4px;
-	border-color: black !important;
-	background-color: white;
+	border-width: var(--border-width);
+	border-color: var(--primary-color) !important;
 	outline: none !important;
 }
 
-[data-theme='neubrutalism'] .checkbox:focus {
-	outline: none !important;
-}
-
-[data-theme='neubrutalism'] .checkbox:checked {
-	background-color: black !important;
+[data-theme='neubrutalism'] .checkbox:checked,
+[data-theme='neubrutalism-dark'] .checkbox:checked {
+	background-color: var(--primary-color) !important;
 	border: none;
 	outline: none !important;
 }
 
-[data-theme='neubrutalism'] .dropdown-content {
-	border-width: 4px;
-	border-color: black !important;
-	background-color: white;
-	outline: none !important;
-	box-shadow: 0px 4px 0px 0px rgba(0, 0, 0, 1);
-	gap: 0.25rem;
-}
-
+/* Dropdown Content Styles */
+[data-theme='neubrutalism'] .dropdown-content,
 [data-theme='neubrutalism-dark'] .dropdown-content {
-	border-width: 4px;
-	border-color: rgba(61, 66, 77, 1) !important;
+	border-width: var(--border-width);
+	border-color: var(--primary-color) !important;
 	outline: none !important;
-	box-shadow: 0px 4px 0px 0px rgba(61, 66, 77, 1);
+	box-shadow: 0px 4px 0px 0px var(--shadow-color);
 	gap: 0.25rem;
 }
 
-[data-theme='neubrutalism'] .dropdown-danger {
-	@apply hover:bg-error hover:text-error-content;
-}
-
-[data-theme='neubrutalism'] .badge {
-	border-width: 4px;
-	border-color: black !important;
-	box-shadow: 0px 4px 0px 0px rgba(0, 0, 0, 1);
-	padding: 9px 8px;
-}
-
+/* Badge Styles */
+[data-theme='neubrutalism'] .badge,
 [data-theme='neubrutalism-dark'] .badge {
-	border-width: 4px;
-	border-color: rgba(61, 66, 77, 1) !important;
-	box-shadow: 0px 4px 0px 0px rgba(61, 66, 77, 1);
-	padding: 9px 8px;
+	border-width: var(--border-width) / 2;
+	border-color: var(--primary-color) !important;
+	color: var(--text-color) !important;
+	box-shadow: 0px 2px 0px 0px var(--shadow-color);
+	padding: 10px 5px;
+	font-weight: 800;
+	text-transform: uppercase;
 }
 
-[data-theme='neubrutalism'] .badge-xs {
-	border-width: 2px;
-	border-color: black !important;
-	box-shadow: 0px 2px 0px 0px rgba(0, 0, 0, 1);
-	padding: 9px 3px;
-}
-
-[data-theme='neubrutalism-dark'] .badge-xs {
-	border-width: 2px;
-	border-color: rgba(61, 66, 77, 1) !important;
-	box-shadow: 0px 2px 0px 0px rgba(61, 66, 77, 1);
-	padding: 9px 3px;
-}
-
-[data-theme='neubrutalism'] .pagination {
+/* Pagination Styles */
+[data-theme='neubrutalism'] .pagination,
+[data-theme='neubrutalism-dark'] .pagination {
 	height: fit-content;
 	display: flex;
 	flex-direction: row;
 	width: fit-content;
-	border-width: 4px;
-	/* border-radius: 0.2rem; */
-	border-color: black !important;
-	box-shadow: 0px 4px 0px 0px rgba(0, 0, 0, 1);
+	border-width: var(--border-width);
+	border-color: var(--primary-color) !important;
+	box-shadow: 0px 4px 0px 0px var(--shadow-color);
 }
 
-[data-theme='neubrutalism'] .pagination .btn {
+[data-theme='neubrutalism'] .pagination .btn,
+[data-theme='neubrutalism-dark'] .pagination .btn {
 	height: 3rem;
 	border: none;
 	border-radius: 0rem;

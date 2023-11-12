@@ -51,7 +51,7 @@
 
 {#if isOpen}
 	<div role="dialog" class="fixed inset-0 flex items-center justify-center z-50">
-		<div class="card bg-slate-100 min-w-[25rem] max-w-[66.666667%]">
+		<div class="card bg-base-100 min-w-[25rem] max-w-[66.666667%]">
 			<div class="card-body">
 				<h2 class="card-title">Backup Options</h2>
 				<p class="card-text">

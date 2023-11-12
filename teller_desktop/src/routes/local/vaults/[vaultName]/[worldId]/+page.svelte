@@ -16,18 +16,24 @@
 	let loading = true;
 	let error = false;
 
-	function handleSnapshotsUpdate() {
+	let refresh = false;
+
+	function handleSnapshotsUpdate(isRefresh?: boolean) {
+		refresh = isRefresh || false;
 		invoke('plugin:backup_handler|grab_world_backups', {
 			worldId: $page.params.worldId,
 			selectedVault: $page.params.vaultName
 		})
 			.then((result) => {
 				snapshots = result as SnapshotInfo[];
-				loading = false;
+				error = false;
 			})
 			.catch((err) => {
 				console.log(err);
 				error = true;
+			})
+			.finally(() => {
+				refresh = false;
 			});
 	}
 
@@ -47,6 +53,9 @@
 			.catch((err) => {
 				console.log(err);
 				error = true;
+			})
+			.finally(() => {
+				loading = false;
 			});
 
 		listen<backupListUpdate>('world_backup_list_updated', (event) => {
@@ -85,7 +94,7 @@
 						? world_data.data.icon
 						: 'https://static.planetminecraft.com/files/image/minecraft/project/2020/194/13404399_l.jpg'}
 					alt={world_data.data.name}
-					class="object-cover w-full h-full self-start border-4 border-black shadow-neu"
+					class="object-cover w-full h-full self-start border-4 border-black dark:border-dark shadow-neu dark:shadow-neu-light"
 				/>
 				<div class="badge badge-xs badge-ghost absolute -bottom-2 left-0 right-0 mx-auto">
 					{world_data.data.game_engine}
@@ -116,19 +125,29 @@
 		{#if snapshots}
 			<div class="flex flex-row justify-between items-center">
 				<h1 class="border-l-4 pl-2 border-primary text-lg font-bold">All Backups</h1>
-				<button class="btn btn-sm">
-					<Icon icon="material-symbols:directory-sync" on:click={handleSnapshotsUpdate} />
+				<button class="btn btn-sm hover:btn-primary">
+					<Icon
+						icon="material-symbols:directory-sync"
+						on:click={() => handleSnapshotsUpdate(true)}
+					/>
 				</button>
 			</div>
-			<ul class="flex flex-col gap-4">
-				{#each snapshots as snapshot}
-					<SnapshotItem
-						{snapshot}
-						vaultName={$page.params.vaultName}
-						worldId={$page.params.worldId}
-					/>
-				{/each}
-			</ul>
+			{#if refresh}
+				<div class="flex flex-col items-center justify-center m-auto w-full h-full">
+					<Icon icon="mdi:loading" class="w-16 h-16 animate-spin" />
+					<p class="text-lg font-semibold">Loading...</p>
+				</div>
+			{:else}
+				<ul class="flex flex-col gap-4">
+					{#each snapshots as snapshot}
+						<SnapshotItem
+							{snapshot}
+							vaultName={$page.params.vaultName}
+							worldId={$page.params.worldId}
+						/>
+					{/each}
+				</ul>
+			{/if}
 		{/if}
 	{:else}
 		<div class="flex flex-col items-center justify-center w-full h-full">
