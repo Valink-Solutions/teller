@@ -31,8 +31,8 @@ export default {
 					primary: '#4ade80',
 					secondary: '#dc7efc',
 					accent: '#f2d5ae',
-					neutral: '#1B1D2C',
-					'base-100': '#111827',
+					neutral: '#F7F5F8',
+					'base-100': '#151319',
 					info: '#44B1E4',
 					success: '#19A38C',
 					warning: '#AB7D07',
@@ -55,7 +55,8 @@ export default {
 			'dark',
 			'cupcake'
 		],
-		darkTheme: 'neubrutalism'
+		darkTheme: 'neubrutalism-dark',
+		darkMode: 'class'
 	},
 	theme: {
 		extend: {
@@ -63,18 +64,19 @@ export default {
 			textColor: ['selection'],
 			dropShadow: {
 				neu: '0px 4px 0px 0px rgba(0, 0, 0, 1);',
-				'neu-light': '0px 4px 0 rgba(61, 66, 77, 1)',
+				'neu-light': '0px 4px 0 #3D3A44',
 				'neu-pressed': '0px 2px 0 rgba(0, 0, 0, 1)',
+				'neu-pressed-dark': '0px 2px 0 #3D3A44',
 				'neu-card': '0px 4px 0 rgba(0, 0, 0, 1)'
 			},
 			boxShadow: {
 				neu: '0px 4px 0px 0px rgba(0, 0, 0, 1);',
-				'neu-light': '0px 4px 0 rgba(61, 66, 77, 1)',
+				'neu-light': '0px 4px 0 #3D3A44',
 				'neu-pressed': '0px 2px 0 rgba(0, 0, 0, 1)',
 				'neu-card': '0px 4px 0 rgba(0, 0, 0, 1)'
 			},
 			borderColor: {
-				dark: 'rgba(61, 66, 77, 1)'
+				dark: '#3D3A44'
 			},
 			width: {
 				120: '30rem',

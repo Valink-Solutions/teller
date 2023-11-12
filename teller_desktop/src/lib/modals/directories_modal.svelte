@@ -79,7 +79,7 @@
 {#if isOpen}
 	<div role="dialog" class="fixed inset-0 flex items-center justify-center z-50 py-2">
 		<div
-			class="card bg-slate-100 h-full w-full min-w-[25rem] max-w-[66.666667%] max-h-[85%] overflow-auto"
+			class="card bg-base-100 h-full w-full min-w-[25rem] max-w-[66.666667%] max-h-[85%] overflow-auto"
 		>
 			<div class="card-body">
 				<div class="flex flex-col gap-2">

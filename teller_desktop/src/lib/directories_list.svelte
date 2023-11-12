@@ -162,12 +162,15 @@
 					{category}
 				</span>
 			</div>
-			<div id={category} class="collapse-content flex flex-col max-w-full gap-2">
+			<div
+				id={category}
+				class="collapse-content dark:collapse-content flex flex-col max-w-full gap-2"
+			>
 				{#each Object.entries(value.paths) as [pathName, pathValue] (pathName)}
 					<div
 						data-path={pathName}
 						data-path-data={pathValue}
-						class="flex flex-row gap-2 card items-center max-w-full h-fit odd:bg-slate-200 p-2"
+						class="flex flex-row gap-2 card items-center max-w-full h-fit bg-base-100 odd:bg-base-200 p-2"
 					>
 						<button
 							on:click={() => deleteDirectory(category, pathValue)}

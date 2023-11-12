@@ -55,18 +55,20 @@
 
 <li class="card flex flex-row w-full bg-base-100 shadow-xl max-h-fit">
 	<div class="card-body flex-row justify-between items-center">
-		<div class="flex flex-row items-center gap-2">
-			<div class="flex flex-row items-center gap-2 w-80 text-sm">
+		<div class="grid grid-cols-3 w-full h-fit items-center gap-2">
+			<div class="col-span-2 flex flex-row items-center gap-2 w-80 text-sm">
 				<Icon icon="mdi:clock" />
 				{dayjs(snapshot.created * 1000).format('MMMM D, YYYY [at] h:mm A')}
 			</div>
 
-			<div class="badge badge-primary badge-xs font-semibold whitespace-nowrap w-24 gap-1">
+			<div
+				class="badge badge-primary text-black dark:text-white badge-xs font-semibold whitespace-nowrap w-24 gap-1"
+			>
 				<!-- <Icon icon="mdi:file" class="h-12 w-12"/> 360 -->
 				{formatBytes(snapshot.size)}
 			</div>
 		</div>
-		<div class="card-actions justify-around items-center">
+		<div class="flex flex-row justify-around items-center gap-2">
 			<div class="dropdown dropdown-end">
 				<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 				<!-- svelte-ignore a11y-label-has-associated-control -->

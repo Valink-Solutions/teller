@@ -126,7 +126,7 @@
 						? world_metadata.data.icon
 						: 'https://static.planetminecraft.com/files/image/minecraft/project/2020/194/13404399_l.jpg'}
 					alt={world_metadata.data.name}
-					class="object-cover w-full h-full self-start border-4 border-black shadow-neu"
+					class="object-cover w-full h-full self-start border-4 border-black dark:border-dark shadow-neu dark:shadow-neu-light"
 				/>
 				<div class="badge badge-xs absolute -bottom-2 left-0 right-0 mx-auto">
 					{world_metadata.data.game_engine}
@@ -207,15 +207,15 @@
 			<h1 class="border-l-4 pl-2 border-primary text-lg font-bold">Game Rules</h1>
 			<div class="grid grid-cols-2 xl:grid-cols-3 gap-4">
 				{#each Object.entries(world_metadata.data.game_rules) as [rule, value]}
-					<div class="card flex flex-row p-2 justify-between items-center bg-slate-200">
+					<div class="card flex flex-row p-2 justify-between items-center bg-base-100">
 						<span class="text-sm font-semibold">{rule}:</span>
 						{#if value === true || value === false}
 							<div class="flex flex-row w-12 relative">
 								<div
-									class="h-3 w-full bg-white border-[3px] border-black drop-shadow-neu-pressed"
+									class="h-3 w-full bg-base-100 border-[3px] border-black dark:border-dark drop-shadow-neu-pressed dark:drop-shadow-neu-pressed-dark"
 								/>
 								<div
-									class="-top-1 h-[20px] w-[20px] absolute border-[3px] border-black drop-shadow-neu-pressed {value ===
+									class="-top-1 h-[20px] w-[20px] absolute border-[3px] border-black dark:border-dark drop-shadow-neu-pressed dark:drop-shadow-neu-pressed-dark {value ===
 									true
 										? 'bg-green-600 right-0'
 										: 'bg-red-600 left-0'}"
@@ -223,7 +223,7 @@
 							</div>
 						{:else}
 							<span
-								class="min-w-[48px] px-2 text-center border-2 border-black bg-white drop-shadow-neu-pressed"
+								class="min-w-[48px] px-2 text-center border-2 border-black dark:border-dark bg-base-100 drop-shadow-neu-pressed dark:drop-shadow-neu-pressed-dark"
 								>{value}</span
 							>
 						{/if}

@@ -175,7 +175,7 @@
 				</select>
 				<button
 					on:click={() => handleWorldListUpdate(true)}
-					class="btn btn-sm bg-slate-100 join-item"
+					class="btn btn-sm hover:btn-primary join-item"
 				>
 					<Icon icon="material-symbols:directory-sync" class="w-4 h-4" />
 				</button>

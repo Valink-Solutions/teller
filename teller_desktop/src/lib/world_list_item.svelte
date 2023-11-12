@@ -55,7 +55,7 @@
 
 <li class="card flex flex-row w-full bg-base-100 shadow-xl max-h-fit">
 	<figure
-		class="bg-black border-r-4 min-w-fit min-h-fit h-24 w-24 max-w-[6rem] max-h-[6rem] border-black"
+		class="bg-black border-r-4 min-w-fit min-h-fit h-24 w-24 max-w-[6rem] max-h-[6rem] border-black dark:border-dark"
 	>
 		<img
 			class="h-24 w-24 max-w-[6rem] max-h-[6rem] bg-black"
@@ -76,7 +76,7 @@
 					<span class="badge badge-xs badge-ghost">{world.game_type}</span>
 				{/if}
 				<span
-					class="badge badge-primary justify-self-end badge-xs font-semibold whitespace-nowrap w-24"
+					class="badge badge-primary text-black dark:text-white justify-self-end badge-xs font-semibold whitespace-nowrap w-24"
 					>{formatBytes(world.size)}</span
 				>
 			</div>

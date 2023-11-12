@@ -12,19 +12,19 @@
 			// Set the data-theme attribute based on the system preference
 			document.documentElement.setAttribute(
 				'data-theme',
-				prefersDarkMode.matches ? 'neubrutalism' : 'neubrutalism'
+				prefersDarkMode.matches ? 'neubrutalism-dark' : 'neubrutalism'
 			);
 
 			// Add an event listener to update the data-theme attribute on the fly
 			prefersDarkMode.addEventListener('change', (event) => {
 				document.documentElement.setAttribute(
 					'data-theme',
-					event.matches ? 'neubrutalism' : 'neubrutalism'
+					event.matches ? 'neubrutalism-dark' : 'neubrutalism'
 				);
 			});
 		</script>
 	</head>
-	<body data-sveltekit-preload-data="hover">
+	<body data-sveltekit-preload-data="hover" class="bg-base-100">
 		<div style="display: contents">%sveltekit.body%</div>
 	</body>
 </html>
