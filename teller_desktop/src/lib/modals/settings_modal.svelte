@@ -64,14 +64,14 @@
 </script>
 
 {#if isOpen}
-	<div role="dialog" class="fixed inset-0 flex items-center justify-center z-50">
+	<div role="dialog" class="fixed inset-0 flex items-center justify-center z-50 text-base-content">
 		<div
 			class="card bg-base-100 h-full w-full min-w-[25rem] max-w-[66.666667%] max-h-[85%] overflow-auto"
 		>
 			<div class="card-body gap-4">
 				<div class="grid grid-cols-3 items-center">
 					<h2 class="col-start-2 card-title justify-center">Main Settings</h2>
-					<span class="text-xs justify-self-end opacity-50">v0.2.3</span>
+					<span class="text-xs justify-self-end opacity-50">v0.2.4</span>
 				</div>
 				<div class="flex flex-col gap-2">
 					<h3 class="text-lg font-semibold">Instances</h3>

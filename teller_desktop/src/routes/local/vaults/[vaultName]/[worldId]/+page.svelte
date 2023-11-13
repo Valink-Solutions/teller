@@ -33,6 +33,7 @@
 				error = true;
 			})
 			.finally(() => {
+				loading = false;
 				refresh = false;
 			});
 	}
@@ -125,11 +126,8 @@
 		{#if snapshots}
 			<div class="flex flex-row justify-between items-center">
 				<h1 class="border-l-4 pl-2 border-primary text-lg font-bold">All Backups</h1>
-				<button class="btn btn-sm hover:btn-primary">
-					<Icon
-						icon="material-symbols:directory-sync"
-						on:click={() => handleSnapshotsUpdate(true)}
-					/>
+				<button on:click={() => handleSnapshotsUpdate(true)} class="btn btn-sm hover:btn-primary">
+					<Icon icon="material-symbols:directory-sync" />
 				</button>
 			</div>
 			{#if refresh}
@@ -140,11 +138,18 @@
 			{:else}
 				<ul class="flex flex-col gap-4">
 					{#each snapshots as snapshot}
-						<SnapshotItem
-							{snapshot}
-							vaultName={$page.params.vaultName}
-							worldId={$page.params.worldId}
-						/>
+						{#if refresh}
+							<div class="flex flex-row">
+								<div class="skeleton h-4 w-28" />
+								<div class="skeleton h-4 w-12" />
+							</div>
+						{:else}
+							<SnapshotItem
+								{snapshot}
+								vaultName={$page.params.vaultName}
+								worldId={$page.params.worldId}
+							/>
+						{/if}
 					{/each}
 				</ul>
 			{/if}

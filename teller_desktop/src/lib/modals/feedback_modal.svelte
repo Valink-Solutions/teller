@@ -68,24 +68,28 @@
 				<p>Feel free to submit suggestions or report bugs.</p>
 
 				<form class="form-control gap-4">
-					<textarea class="textarea w-full" placeholder="Feedback" bind:value={feedbackText} />
+					<textarea
+						class="textarea w-full"
+						placeholder="Enter feedback, a bug report, or a feature request here."
+						bind:value={feedbackText}
+					/>
 
 					<div class="flex justify-between">
 						<button
-							class={urgency === 10 ? 'btn btn-primary' : 'btn btn-outline'}
+							class={urgency === 10 ? 'btn btn-primary' : 'btn btn-primary btn-outline'}
 							on:click={() => updateUrgency(10)}>&#128556; Commend</button
 						>
 						<button
-							class={urgency === 20 ? 'btn btn-primary' : 'btn btn-outline'}
+							class={urgency === 20 ? 'btn btn-primary' : 'btn btn-primary btn-outline'}
 							on:click={() => updateUrgency(20)}>&#128375; Bug</button
 						>
 						<button
-							class={urgency === 30 ? 'btn btn-primary' : 'btn btn-outline'}
+							class={urgency === 30 ? 'btn btn-primary' : 'btn btn-primary btn-outline'}
 							on:click={() => updateUrgency(30)}>&#128640; Feature</button
 						>
 						<button
-							class={urgency === 50 ? 'btn btn-error' : 'btn btn-outline'}
-							on:click={() => updateUrgency(50)}>&#128163; URGENT</button
+							class={urgency === 50 ? 'btn btn-error' : 'btn btn-error btn-outline'}
+							on:click={() => updateUrgency(50)}>&#128163; Urgent</button
 						>
 					</div>
 				</form>

@@ -6,22 +6,26 @@
 		<meta name="viewport" content="width=device-width" />
 		%sveltekit.head%
 		<script>
-			// Get the system preference for dark mode
-			const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
-
-			// Set the data-theme attribute based on the system preference
-			document.documentElement.setAttribute(
-				'data-theme',
-				prefersDarkMode.matches ? 'neubrutalism-dark' : 'neubrutalism'
-			);
-
-			// Add an event listener to update the data-theme attribute on the fly
-			prefersDarkMode.addEventListener('change', (event) => {
-				document.documentElement.setAttribute(
-					'data-theme',
-					event.matches ? 'neubrutalism-dark' : 'neubrutalism'
-				);
-			});
+			// On page load, check the saved theme preference
+			window.onload = function () {
+				const savedTheme = localStorage.getItem('userThemePreference');
+				switch (savedTheme) {
+					case 'light':
+						document.documentElement.setAttribute('data-theme', 'neubrutalism');
+						break;
+					case 'dark':
+						document.documentElement.setAttribute('data-theme', 'neubrutalism-dark');
+						break;
+					default:
+						// System preference
+						const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+						document.documentElement.setAttribute(
+							'data-theme',
+							prefersDarkMode.matches ? 'neubrutalism-dark' : 'neubrutalism'
+						);
+						break;
+				}
+			};
 		</script>
 	</head>
 	<body data-sveltekit-preload-data="hover" class="bg-base-100">
