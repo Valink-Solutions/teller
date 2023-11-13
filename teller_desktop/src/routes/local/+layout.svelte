@@ -60,7 +60,7 @@
 		listen<ToastEvent>('error', (event) => {
 			toast.push(event.payload.message, {
 				theme: {
-					'--toastBackground': '#EF4444',
+					'--toastBackground': '--base-100',
 					'--toastProgressBackground': '#F87171',
 					'--toastProgressText': '#fff',
 					'--toastColor': '#fff'
@@ -132,7 +132,7 @@
 
 <div class="flex flex-row max-h-screen max-w-screen" data-name="sidebar">
 	<div class="h-screen min-w-[270px] w-[348px] lg:w-[400px] p-2 overflow-hidden relative">
-		<div class="card flex flex-col h-fit min-h-full p-2 bg-base-100 gap-4 overflow-hidden">
+		<div class="card flex flex-col h-fit min-h-full w-full p-2 bg-base-100 gap-4 overflow-hidden">
 			<div class="flex flex-row justify-center gap-2 items-center">
 				<h1 class="font-bold">ChunkVault</h1>
 			</div>
@@ -149,7 +149,7 @@
 					<h2 class="text-center text-xs">Instances</h2>
 				</div>
 				<div class="max-h-[350px] overflow-hidden overflow-y-auto">
-					<ul class="menu menu-vertical min-w-[190px] w-full gap-2">
+					<ul class="menu menu-vertical w-full gap-2">
 						<li>
 							<button
 								on:click={() =>
@@ -203,7 +203,7 @@
 				</div>
 			</div>
 
-			<div class="flex flex-col h-full gap-2">
+			<div class="flex flex-col h-full w-full gap-2">
 				<div class="flex flex-row gap-2 items-center w-full justify-center">
 					<h2 class="text-center text-xs">Vaults</h2>
 					<!-- <button on:click={handleEditDirClick}>
@@ -213,40 +213,54 @@
 				<!-- svelte-ignore a11y-click-events-have-key-events -->
 				<!-- svelte-ignore a11y-no-static-element-interactions -->
 				<!-- svelte-ignore a11y-missing-attribute -->
-				<div class="tabs w-full justify-center">
-					<button
-						class="tab {activeTab === 'local' ? 'tab-active' : ''}"
-						on:click={() => switchTab('local')}>Local</button
-					>
-					<button class="tab {activeTab === 'remote' ? 'tab-active' : ''}" disabled>Remote</button>
-				</div>
-				<div class="tab-content">
-					{#if activeTab === 'local'}
-						<!-- Local Vaults content goes here -->
-						{#if localVaults}
-							<ul class="menu menu-vertical min-w-[190px] w-full gap-2">
-								{#each Object.entries(localVaults) as [vault, path], i (vault)}
-									<li>
-										<button
-											on:click={() =>
-												handleLocationChange({ type: 'localBackup', category: vault, path: path })}
-											class:active={$activeItem?.type === 'localBackup' &&
-												$activeItem?.category === vault}
-											class="text-xs"
-										>
-											{#if vault.length > 18}
-												{vault.slice(0, 15) + '...'}
-											{:else}
-												{vault}
-											{/if}
-										</button>
-									</li>
-								{/each}
-							</ul>
+				<div class="grid grid-cols-2 grid-rows-3 p-0 w-full min-w-full justify-center">
+					<input
+						type="radio"
+						name="vault_tab"
+						aria-label="Local"
+						class="tab w-full {activeTab === 'local' ? 'tab-active' : ''}"
+						on:click={() => switchTab('local')}
+					/>
+					<div class="row-start-2 cols-span-2 row-span-2 mt-2 tab-content w-full">
+						{#if activeTab === 'local'}
+							<!-- Local Vaults content goes here -->
+							{#if localVaults}
+								<ul class="menu w-full gap-2 p-0 m-0">
+									{#each Object.entries(localVaults) as [vault, path], i (vault)}
+										<li class="w-full">
+											<a
+												on:click={() =>
+													handleLocationChange({
+														type: 'localBackup',
+														category: vault,
+														path: path
+													})}
+												class:active={$activeItem?.type === 'localBackup' &&
+													$activeItem?.category === vault}
+												class="text-xs w-full"
+											>
+												{#if vault.length > 18}
+													{vault.slice(0, 15) + '...'}
+												{:else}
+													{vault}
+												{/if}
+											</a>
+										</li>
+									{/each}
+								</ul>
+							{/if}
+						{:else if activeTab === 'remote'}
+							<!-- Remote Vaults content goes here -->
 						{/if}
-					{:else if activeTab === 'remote'}
-						<!-- Remote Vaults content goes here -->
-					{/if}
+					</div>
+					<input
+						type="radio"
+						name="vault_tab"
+						aria-label="Remote"
+						class="tab w-full {activeTab === 'remote' ? 'tab-active' : ''}"
+						disabled
+					/>
+					<div class="tab-content w-full" />
 				</div>
 			</div>
 
@@ -273,15 +287,13 @@
 </Modals>
 <SvelteToast {options} />
 
-<style>
+<style lang="postcss">
 	:root {
 		--toastContainerTop: auto;
 		--toastContainerBottom: 1.5rem;
-		--toastWidth: 20rem;
-		--toastBackground: rgb(244, 244, 244);
-		--toastColor: #000000;
-		--toastBoxShadow: 0px 4px 0px 0px rgb(0, 0, 0);
-		--toastBorder: 4px solid rgb(0, 0, 0);
+		--toastWidth: 30rem;
+		--toastBoxShadow: 0px 4px 0px 0px var(--primary-border-color) !important;
+		--toastBorder: 4px solid var(--primary-border-color) !important;
 		--toastBorderRadius: 0;
 		--toastMsgPadding: 0.75rem 0.5rem;
 		--toastBtnWidth: 2rem;
@@ -295,6 +307,7 @@
 		--toastBarHeight: 6px;
 		--toastBarWidth: 100%;
 	}
+
 	.backdrop {
 		position: fixed;
 		top: 0;

@@ -153,7 +153,7 @@
 					/>
 				</button>
 				<select
-					class="select select-sm max-w-[85px] text-xs join-item"
+					class="select select-sm max-w-[100px] text-xs join-item"
 					bind:value={$worldSortOption.option}
 				>
 					<option value="size">Size</option>

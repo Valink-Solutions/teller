@@ -2,6 +2,7 @@ export default {
 	plugins: {
 		tailwindcss: {},
 		autoprefixer: {},
-		'postcss-scrollbar': {}
+		'postcss-scrollbar': {},
+		'postcss-color-function': {}
 	}
 };
