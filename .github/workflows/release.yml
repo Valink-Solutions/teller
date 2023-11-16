@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest-large, ubuntu-20.04, windows-latest]
+        platform: [macos-latest, ubuntu-20.04, windows-latest]
     runs-on: ${{ matrix.platform }}
 
     steps:
@@ -61,7 +61,7 @@ jobs:
         with:
           projectPath: ./teller_desktop
           tagName: ${{ github.ref_name }}
-          releaseName: 'ChunkVault App v__VERSION__'
+          releaseName: 'ChunkVault Desktop v__VERSION__'
           releaseBody: 'See the assets to download and install this version.'
           releaseDraft: true
           prerelease: false
