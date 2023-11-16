@@ -161,7 +161,7 @@ pub async fn get_world_metadata_from_id(
         .map_err(|e| format!("Failed to read backups directory: {}", e))?;
 
     match find_newest_backup(&files) {
-        Some(newest_backup) => return get_backup_meta_from_path(newest_backup).await,
+        Some(newest_backup) => get_backup_meta_from_path(newest_backup).await,
         None => Err("No backups found".to_string()),
     }
 }
@@ -186,8 +186,8 @@ pub async fn grab_backup_metadata(
     let backup_path = world_path.join(format!("{}.chunkvault-snapshot", backup_id));
 
     if backup_path.exists() {
-        return get_backup_meta_from_path(backup_path).await;
+        get_backup_meta_from_path(backup_path).await
     } else {
-        return Err("Backup does not exist".to_string());
+        Err("Backup does not exist".to_string())
     }
 }

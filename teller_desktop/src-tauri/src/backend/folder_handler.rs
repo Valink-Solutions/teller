@@ -53,7 +53,7 @@ async fn open_world_in_explorer(
     let path = get_world_path_by_id(world_id, category, instance).await?;
 
     if path.is_dir() {
-        match tauri::api::shell::open(&handle.shell_scope(), &path.to_string_lossy(), None)
+        match tauri::api::shell::open(&handle.shell_scope(), path.to_string_lossy(), None)
             .map_err(|e| e.to_string())
         {
             Ok(_) => Ok(()),
@@ -69,12 +69,12 @@ async fn open_world_in_explorer(
 
 #[tauri::command]
 fn open_path_in_explorer(handle: tauri::AppHandle, path: &str) -> Result<(), String> {
-    let path_str = path.replace(" ", r" ").replace("\"", "");
+    let path_str = path.replace(' ', r" ").replace('\"', "");
 
     let path = PathBuf::from(path_str);
 
     if path.is_dir() {
-        match tauri::api::shell::open(&handle.shell_scope(), &path.to_string_lossy(), None)
+        match tauri::api::shell::open(&handle.shell_scope(), path.to_string_lossy(), None)
             .map_err(|e| e.to_string())
         {
             Ok(_) => Ok(()),

@@ -131,7 +131,7 @@ pub async fn get_vault_id(path: &PathBuf) -> Result<String, String> {
             let new_vault_id = uuid::Uuid::new_v4().to_string();
             let mut vault_data = vault_data;
             vault_data["id"] = serde_json::Value::String(new_vault_id.clone());
-            match update_vault_file(vault_data, &path).await {
+            match update_vault_file(vault_data, path).await {
                 Ok(_) => {}
                 Err(e) => return Err(e),
             }
@@ -162,7 +162,7 @@ pub fn read_dat_file(file_path: PathBuf, game_type: GameType) -> Result<NbtValue
             let (_, dat_blob) =
                 match read_from_file(file_path, Compression::Gzip, Endian::Big, false) {
                     Ok(data) => data,
-                    Err(e) => return Err(format!("Failed to read level.dat: {e:?}").into()),
+                    Err(e) => return Err(format!("Failed to read level.dat: {e:?}")),
                 };
             Ok(dat_blob)
         }
@@ -170,7 +170,7 @@ pub fn read_dat_file(file_path: PathBuf, game_type: GameType) -> Result<NbtValue
             let (_, dat_blob) =
                 match read_from_file(file_path, Compression::Uncompressed, Endian::Little, true) {
                     Ok(data) => data,
-                    Err(e) => return Err(format!("Failed to read level.dat: {e:?}").into()),
+                    Err(e) => return Err(format!("Failed to read level.dat: {e:?}")),
                 };
             Ok(dat_blob)
         }
@@ -181,7 +181,7 @@ pub fn read_dat_file(file_path: PathBuf, game_type: GameType) -> Result<NbtValue
 pub fn get_world_data(world_path: &PathBuf) -> Result<Value, String> {
     info!("Getting world data for {:?}", world_path);
 
-    let game_type = is_minecraft_world(&world_path);
+    let game_type = is_minecraft_world(world_path);
 
     let level_dat_path = world_path.join("level.dat");
 
@@ -269,8 +269,8 @@ pub async fn process_world_data(
                 },
                 last_played: {
                     let last_played = level_value["LastPlayed"].as_i64().unwrap_or_default();
-                    let naive_datetime = chrono::NaiveDateTime::from_timestamp_opt(last_played, 0);
-                    naive_datetime
+                    
+                    chrono::NaiveDateTime::from_timestamp_opt(last_played, 0)
                 },
                 players: get_player_data(path, game_type)
                     .await
@@ -287,7 +287,7 @@ pub async fn process_world_data(
                 },
             };
 
-            return Ok(world_level_data);
+            Ok(world_level_data)
         }
         GameType::Java => {
             let level_data = match level_value.get("Data") {
@@ -334,8 +334,8 @@ pub async fn process_world_data(
                 },
                 last_played: {
                     let last_played = level_data["LastPlayed"].as_i64().unwrap_or_default();
-                    let naive_datetime = chrono::NaiveDateTime::from_timestamp_millis(last_played);
-                    naive_datetime
+                    
+                    chrono::NaiveDateTime::from_timestamp_millis(last_played)
                 },
                 players: get_player_data(path, game_type)
                     .await
@@ -346,15 +346,15 @@ pub async fn process_world_data(
                         .await
                         .map_err(|e| e.to_string())? as i64
                 },
-                game_rules: match parse_game_rules(&level_data, game_type) {
+                game_rules: match parse_game_rules(level_data, game_type) {
                     Ok(rules) => Some(rules),
                     Err(_) => None,
                 },
             };
 
-            return Ok(world_level_data);
+            Ok(world_level_data)
         }
-        GameType::None => return Err("Game type not specified".into()),
+        GameType::None => Err("Game type not specified".into()),
     }
 }
 
@@ -676,10 +676,7 @@ pub async fn parse_world_entry_data(path: PathBuf) -> Result<WorldData, String> 
         }
     };
 
-    let world_size = match calculate_dir_size(path.clone()).await {
-        Ok(size) => size,
-        Err(_) => 0,
-    };
+    let world_size = (calculate_dir_size(path.clone()).await).unwrap_or(0);
 
     let vault_id = match get_vault_id(&path).await {
         Ok(id) => id,
@@ -703,7 +700,7 @@ pub async fn parse_world_entry_data(path: PathBuf) -> Result<WorldData, String> 
         },
         path: path.to_string_lossy().into_owned(),
         size: world_size,
-        last_played: last_played,
+        last_played,
         game_type: match game_type {
             GameType::Java => Some("Java".to_string()),
             GameType::Bedrock => Some("Bedrock".to_string()),

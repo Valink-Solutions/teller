@@ -254,7 +254,7 @@ pub async fn create_backup_from_id(
         }
         Err(e) => {
             error!("Failed to grab world by id {}: {:?}", world_id, e);
-            return Err(format!("Failed to grab world by id {}: {:?}", world_id, e));
+            Err(format!("Failed to grab world by id {}: {:?}", world_id, e))
         }
     }
 }

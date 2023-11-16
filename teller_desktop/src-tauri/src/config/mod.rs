@@ -40,7 +40,7 @@ fn get_save_folders(handle: tauri::AppHandle) -> Result<DirectorySettings, Strin
     let config_dir = get_config_folder();
 
     // This simply opens the window and errors out allowing the user to configure the directories
-    let saves_config = match get_local_directories_config(&config_dir) {
+    let saves_config = match get_local_directories_config(config_dir) {
         Ok(s) => s,
         Err(e) => {
             let _config_saves_window = tauri::WindowBuilder::new(
@@ -63,7 +63,7 @@ fn get_save_folders(handle: tauri::AppHandle) -> Result<DirectorySettings, Strin
 fn load_saves_folders() -> Result<DirectorySettings, String> {
     let config_dir = get_config_folder();
 
-    let saves_config = match get_local_directories_config(&config_dir) {
+    let saves_config = match get_local_directories_config(config_dir) {
         Ok(s) => s,
         Err(e) => {
             return Err(format!("Could not get saves config: {:?}", e));

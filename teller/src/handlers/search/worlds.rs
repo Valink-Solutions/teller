@@ -180,7 +180,7 @@ pub async fn get_world_by_id(
         }
         Err(e) => {
             error!("Could not find world: {:?}", e);
-            return Err("Could not find world".to_string());
+            Err("Could not find world".to_string())
         }
     }
 }
@@ -200,7 +200,7 @@ pub fn is_minecraft_world(path: &PathBuf) -> GameType {
 
     if is_java {
         info!("Found java world at {:?}", path);
-        return GameType::Java;
+        GameType::Java
     } else if is_bedrock {
         info!("Found bedrock world at {:?}", path);
         return GameType::Bedrock;

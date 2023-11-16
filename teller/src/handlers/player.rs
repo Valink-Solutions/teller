@@ -17,7 +17,7 @@ pub async fn get_player_meta_from_uuid(
     client: reqwest::Client,
     player_uuid_str: String,
 ) -> Result<Value, String> {
-    if player_uuid_str == "~local_player".to_string() {
+    if player_uuid_str == *"~local_player" {
         let player_avatar =
             "https://crafthead.net/avatar/8667ba71b85a4004af54457a9734eed7?scale=32&overlay=false";
 
@@ -66,7 +66,7 @@ pub async fn get_player_meta_from_uuid(
                         "meta": {}
                     });
 
-                    return Ok(player_meta);
+                    Ok(player_meta)
                 }
             }
             Err(_) => Err("Error parsing player data".to_string()),
@@ -181,7 +181,7 @@ pub fn grab_player_from_uuid(player_uuid: String, path: &PathBuf) -> Result<Play
                     Ok((_, data)) => serde_json::to_value(data)
                         .map_err(|e| format!("Failed to parse player data: {:?}", e))?,
                     Err(e) => {
-                        return Err(format!("Failed to read player data: {:?}", e).into());
+                        return Err(format!("Failed to read player data: {:?}", e));
                     }
                 }
             };
@@ -191,10 +191,7 @@ pub fn grab_player_from_uuid(player_uuid: String, path: &PathBuf) -> Result<Play
                 health: Some(player_data.get("Health").unwrap().as_f64().unwrap() as f32),
                 food: Some(player_data.get("foodLevel").unwrap().as_i64().unwrap() as i32),
                 game_mode: match player_data.get("playerGameType") {
-                    Some(game_mode) => match game_mode.as_i64() {
-                        Some(game_mode) => Some(game_mode as i32),
-                        None => None,
-                    },
+                    Some(game_mode) => game_mode.as_i64().map(|game_mode| game_mode as i32),
                     None => None,
                 },
                 level: player_data.get("XpLevel").unwrap().as_i64().unwrap() as i32,
@@ -298,9 +295,9 @@ pub async fn get_player_data(path: &PathBuf, game_type: GameType) -> Result<Vec<
                             | d4 as u128;
 
                         // Create a UUID from the 128-bit value
-                        let player_uuid = Uuid::from_u128(uuid_int).to_string();
+                        
 
-                        player_uuid
+                        Uuid::from_u128(uuid_int).to_string()
                     }
                     None => "~local_player".to_string(),
                 };
@@ -324,7 +321,7 @@ pub async fn get_player_data(path: &PathBuf, game_type: GameType) -> Result<Vec<
             let mut player_data = match fs::read_dir(&player_data_path).await {
                 Ok(data) => data,
                 Err(e) => {
-                    return Err(format!("Failed to read player data: {:?}", e).into());
+                    return Err(format!("Failed to read player data: {:?}", e));
                 }
             };
 

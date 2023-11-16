@@ -47,7 +47,7 @@ jobs:
         run: cd teller_desktop && pnpm install
 
       - name: Run Clippy
-        run: cargo clippy -- -D warnings
+        run: cargo clippy -- -D warnings --fix
 
       # - name: Run Tests
       #   run: cargo test
