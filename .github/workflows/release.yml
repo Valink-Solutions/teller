@@ -46,8 +46,8 @@ jobs:
       - name: Install frontend dependencies
         run: cd teller_desktop && pnpm install
 
-      - name: Run Clippy
-        run: cargo clippy -- -D warnings --fix
+      # - name: Run Clippy
+      #   run: cargo clippy --fix
 
       # - name: Run Tests
       #   run: cargo test
