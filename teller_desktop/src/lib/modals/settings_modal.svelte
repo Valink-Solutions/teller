@@ -71,7 +71,7 @@
 			<div class="card-body gap-4">
 				<div class="grid grid-cols-3 items-center">
 					<h2 class="col-start-2 card-title justify-center">Main Settings</h2>
-					<span class="text-xs justify-self-end opacity-50">v0.2.4</span>
+					<span class="text-xs justify-self-end opacity-50">v0.2.5</span>
 				</div>
 				<div class="flex flex-col gap-2">
 					<h3 class="text-lg font-semibold">Instances</h3>

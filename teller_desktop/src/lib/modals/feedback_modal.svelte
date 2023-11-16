@@ -33,7 +33,9 @@
 
 		logSubmissionTime();
 
-		const response = await fetch('https://feedback-api.shuttleapp.rs/feedback', {
+		const apiBaseUrl = 'https://feedbackapi-template.shuttleapp.rs';
+		const endpoint = `${apiBaseUrl}${apiBaseUrl.endsWith('-template') ? '' : '-template'}/feedback`;
+		const response = await fetch(endpoint, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json'
