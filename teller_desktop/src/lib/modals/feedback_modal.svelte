@@ -33,7 +33,7 @@
 
 		logSubmissionTime();
 
-		const apiBaseUrl = 'https://feedbackapi-template.shuttleapp.rs';
+		const apiBaseUrl = 'https://feedback-api-template.shuttleapp.rs';
 		const endpoint = `${apiBaseUrl}${apiBaseUrl.endsWith('-template') ? '' : '-template'}/feedback`;
 		const response = await fetch(endpoint, {
 			method: 'POST',
