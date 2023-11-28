@@ -295,7 +295,6 @@ pub async fn get_player_data(path: &PathBuf, game_type: GameType) -> Result<Vec<
                             | d4 as u128;
 
                         // Create a UUID from the 128-bit value
-                        
 
                         Uuid::from_u128(uuid_int).to_string()
                     }

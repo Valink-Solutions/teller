@@ -269,7 +269,7 @@ pub async fn process_world_data(
                 },
                 last_played: {
                     let last_played = level_value["LastPlayed"].as_i64().unwrap_or_default();
-                    
+
                     chrono::NaiveDateTime::from_timestamp_opt(last_played, 0)
                 },
                 players: get_player_data(path, game_type)
@@ -334,7 +334,7 @@ pub async fn process_world_data(
                 },
                 last_played: {
                     let last_played = level_data["LastPlayed"].as_i64().unwrap_or_default();
-                    
+
                     chrono::NaiveDateTime::from_timestamp_millis(last_played)
                 },
                 players: get_player_data(path, game_type)

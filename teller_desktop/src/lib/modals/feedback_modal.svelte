@@ -10,8 +10,6 @@
 	let feedbackText: string = '';
 	let urgency: number = 0;
 
-	let canSub: boolean = true;
-
 	function updateUrgency(urgen: number) {
 		if (urgency === urgen) {
 			urgency = 0;
@@ -33,8 +31,8 @@
 
 		logSubmissionTime();
 
-		const apiBaseUrl = 'https://feedback-api-template.shuttleapp.rs';
-		const endpoint = `${apiBaseUrl}${apiBaseUrl.endsWith('-template') ? '' : '-template'}/feedback`;
+		const apiBaseUrl = 'https://feedback-api.fly.dev';
+		const endpoint = `${apiBaseUrl}/feedback`;
 		const response = await fetch(endpoint, {
 			method: 'POST',
 			headers: {
@@ -47,10 +45,16 @@
 		});
 
 		if (response.ok) {
-			toast.push('Feedback submitted!');
+			const responseData = await response.json();
+			if (responseData && responseData.id) {
+				toast.push(`Feedback submitted successfully!`);
+			} else {
+				toast.push('Feedback submitted, but no ID was returned.');
+			}
 			closeModal();
 		} else {
-			toast.push(await response.text(), {
+			const errorMessage = await response.text();
+			toast.push(`Error submitting feedback: ${errorMessage}`, {
 				theme: {
 					'--toastBackground': '#f44336',
 					'--toastProgressBackground': '#d32f2f'
