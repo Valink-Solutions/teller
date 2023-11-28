@@ -4178,7 +4178,7 @@ dependencies = [
 
 [[package]]
 name = "teller"
-version = "0.2.5"
+version = "0.2.6"
 dependencies = [
  "anyhow",
  "async-recursion",
@@ -4204,7 +4204,7 @@ dependencies = [
 
 [[package]]
 name = "teller_desktop"
-version = "0.2.5"
+version = "0.2.6"
 dependencies = [
  "anyhow",
  "base64 0.21.5",
