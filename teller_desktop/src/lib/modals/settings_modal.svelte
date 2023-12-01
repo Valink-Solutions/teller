@@ -20,17 +20,17 @@
 	function updateTheme(theme: string) {
 		switch (theme) {
 			case 'light':
-				document.documentElement.setAttribute('data-theme', 'neubrutalism');
+				document.documentElement.setAttribute('data-theme', 'light');
 				break;
 			case 'dark':
-				document.documentElement.setAttribute('data-theme', 'neubrutalism-dark');
+				document.documentElement.setAttribute('data-theme', 'dark');
 				break;
 			default:
 				// System preference
 				const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
 				document.documentElement.setAttribute(
 					'data-theme',
-					prefersDarkMode.matches ? 'neubrutalism-dark' : 'neubrutalism'
+					prefersDarkMode.matches ? 'dark' : 'light'
 				);
 				break;
 		}
@@ -71,7 +71,7 @@
 			<div class="card-body gap-4">
 				<div class="grid grid-cols-3 items-center">
 					<h2 class="col-start-2 card-title justify-center">Main Settings</h2>
-					<span class="text-xs justify-self-end opacity-50">v0.2.6</span>
+					<span class="text-xs justify-self-end opacity-50">v0.2.7</span>
 				</div>
 				<div class="flex flex-col gap-2">
 					<h3 class="text-lg font-semibold">Instances</h3>

@@ -31,7 +31,7 @@
 
 		logSubmissionTime();
 
-		const apiBaseUrl = 'https://feedback-api.fly.dev';
+		const apiBaseUrl = 'https://feedback.chunkvault.com';
 		const endpoint = `${apiBaseUrl}/feedback`;
 		const response = await fetch(endpoint, {
 			method: 'POST',
