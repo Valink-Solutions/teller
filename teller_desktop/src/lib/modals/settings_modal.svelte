@@ -20,17 +20,17 @@
 	function updateTheme(theme: string) {
 		switch (theme) {
 			case 'light':
-				document.documentElement.setAttribute('data-theme', 'neubrutalism');
+				document.documentElement.setAttribute('data-theme', 'light');
 				break;
 			case 'dark':
-				document.documentElement.setAttribute('data-theme', 'neubrutalism-dark');
+				document.documentElement.setAttribute('data-theme', 'dark');
 				break;
 			default:
 				// System preference
 				const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
 				document.documentElement.setAttribute(
 					'data-theme',
-					prefersDarkMode.matches ? 'neubrutalism-dark' : 'neubrutalism'
+					prefersDarkMode.matches ? 'dark' : 'light'
 				);
 				break;
 		}
