@@ -6,7 +6,7 @@
 
 html,
 body {
-	font-family: 'Martian Mono', monospace;
+	font-family: 'Martian Mono', 'Courier New', monospace;
 }
 
 /* Scrollbar styles */
@@ -23,7 +23,7 @@ body {
 }
 
 /* Neubrutalism Theme Styles */
-[data-theme='neubrutalism'] {
+[data-theme='light'] {
 	--accent-color: #3ba265;
 	--primary-border-color: rgba(0, 0, 0, 1);
 	--primary-shadow-color: rgba(0, 0, 0, 1);
@@ -32,7 +32,7 @@ body {
 	--border-width: 4px;
 }
 
-[data-theme='neubrutalism-dark'] {
+[data-theme='dark'] {
 	--accent-color: #3ba265;
 	--primary-border-color: #3d3a44;
 	--primary-shadow-color: #3d3a44;
@@ -42,22 +42,22 @@ body {
 }
 
 /* Toast Styles */
-[data-theme='neubrutalism'] ._toastItem,
-[data-theme='neubrutalism-dark'] ._toastItem,
+[data-theme='light'] ._toastItem,
+[data-theme='dark'] ._toastItem,
 [data-theme='light'] ._toastItem {
 	color: var(--base-content) !important;
 }
 
-[data-theme='neubrutalism'] ._toastItem {
+[data-theme='light'] ._toastItem {
 	background-color: white !important;
 }
-[data-theme='neubrutalism-dark'] ._toastItem {
+[data-theme='dark'] ._toastItem {
 	background-color: #252329 !important;
 }
 
 /* Button Styles */
-[data-theme='neubrutalism'] .btn,
-[data-theme='neubrutalism-dark'] .btn {
+[data-theme='light'] .btn,
+[data-theme='dark'] .btn {
 	border-width: var(--border-width);
 	border-color: var(--primary-border-color);
 	color: var(--base-content) !important;
@@ -66,61 +66,61 @@ body {
 	fill: var(--primary-border-color);
 }
 
-[data-theme='neubrutalism'] .btn:disabled,
-[data-theme='neubrutalism-dark'] .btn:disabled {
-	color: var(--disabled-color);
+[data-theme='light'] .btn:disabled,
+[data-theme='dark'] .btn:disabled {
+	color: var(--disabled-color) !important;
 	border-color: var(--disabled-color);
 	box-shadow: 0px 4px 0px 0px var(--disabled-color);
 }
 
 /* Ghost Button Styles */
-[data-theme='neubrutalism'] .btn-ghost,
-[data-theme='neubrutalism-dark'] .btn-ghost {
+[data-theme='light'] .btn-ghost,
+[data-theme='dark'] .btn-ghost {
 	border: none !important;
 	box-shadow: none !important;
 }
 
 /* Button Hover Styles */
-[data-theme='neubrutalism'] .btn:hover,
-[data-theme='neubrutalism-dark'] .btn:hover {
+[data-theme='light'] .btn:hover,
+[data-theme='dark'] .btn:hover {
 	color: var(--base-content);
 	border-color: var(--primary-shadow-color) !important;
 }
 
 /* Button Active Styles */
-[data-theme='neubrutalism'] .btn:active:not(.btn-ghost),
-[data-theme='neubrutalism-dark'] .btn:active:not(.btn-ghost) {
+[data-theme='light'] .btn:active:not(.btn-ghost),
+[data-theme='dark'] .btn:active:not(.btn-ghost) {
 	box-shadow: 0px 2px 0px 0px var(--primary-shadow-color) !important;
 }
 
-[data-theme='neubrutalism'] .btn-ghost:active,
-[data-theme='neubrutalism-dark'] .btn-ghost:active {
+[data-theme='light'] .btn-ghost:active,
+[data-theme='dark'] .btn-ghost:active {
 	box-shadow: none !important;
 }
 
 /* Card, Modal, Panel, Collapse Styles */
-[data-theme='neubrutalism'] .card,
-[data-theme='neubrutalism'] .modal,
-[data-theme='neubrutalism'] .panel,
-[data-theme='neubrutalism-dark'] .card,
-[data-theme='neubrutalism-dark'] .modal,
-[data-theme='neubrutalism-dark'] .panel {
+[data-theme='light'] .card,
+[data-theme='light'] .modal,
+[data-theme='light'] .panel,
+[data-theme='dark'] .card,
+[data-theme='dark'] .modal,
+[data-theme='dark'] .panel {
 	border-width: var(--border-width) !important;
 	border-color: var(--primary-border-color) !important;
 	box-shadow: 0px 4px 0px 0px var(--primary-shadow-color);
 }
 
-[data-theme='neubrutalism'] .collapse,
-[data-theme='neubrutalism-dark'] .collapse {
+[data-theme='light'] .collapse,
+[data-theme='dark'] .collapse {
 	border: var(--border-width) solid var(--primary-border-color) !important;
 	box-shadow: 0px 4px 0px 0px var(--primary-shadow-color) !important;
 }
 
 /* Input, Textarea Styles */
-[data-theme='neubrutalism'] .input,
-[data-theme='neubrutalism'] .textarea,
-[data-theme='neubrutalism-dark'] .input,
-[data-theme='neubrutalism-dark'] .textarea {
+[data-theme='light'] .input,
+[data-theme='light'] .textarea,
+[data-theme='dark'] .input,
+[data-theme='dark'] .textarea {
 	border-width: var(--border-width);
 	border-color: var(--primary-border-color) !important;
 	box-shadow: 0px 4px 0px 0px var(--primary-shadow-color);
@@ -128,32 +128,32 @@ body {
 }
 
 /* Form Input Styles */
-[data-theme='neubrutalism'] .form-input,
-[data-theme='neubrutalism-dark'] .form-input {
+[data-theme='light'] .form-input,
+[data-theme='dark'] .form-input {
 	border-width: var(--border-width);
 	border-color: var(--primary-border-color) !important;
 	box-shadow: 0px 4px 0px 0px var(--primary-shadow-color);
 }
 
 /* Select Styles */
-[data-theme='neubrutalism'] .select,
-[data-theme='neubrutalism-dark'] .select {
+[data-theme='light'] .select,
+[data-theme='dark'] .select {
 	border-width: var(--border-width);
 	border-color: var(--primary-border-color) !important;
 	box-shadow: 0px 4px 0px 0px var(--primary-shadow-color);
 	outline: none;
 }
 
-[data-theme='neubrutalism'] .select:disabled,
-[data-theme='neubrutalism-dark'] .select:disabled {
+[data-theme='light'] .select:disabled,
+[data-theme='dark'] .select:disabled {
 	color: var(--disabled-color) !important;
 	border-color: var(--disabled-color) !important;
 	box-shadow: 0px 4px 0px 0px var(--disabled-color) !important;
 }
 
 /* Checkbox Styles */
-[data-theme='neubrutalism'] .checkbox,
-[data-theme='neubrutalism-dark'] .checkbox {
+[data-theme='light'] .checkbox,
+[data-theme='dark'] .checkbox {
 	width: 30px;
 	height: 30px;
 	border-width: var(--border-width);
@@ -161,15 +161,15 @@ body {
 	outline: none !important;
 }
 
-[data-theme='neubrutalism'] .checkbox:checked,
-[data-theme='neubrutalism-dark'] .checkbox:checked {
+[data-theme='light'] .checkbox:checked,
+[data-theme='dark'] .checkbox:checked {
 	background-color: var(--primary-border-color) !important;
 	border: none;
 	outline: none !important;
 }
 
-[data-theme='neubrutalism'] .checkbox:checked:after,
-[data-theme='neubrutalism-dark'] .checkbox:checked:after {
+[data-theme='light'] .checkbox:checked:after,
+[data-theme='dark'] .checkbox:checked:after {
 	content: '';
 	position: absolute;
 	top: 50%;
@@ -183,8 +183,8 @@ body {
 }
 
 /* Dropdown Content Styles */
-[data-theme='neubrutalism'] .dropdown-content,
-[data-theme='neubrutalism-dark'] .dropdown-content {
+[data-theme='light'] .dropdown-content,
+[data-theme='dark'] .dropdown-content {
 	border-width: var(--border-width);
 	border-color: var(--primary-border-color) !important;
 	outline: none !important;
@@ -193,8 +193,8 @@ body {
 }
 
 /* Badge Styles */
-[data-theme='neubrutalism'] .badge,
-[data-theme='neubrutalism-dark'] .badge {
+[data-theme='light'] .badge,
+[data-theme='dark'] .badge {
 	border-width: var(--border-width) / 2;
 	border-color: var(--primary-border-color) !important;
 	color: var(--text-color) !important;
@@ -205,8 +205,8 @@ body {
 }
 
 /* Pagination Styles */
-[data-theme='neubrutalism'] .pagination,
-[data-theme='neubrutalism-dark'] .pagination {
+[data-theme='light'] .pagination,
+[data-theme='dark'] .pagination {
 	height: fit-content;
 	display: flex;
 	flex-direction: row;
@@ -216,24 +216,24 @@ body {
 	box-shadow: 0px 4px 0px 0px var(--primary-shadow-color);
 }
 
-[data-theme='neubrutalism'] .pagination .btn,
-[data-theme='neubrutalism-dark'] .pagination .btn {
+[data-theme='light'] .pagination .btn,
+[data-theme='dark'] .pagination .btn {
 	height: 3rem;
 	border: none;
 	border-radius: 0rem;
 	box-shadow: none;
 }
 
-[data-theme='neubrutalism'] .pagination .btn-disabled,
-[data-theme='neubrutalism'] .pagination .btn-disabled:hover,
-[data-theme='neubrutalism'] .pagination .btn[disabled],
-[data-theme='neubrutalism'] .pagination .btn[disabled]:hover {
+[data-theme='light'] .pagination .btn-disabled,
+[data-theme='light'] .pagination .btn-disabled:hover,
+[data-theme='light'] .pagination .btn[disabled],
+[data-theme='light'] .pagination .btn[disabled]:hover {
 	fill: #3ba265;
 }
 
-[data-theme='neubrutalism-dark'] .pagination .btn-disabled,
-[data-theme='neubrutalism-dark'] .pagination .btn-disabled:hover,
-[data-theme='neubrutalism-dark'] .pagination .btn[disabled],
-[data-theme='neubrutalism-dark'] .pagination .btn[disabled]:hover {
+[data-theme='dark'] .pagination .btn-disabled,
+[data-theme='dark'] .pagination .btn-disabled:hover,
+[data-theme='dark'] .pagination .btn[disabled],
+[data-theme='dark'] .pagination .btn[disabled]:hover {
 	fill: #3ba265;
 }
