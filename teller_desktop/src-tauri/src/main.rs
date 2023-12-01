@@ -4,8 +4,9 @@
 )]
 
 use log::info;
+use rusqlite::Connection;
 use std::env;
-use tauri::Manager;
+use tauri::{Manager, State};
 use tauri_plugin_log::LogTarget;
 use teller::handlers::config::get_config_folder;
 
@@ -15,8 +16,36 @@ struct Payload {
     cwd: String,
 }
 
+pub struct AppState {
+    pub db: std::sync::Mutex<Option<Connection>>,
+}
+
 fn main() {
+
     tauri::Builder::default()
+        .manage(AppState { db: Default::default() })
+        .setup(|app| {
+            let handle = app.handle();
+
+            let app_state: State<AppState> = handle.state();
+            let db = teller_desktop::backend::database_handler::initialize_database(&handle)
+                .expect("Database initialize should succeed");
+            *app_state.db.lock().unwrap() = Some(db);
+
+            // Run migrations
+            if let Ok(mut db) = app_state.db.lock() {
+                if let Some(ref mut db_conn) = *db {
+                    let migrations = include_str!("../../../migrations/20231128193314_init.sql");
+                    let current_version: u32 = db_conn.pragma_query_value(None, "user_version", |row| row.get(0)).unwrap_or(0);
+                    if current_version < teller_desktop::backend::database_handler::CURRENT_DB_VERSION {
+                        let _ = db_conn.execute_batch(migrations); // Ignore if migrations have already been applied
+                        let _ = teller_desktop::backend::database_handler::upgrade_database_if_needed(db_conn, current_version); // Ignore if upgrade is not needed
+                    }
+                }
+            }
+
+            Ok(())
+        })
         .plugin(
             tauri_plugin_log::Builder::default()
                 .targets([
